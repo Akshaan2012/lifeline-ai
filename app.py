@@ -76,6 +76,7 @@ PAGES = [
     "Medication Safety Checker",
     "Doctor Dashboard",
     "Scenario Challenge",
+    "Safety Videos",
 ]
 
 LANGUAGE_OPTIONS = [
@@ -1206,6 +1207,37 @@ def render_challenge() -> None:
     st.markdown("</div>", unsafe_allow_html=True)
 
 
+def render_safety_videos() -> None:
+    render_command_bar()
+    page_header(
+        "Safety Videos",
+        "Quick patient-friendly learning about prevention, precautions, medicine safety, and disease safety.",
+        "Safety learning",
+    )
+    video_col, guide_col = st.columns([1.2, .8], gap="large")
+    with video_col:
+        st.markdown(f'<div class="section-label">{h("Featured video")}</div>', unsafe_allow_html=True)
+        st.markdown('<div class="panel">', unsafe_allow_html=True)
+        st.video("https://www.youtube.com/watch?v=3PmVJQUCm4E")
+        st.caption(tr("WHO video: how to wash hands with soap and water. Hand hygiene is one of the simplest ways to reduce infection spread."))
+        st.markdown("</div>", unsafe_allow_html=True)
+    with guide_col:
+        st.markdown(f'<div class="section-label">{h("Core safety rules")}</div>', unsafe_allow_html=True)
+        st.markdown('<div class="panel">', unsafe_allow_html=True)
+        safety_sections = [
+            ("Prevention", ["Wash hands often.", "Keep vaccines up to date.", "Sleep well, drink water, and avoid smoking.", "Stay away from sick people when possible."]),
+            ("Precautions", ["Wear a mask if coughing or around high-risk people.", "Do not share towels, bottles, or utensils when sick.", "Clean frequently touched surfaces.", "Watch symptoms for worsening."]),
+            ("Medicine safety", ["Do not mix medicines without checking.", "Never take antibiotics for viral fever unless prescribed.", "Check allergies before taking a medicine.", "Follow the label or doctor dose only."]),
+            ("Disease safety", ["Know red flags: chest pain, trouble breathing, confusion, fainting, stroke signs.", "Seek care faster for babies, elderly people, pregnancy, or weak immunity.", "Use the Health Checker for symptom guidance.", "Ask a doctor if symptoms continue or worsen."]),
+        ]
+        for title, items in safety_sections:
+            st.markdown(f"**{tr(title)}**")
+            for item in translate_items(items, st.session_state.language):
+                st.write(f"- {item}")
+        st.warning(tr("Videos and tips are for education only. They do not replace medical care."))
+        st.markdown("</div>", unsafe_allow_html=True)
+
+
 def main() -> None:
     inject_css()
     init_state()
@@ -1223,6 +1255,8 @@ def main() -> None:
         render_dashboard()
     elif st.session_state.page == "Scenario Challenge":
         render_challenge()
+    elif st.session_state.page == "Safety Videos":
+        render_safety_videos()
     render_sam()
 
 
