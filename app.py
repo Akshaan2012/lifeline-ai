@@ -485,6 +485,27 @@ def inject_css() -> None:
             transform: translateY(-2px);
             box-shadow: 0 24px 60px rgba(10, 81, 92, .42), 0 0 0 8px rgba(33, 224, 200, .34) !important;
         }
+        [data-testid="stPopoverBody"],
+        [data-testid="stPopoverBody"] * {
+            color: #ffffff !important;
+        }
+        [data-testid="stPopoverBody"] {
+            background: #0f141c !important;
+        }
+        [data-testid="stPopoverBody"] input {
+            background: #ffffff !important;
+            color: #10252c !important;
+            border-color: #21e0c8 !important;
+        }
+        [data-testid="stPopoverBody"] input::placeholder {
+            color: #6f8588 !important;
+            opacity: 1 !important;
+        }
+        [data-testid="stPopoverBody"] button {
+            color: #ffffff !important;
+            background: linear-gradient(180deg, #21c7b4, #0f8f83) !important;
+            border-color: #21e0c8 !important;
+        }
         .small-title {
             color: var(--mint);
             text-transform: uppercase;
