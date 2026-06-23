@@ -6,6 +6,7 @@ from typing import Any
 
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 
 from backend.database import clear_cases, database_backend, list_cases, save_case
 from backend.disease_qa import answer_question
@@ -1218,8 +1219,8 @@ def render_safety_videos() -> None:
     with video_col:
         st.markdown(f'<div class="section-label">{h("Featured video")}</div>', unsafe_allow_html=True)
         st.markdown('<div class="panel">', unsafe_allow_html=True)
-        st.video("https://www.youtube.com/watch?v=rb7TVW77ZCs")
-        st.caption(tr("Educational video: how vaccines help the body prepare for disease. It connects prevention, precautions, and disease safety in a simple way."))
+        components.iframe("https://www.youtube.com/embed/-dmJSLNgjxo", height=420, scrolling=False)
+        st.caption(tr("CDC video: Introduction to Public Health. It explains disease prevention, tracking, public-health programs, and how safety measures protect people."))
         st.markdown("</div>", unsafe_allow_html=True)
     with guide_col:
         st.markdown(f'<div class="section-label">{h("Core safety rules")}</div>', unsafe_allow_html=True)
