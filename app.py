@@ -139,48 +139,58 @@ def inject_css() -> None:
         """
         <style>
         :root {
-            --bg: #080c0f;
-            --bg-2: #0b1115;
-            --panel: #10171c;
-            --panel-2: #141d23;
-            --panel-3: #18242b;
-            --line: #233139;
-            --line-soft: rgba(120, 143, 150, .18);
-            --text: #edf4f1;
-            --muted: #99aaa5;
-            --teal: #41d8c3;
-            --teal-dim: rgba(65, 216, 195, .12);
-            --amber: #f3b84c;
-            --red: #ff6c6c;
+            --bg: #07090b;
+            --bg-2: #0a1012;
+            --panel: #0f1618;
+            --panel-2: #141d20;
+            --panel-3: #182529;
+            --line: #26363a;
+            --line-soft: rgba(139, 160, 158, .18);
+            --text: #f1f7f4;
+            --muted: #9fb0aa;
+            --mint: #45e0c7;
+            --mint-dim: rgba(69, 224, 199, .12);
+            --blue: #7eb7ff;
+            --amber: #f4bd5f;
+            --red: #ff6f70;
+            --ink: #050708;
         }
         .stApp {
             background:
-                radial-gradient(circle at 18% 0%, rgba(65, 216, 195, .08), transparent 26%),
-                linear-gradient(180deg, #090e11 0%, var(--bg) 45%, #070b0d 100%);
+                linear-gradient(90deg, rgba(69, 224, 199, .045) 1px, transparent 1px),
+                linear-gradient(180deg, #0a0f11 0%, var(--bg) 48%, #060809 100%);
+            background-size: 42px 42px, auto;
             color: var(--text);
             font-family: "Noto Sans Devanagari", "Mangal", "Nirmala UI", "Segoe UI", Arial, sans-serif;
         }
         header[data-testid="stHeader"] { background: transparent; }
         #MainMenu, footer { visibility: hidden; }
         [data-testid="stSidebar"] {
-            background: linear-gradient(180deg, #0d1418 0%, #090e11 100%);
+            background:
+                linear-gradient(180deg, rgba(13, 20, 22, .98) 0%, rgba(6, 9, 10, .99) 100%);
             border-right: 1px solid var(--line);
         }
         [data-testid="stSidebar"] * { color: var(--text); }
+        [data-testid="stSidebar"] h2 {
+            font-size: 1.35rem;
+            margin: 0 0 1rem 0;
+        }
         [data-testid="stSidebar"] [role="radiogroup"] label {
             border: 1px solid transparent;
             border-radius: 8px;
-            padding: 8px 10px;
-            margin: 4px 0;
-            background: rgba(255, 255, 255, .015);
+            padding: 9px 10px;
+            margin: 5px 0;
+            background: rgba(255, 255, 255, .02);
+            transition: border-color .16s ease, background .16s ease, transform .16s ease;
         }
         [data-testid="stSidebar"] [role="radiogroup"] label:hover {
-            border-color: rgba(65, 216, 195, .28);
-            background: rgba(65, 216, 195, .06);
+            border-color: rgba(69, 224, 199, .34);
+            background: rgba(69, 224, 199, .07);
+            transform: translateX(2px);
         }
         .block-container { padding-top: 1.05rem; padding-bottom: 2rem; max-width: 1380px; }
         h1, h2, h3 { letter-spacing: 0; color: var(--text); }
-        h1 { font-size: 2.35rem; line-height: 1.05; margin-bottom: .35rem; }
+        h1 { font-size: 3.65rem; line-height: .98; margin-bottom: .55rem; font-weight: 850; }
         h2 { font-size: 1.35rem; }
         h3 { font-size: 1.05rem; }
         p, li, label, .stMarkdown { color: var(--text); }
@@ -188,14 +198,14 @@ def inject_css() -> None:
         .muted { color: var(--muted); }
         .command-bar {
             border: 1px solid var(--line);
-            background: rgba(16, 23, 28, .84);
+            background: linear-gradient(90deg, rgba(17, 25, 28, .93), rgba(11, 15, 17, .94));
             border-radius: 8px;
-            padding: 12px 14px;
+            padding: 12px 14px 12px 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             gap: 12px;
-            box-shadow: 0 16px 44px rgba(0, 0, 0, .18);
+            box-shadow: 0 16px 44px rgba(0, 0, 0, .18), inset 3px 0 0 rgba(69, 224, 199, .65);
             margin-bottom: 18px;
         }
         .command-text {
@@ -207,40 +217,80 @@ def inject_css() -> None:
             height: 8px;
             display: inline-block;
             border-radius: 999px;
-            background: var(--teal);
-            box-shadow: 0 0 18px rgba(65, 216, 195, .8);
+            background: var(--mint);
+            box-shadow: 0 0 18px rgba(69, 224, 199, .8);
             margin-right: 8px;
         }
         .page-head {
             border: 1px solid var(--line);
-            background: linear-gradient(135deg, rgba(20, 29, 35, .95), rgba(13, 20, 24, .96));
+            background:
+                linear-gradient(135deg, rgba(19, 29, 31, .97), rgba(9, 14, 15, .98));
             border-radius: 8px;
-            padding: 20px 22px;
+            padding: 22px 24px;
             margin-bottom: 18px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 18px 70px rgba(0,0,0,.2);
+            position: relative;
+            overflow: hidden;
         }
         .page-head p { margin-bottom: 0; color: var(--muted); max-width: 860px; }
+        .clinical-rail {
+            height: 24px;
+            display: flex;
+            align-items: end;
+            gap: 4px;
+            margin: 0 0 16px;
+        }
+        .clinical-rail span {
+            width: 5px;
+            border-radius: 999px 999px 0 0;
+            background: linear-gradient(180deg, var(--mint), rgba(69, 224, 199, .18));
+            opacity: .86;
+        }
+        .clinical-rail span:nth-child(1) { height: 8px; }
+        .clinical-rail span:nth-child(2) { height: 16px; background: linear-gradient(180deg, var(--blue), rgba(126, 183, 255, .14)); }
+        .clinical-rail span:nth-child(3) { height: 11px; }
+        .clinical-rail span:nth-child(4) { height: 24px; background: linear-gradient(180deg, var(--amber), rgba(244, 189, 95, .14)); }
+        .clinical-rail span:nth-child(5) { height: 9px; }
+        .clinical-rail span:nth-child(6) { height: 18px; }
         .hero {
             border: 1px solid var(--line);
             background:
-                linear-gradient(135deg, rgba(19, 29, 35, .96) 0%, rgba(12, 20, 24, .98) 64%, rgba(10, 17, 20, .96) 100%);
+                linear-gradient(135deg, rgba(18, 29, 31, .98) 0%, rgba(9, 14, 16, .98) 70%, rgba(15, 21, 19, .98) 100%);
             border-radius: 8px;
-            padding: 32px;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,.035), 0 18px 70px rgba(0,0,0,.22);
+            padding: 34px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.045), 0 22px 80px rgba(0,0,0,.28);
+            position: relative;
+            overflow: hidden;
+        }
+        .hero:after, .page-head:after {
+            content: "";
+            position: absolute;
+            inset: auto 22px 18px auto;
+            width: 148px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(69, 224, 199, .8), transparent);
         }
         .panel {
             border: 1px solid var(--line);
-            background: linear-gradient(180deg, rgba(16, 23, 28, .98), rgba(12, 18, 22, .98));
+            background:
+                linear-gradient(180deg, rgba(16, 23, 25, .98), rgba(10, 15, 17, .98));
             border-radius: 8px;
             padding: 20px;
             min-height: 100%;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,.03);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.035), 0 12px 42px rgba(0,0,0,.16);
         }
         .metric-card {
             border: 1px solid var(--line);
-            background: linear-gradient(180deg, var(--panel-2), #10181d);
+            background: linear-gradient(180deg, rgba(20, 29, 32, .98), rgba(11, 16, 18, .98));
             border-radius: 8px;
             padding: 16px 16px 15px;
             min-height: 112px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.035);
+            transition: border-color .16s ease, transform .16s ease;
+        }
+        .metric-card:hover {
+            border-color: rgba(69, 224, 199, .38);
+            transform: translateY(-2px);
         }
         .metric-card b {
             display: block;
@@ -248,15 +298,15 @@ def inject_css() -> None:
             color: var(--text);
         }
         .metric-card .token {
-            color: var(--teal);
+            color: var(--mint);
             font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
             font-size: .82rem;
         }
         .risk {
             display: inline-block;
-            border: 1px solid rgba(70, 214, 191, .45);
+            border: 1px solid rgba(69, 224, 199, .45);
             color: #06100e;
-            background: var(--teal);
+            background: var(--mint);
             border-radius: 999px;
             padding: 8px 12px;
             font-weight: 800;
@@ -292,7 +342,7 @@ def inject_css() -> None:
             margin-bottom: 14px;
         }
         .summary-item {
-            background: rgba(255,255,255,.025);
+            background: rgba(255,255,255,.03);
             border: 1px solid var(--line-soft);
             border-radius: 8px;
             padding: 10px;
@@ -314,8 +364,8 @@ def inject_css() -> None:
         }
         .soft-badge {
             display: inline-block;
-            border: 1px solid rgba(65, 216, 195, .28);
-            background: var(--teal-dim);
+            border: 1px solid rgba(69, 224, 199, .28);
+            background: var(--mint-dim);
             color: #bffdf2;
             border-radius: 999px;
             padding: 5px 10px;
@@ -324,7 +374,7 @@ def inject_css() -> None:
             margin-right: 8px;
         }
         .sam-box {
-            border: 1px solid rgba(70, 214, 191, .45);
+            border: 1px solid rgba(69, 224, 199, .45);
             background:
                 linear-gradient(180deg, rgba(16, 33, 34, .98), rgba(12, 23, 25, .98));
             border-radius: 8px;
@@ -347,26 +397,26 @@ def inject_css() -> None:
             height: 72px;
             min-width: 72px;
             border-radius: 999px;
-            border: 1px solid rgba(65, 216, 195, .75);
+            border: 1px solid rgba(69, 224, 199, .78);
             background: linear-gradient(180deg, #1a4b43, #102b27);
-            box-shadow: 0 18px 60px rgba(0,0,0,.45), 0 0 34px rgba(65, 216, 195, .25);
+            box-shadow: 0 18px 60px rgba(0,0,0,.45), 0 0 34px rgba(69, 224, 199, .25);
             color: #eafffb;
             font-weight: 900;
         }
         div[data-testid="stPopover"] > button:hover {
-            border-color: var(--teal);
+            border-color: var(--mint);
             transform: translateY(-1px);
-            box-shadow: 0 22px 70px rgba(0,0,0,.5), 0 0 44px rgba(65, 216, 195, .35);
+            box-shadow: 0 22px 70px rgba(0,0,0,.5), 0 0 44px rgba(69, 224, 199, .35);
         }
         .small-title {
-            color: var(--teal);
+            color: var(--mint);
             text-transform: uppercase;
             font-size: .78rem;
             letter-spacing: .08em;
             font-weight: 800;
         }
         .section-label {
-            color: var(--teal);
+            color: var(--mint);
             font-size: .78rem;
             font-weight: 800;
             text-transform: uppercase;
@@ -375,25 +425,29 @@ def inject_css() -> None:
         }
         .stButton>button {
             border-radius: 6px;
-            border: 1px solid rgba(70, 214, 191, .45);
+            border: 1px solid rgba(69, 224, 199, .45);
             background: linear-gradient(180deg, #15302c, #102420);
             color: var(--text);
             font-weight: 700;
             min-height: 2.45rem;
         }
         .stButton>button:hover {
-            border-color: var(--teal);
+            border-color: var(--mint);
             color: #dffff8;
             background: #173c36;
         }
+        .stButton>button:focus, .stTextInput input:focus, .stNumberInput input:focus, .stTextArea textarea:focus {
+            outline: 2px solid rgba(126, 183, 255, .55) !important;
+            outline-offset: 2px;
+        }
         .stTextInput input, .stNumberInput input, .stTextArea textarea {
-            background: #0d1418;
+            background: #0b1214;
             color: var(--text);
             border: 1px solid var(--line);
             border-radius: 7px;
         }
         div[data-baseweb="select"] > div {
-            background: #0d1418;
+            background: #0b1214;
             border-color: var(--line);
             border-radius: 7px;
         }
@@ -422,6 +476,16 @@ def inject_css() -> None:
             padding: 2px 5px;
         }
         hr { border-color: var(--line-soft); }
+        @media (max-width: 720px) {
+            h1 { font-size: 2.35rem; }
+            .hero, .page-head, .panel { padding: 18px; }
+            .command-bar { align-items: flex-start; flex-direction: column; }
+            .summary-grid { grid-template-columns: 1fr; }
+            div[data-testid="stPopover"] {
+                right: 16px;
+                bottom: 16px;
+            }
+        }
         </style>
         """,
         unsafe_allow_html=True,
@@ -545,6 +609,7 @@ def page_header(title: str, subtitle: str, badge: str) -> None:
     st.markdown(
         f"""
         <div class="page-head">
+            <div class="clinical-rail"><span></span><span></span><span></span><span></span><span></span><span></span></div>
             <div class="small-title">{badge}</div>
             <h1>{title}</h1>
             <p>{subtitle}</p>
@@ -578,6 +643,7 @@ def render_home() -> None:
     st.markdown(
         f"""
         <div class="hero">
+            <div class="clinical-rail"><span></span><span></span><span></span><span></span><span></span><span></span></div>
             <div class="small-title">{h("AI health guidance")}</div>
             <h1>LifeLine AI</h1>
             <p class="muted">{hero_subtitle}</p>
