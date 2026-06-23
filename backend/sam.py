@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, asdict
+import os
 
 
 @dataclass(frozen=True)
@@ -97,4 +98,60 @@ def route_message(message: str) -> SamCommand:
         confidence=0.65,
         reason="The request is unclear, so the safest useful page is the Health Checker.",
         message="I can help you choose a page. If you feel unwell, start with the Health Checker.",
+    )
+
+
+def _setting(name: str, default: str = "") -> str:
+    value = os.getenv(name, "").strip()
+    if value:
+        return value
+    try:
+        import streamlit as st
+
+        return str(st.secrets.get(name, default)).strip()
+    except Exception:
+        return default
+
+
+def _ai_reply(message: str) -> str | None:
+    api_key = _setting("OPENAI_API_KEY")
+    if not api_key:
+        return None
+    model = _setting("OPENAI_MODEL", "gpt-5.4-nano")
+    system = (
+        "You are Sam, the friendly AI assistant inside LifeLine AI. "
+        "Answer any normal question clearly and briefly. For health questions, use simple patient-friendly language, "
+        "give safe general education, mention red flags when relevant, and never claim to diagnose, prescribe, or replace a doctor. "
+        "If emergency symptoms are mentioned, advise urgent local medical help. "
+        "You can also guide users to these app pages: Patient Health Checker, Health Timeline, Disease Q&A Assistant, "
+        "Medication Safety Checker, Doctor Dashboard, Scenario Challenge, Safety Videos."
+    )
+    try:
+        from openai import OpenAI
+
+        client = OpenAI(api_key=api_key)
+        response = client.responses.create(
+            model=model,
+            input=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": message},
+            ],
+            max_output_tokens=420,
+        )
+        return (response.output_text or "").strip() or None
+    except Exception:
+        return None
+
+
+def answer_message(message: str) -> SamCommand:
+    routed = route_message(message)
+    reply = _ai_reply(message)
+    if not reply:
+        return routed
+    return SamCommand(
+        intent="ai_answer",
+        target_page=routed.target_page,
+        confidence=max(routed.confidence, 0.9),
+        reason="Sam answered with the configured OpenAI model and kept the best app route as an optional next step.",
+        message=reply,
     )

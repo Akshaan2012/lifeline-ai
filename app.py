@@ -16,7 +16,7 @@ from backend.followup import evaluate_follow_up
 from backend.medication_safety import analyze_medication_safety
 from backend.recommender import build_recommendations
 from backend.report import generate_health_report_pdf
-from backend.sam import route_message
+from backend.sam import answer_message
 from backend.translator import translate_answer, translate_items, translate_text
 from backend.triage_engine import RISK_ORDER, analyze_patient
 
@@ -705,7 +705,7 @@ def render_sam() -> None:
             key="sam_bubble_input",
         )
         if message:
-            command = route_message(message)
+            command = answer_message(message)
             st.write(translate_text(command.message, st.session_state.language))
             if command.target_page and st.button(tr(f"Open {command.target_page}"), key="sam_bubble_open", width="stretch"):
                 switch_page(command.target_page)
