@@ -82,7 +82,7 @@ LANGUAGE_OPTIONS = [
     "\U0001f1ee\U0001f1f3 Tamil", "\U0001f1ee\U0001f1f3 Malayalam", "\U0001f1ee\U0001f1f3 Telugu", "\U0001f1ee\U0001f1f3 Gujarati", "\U0001f1ee\U0001f1f3 Bhojpuri",
     "\U0001f1e8\U0001f1f3 Mandarin", "\U0001f1f9\U0001f1ed Thai", "\U0001f1ef\U0001f1f5 Japanese", "\U0001f1f3\U0001f1f4 Norwegian", "\U0001f1f8\U0001f1ea Swedish",
     "\U0001f1eb\U0001f1ee Finnish", "\U0001f1f5\U0001f1f9 Portuguese", "\U0001f1f7\U0001f1f4 Romanian", "\U0001f1ee\U0001f1f9 Italian", "\U0001f1ee\U0001f1f8 Icelandic",
-    "\U0001f1f3\U0001f1f1 Dutch", "\U0001f1f2\U0001f1fe Malay", "\U0001f1ee\U0001f1f1 Hebrew", "\U0001f1f8\U0001f1e6 Arabic",
+    "\U0001f1f3\U0001f1f1 Dutch", "\U0001f1f2\U0001f1fe Malay", "\U0001f1f0\U0001f1ea Swahili", "\U0001f1ff\U0001f1e6 Afrikaans", "\U0001f1ee\U0001f1f1 Hebrew", "\U0001f1f8\U0001f1e6 Arabic",
 ]
 
 

@@ -32,6 +32,8 @@ LANGUAGE_CODES = {
     "Icelandic": "is",
     "Dutch": "nl",
     "Malay": "ms",
+    "Swahili": "sw",
+    "Afrikaans": "af",
     "Hebrew": "iw",
     "Arabic": "ar",
 }
