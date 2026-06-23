@@ -262,7 +262,7 @@ def inject_css() -> None:
             background: rgba(98, 224, 204, .14);
             transform: translateX(2px);
         }
-        .block-container { padding-top: 1rem; padding-bottom: 2.5rem; max-width: 1260px; }
+        .block-container { padding-top: .65rem; padding-bottom: 2.5rem; max-width: 1220px; }
         h1, h2, h3 { letter-spacing: 0; color: var(--text); }
         h1 { font-size: 2.6rem; line-height: 1.05; margin-bottom: .55rem; font-weight: 850; }
         h2 { font-size: 1.35rem; }
@@ -271,16 +271,7 @@ def inject_css() -> None:
         .stCaptionContainer, [data-testid="stCaptionContainer"] { color: var(--muted); }
         .muted { color: var(--muted); }
         .command-bar {
-            border: 1px solid var(--line);
-            background: rgba(255,255,255,.92);
-            border-radius: 8px;
-            padding: 12px 14px 12px 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            box-shadow: 0 12px 30px rgba(15, 42, 48, .08), inset 3px 0 0 var(--mint);
-            margin-bottom: 14px;
+            display: none;
         }
         .command-text {
             color: var(--muted);
@@ -300,8 +291,8 @@ def inject_css() -> None:
             background:
                 linear-gradient(135deg, #ffffff 0%, #edf8f6 100%);
             border-radius: 8px;
-            padding: 22px 24px;
-            margin-bottom: 16px;
+            padding: 18px 22px;
+            margin-bottom: 18px;
             box-shadow: 0 16px 42px rgba(26, 74, 84, .08);
             position: relative;
             overflow: hidden;
@@ -312,7 +303,7 @@ def inject_css() -> None:
             display: flex;
             align-items: end;
             gap: 4px;
-            margin: 0 0 16px;
+            margin: 0 0 12px;
         }
         .clinical-rail span {
             width: 5px;
@@ -331,7 +322,7 @@ def inject_css() -> None:
             background:
                 linear-gradient(135deg, #ffffff 0%, #eaf7f5 72%, #f8fbff 100%);
             border-radius: 8px;
-            padding: 28px;
+            padding: 24px;
             box-shadow: 0 18px 48px rgba(26, 74, 84, .1);
             position: relative;
             overflow: hidden;
@@ -357,7 +348,7 @@ def inject_css() -> None:
             background: var(--surface);
             border-radius: 8px;
             padding: 16px 16px 15px;
-            min-height: 112px;
+            min-height: 104px;
             box-shadow: 0 10px 28px rgba(26, 74, 84, .07);
             transition: border-color .16s ease, transform .16s ease;
         }
@@ -495,7 +486,7 @@ def inject_css() -> None:
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: .08em;
-            margin: 4px 0 10px;
+            margin: 6px 0 8px;
         }
         .stButton>button {
             border-radius: 6px;
@@ -519,6 +510,7 @@ def inject_css() -> None:
             color: var(--text);
             border: 1px solid var(--line);
             border-radius: 7px;
+            box-shadow: 0 1px 0 rgba(10, 25, 32, .03);
         }
         div[data-baseweb="select"] > div {
             background: #ffffff;
