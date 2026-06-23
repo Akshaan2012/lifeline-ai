@@ -19,6 +19,30 @@ class SamCommand:
 def route_message(message: str) -> SamCommand:
     text = message.lower().strip()
 
+    if any(word in text for word in ["timeline", "history", "past checks", "patient profile"]):
+        return SamCommand(
+            intent="navigate",
+            target_page="Health Timeline",
+            confidence=0.94,
+            reason="The user asked for patient history, timeline, or profile.",
+            message="Open Health Timeline to see saved checks and patient history over time.",
+        )
+    if any(word in text for word in ["disease q&a", "q&a", "qa", "health question", "medicine question"]):
+        return SamCommand(
+            intent="navigate",
+            target_page="Disease Q&A Assistant",
+            confidence=0.94,
+            reason="The user asked for the disease or medicine Q&A page.",
+            message="Open Health & Medicine Q&A to ask about diseases, symptoms, or medicines.",
+        )
+    if any(word in text for word in ["safety video", "safety videos", "public health video", "prevention video"]):
+        return SamCommand(
+            intent="navigate",
+            target_page="Safety Videos",
+            confidence=0.94,
+            reason="The user asked for safety videos or prevention education.",
+            message="Open Safety Videos to learn about prevention, precautions, medicine safety, and disease safety.",
+        )
     if any(word in text for word in ["medicine safety", "safe to take", "mix", "interaction", "allergy", "allergic", "dose", "dosage"]):
         return SamCommand(
             intent="navigate",
@@ -129,22 +153,29 @@ def _ai_reply(message: str) -> str | None:
     try:
         from openai import OpenAI
 
-        client = OpenAI(api_key=api_key)
+        client = OpenAI(api_key=api_key, timeout=float(_setting("OPENAI_TIMEOUT_SECONDS", "8")))
         response = client.responses.create(
             model=model,
             input=[
                 {"role": "system", "content": system},
                 {"role": "user", "content": message},
             ],
-            max_output_tokens=420,
+            max_output_tokens=int(_setting("OPENAI_MAX_OUTPUT_TOKENS", "220")),
         )
         return (response.output_text or "").strip() or None
     except Exception:
         return None
 
 
+def _wants_navigation(message: str) -> bool:
+    text = message.lower()
+    return any(word in text for word in ["open", "go to", "take me", "show me", "switch", "page", "button"])
+
+
 def answer_message(message: str) -> SamCommand:
     routed = route_message(message)
+    if _wants_navigation(message) and routed.target_page:
+        return routed
     reply = _ai_reply(message)
     if not reply:
         return routed

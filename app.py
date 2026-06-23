@@ -618,6 +618,7 @@ def sidebar() -> None:
 
 def switch_page(page: str) -> None:
     st.session_state.page = page
+    st.session_state.page_picker = page
     st.rerun()
 
 
