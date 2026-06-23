@@ -21,6 +21,10 @@ def _short(value: Any) -> str:
     return "<br/>".join(wrap(text, 85)) if len(text) > 90 else text
 
 
+def _p(text: Any, style: Any) -> Paragraph:
+    return Paragraph(str(text), style)
+
+
 def generate_health_report_pdf(patient_data: dict[str, Any], result: Any, advice: dict[str, Any]) -> bytes:
     buffer = BytesIO()
     doc = SimpleDocTemplate(
@@ -38,16 +42,18 @@ def generate_health_report_pdf(patient_data: dict[str, Any], result: Any, advice
     story.append(Paragraph(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}", styles["Normal"]))
     story.append(Spacer(1, 10))
 
+    symptoms_text = _short(", ".join(patient_data.get("symptoms", [])))
     summary = [
-        ["Patient", _short(patient_data.get("patient_name") or "Anonymous")],
-        ["Age / Gender", f"{patient_data.get('age', 'Not provided')} / {patient_data.get('gender', 'Not provided')}"],
-        ["Symptoms", _short(", ".join(patient_data.get("symptoms", [])))],
-        ["Existing conditions", _short(", ".join(patient_data.get("conditions", [])))],
-        ["Medicines / allergies", _short(patient_data.get("medications"))],
-        ["Risk level", result.risk_level],
-        ["Risk score", f"{result.score}/100"],
-        ["Likely pattern", result.possible_category],
-        ["Recommended timeframe", advice["timeframe"]],
+        [_p("Patient", styles["BodyText"]), _p(_short(patient_data.get("patient_name") or "Anonymous"), styles["BodyText"])],
+        [_p("Age / Gender", styles["BodyText"]), _p(f"{patient_data.get('age', 'Not provided')} / {patient_data.get('gender', 'Not provided')}", styles["BodyText"])],
+        [_p("Symptoms", styles["BodyText"]), ""],
+        [_p(symptoms_text, styles["BodyText"]), ""],
+        [_p("Existing conditions", styles["BodyText"]), _p(_short(", ".join(patient_data.get("conditions", []))), styles["BodyText"])],
+        [_p("Medicines / allergies", styles["BodyText"]), _p(_short(patient_data.get("medications")), styles["BodyText"])],
+        [_p("Risk level", styles["BodyText"]), _p(result.risk_level, styles["BodyText"])],
+        [_p("Risk score", styles["BodyText"]), _p(f"{result.score}/100", styles["BodyText"])],
+        [_p("Likely pattern", styles["BodyText"]), _p(result.possible_category, styles["BodyText"])],
+        [_p("Recommended timeframe", styles["BodyText"]), _p(advice["timeframe"], styles["BodyText"])],
     ]
     table = Table(summary, colWidths=[1.8 * inch, 5.0 * inch])
     table.setStyle(
@@ -60,6 +66,8 @@ def generate_health_report_pdf(patient_data: dict[str, Any], result: Any, advice
                 ("VALIGN", (0, 0), (-1, -1), "TOP"),
                 ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
                 ("PADDING", (0, 0), (-1, -1), 7),
+                ("SPAN", (0, 3), (1, 3)),
+                ("BACKGROUND", (0, 3), (1, 3), colors.white),
             ]
         )
     )

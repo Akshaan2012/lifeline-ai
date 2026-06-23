@@ -25,6 +25,12 @@ for select
 to anon
 using (true);
 
+create policy "Allow app reset for patient cases"
+on public.patient_cases
+for delete
+to anon
+using (true);
+
 create index if not exists patient_cases_score_idx
 on public.patient_cases (score desc);
 

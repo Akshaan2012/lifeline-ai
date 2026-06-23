@@ -7,7 +7,7 @@ from typing import Any
 import pandas as pd
 import streamlit as st
 
-from backend.database import database_backend, list_cases, save_case
+from backend.database import clear_cases, database_backend, list_cases, save_case
 from backend.disease_qa import answer_question
 from backend.medication_safety import analyze_medication_safety
 from backend.recommender import build_recommendations
@@ -961,6 +961,15 @@ def render_dashboard() -> None:
         "Clinical queue",
     )
     st.caption(f"{tr('Database')}: {database_backend()}")
+    reset_col, _ = st.columns([0.35, 0.65])
+    with reset_col:
+        confirm_reset = st.checkbox(tr("I understand this will remove saved patient cases"))
+        if st.button(tr("Reset patient data"), disabled=not confirm_reset, width="stretch"):
+            clear_cases()
+            st.session_state.checker_result = None
+            st.session_state.checker_patient_data = None
+            st.success(tr("Saved patient cases were removed."))
+            st.rerun()
     cases = list_cases()
     if not cases:
         st.info(tr("No saved patient cases yet. Use the Health Checker and save a case."))

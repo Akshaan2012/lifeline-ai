@@ -121,3 +121,14 @@ def list_cases() -> list[dict[str, Any]]:
             "SELECT * FROM patient_cases ORDER BY score DESC, created_at DESC"
         ).fetchall()
     return [dict(row) for row in rows]
+
+
+def clear_cases() -> None:
+    supabase = _supabase_client()
+    if supabase:
+        supabase.table("patient_cases").delete().neq("id", 0).execute()
+        return
+
+    init_db()
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("DELETE FROM patient_cases")
