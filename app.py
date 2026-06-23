@@ -183,11 +183,11 @@ def inject_css() -> None:
         """
         <style>
         :root {
-            --bg: #f5faf9;
+            --bg: #edf7f6;
             --surface: #ffffff;
-            --surface-2: #eef7f5;
+            --surface-2: #e2f3f1;
             --panel: #ffffff;
-            --line: #d9e8e5;
+            --line: #c7dfdc;
             --line-soft: rgba(24, 65, 72, .12);
             --text: #17252a;
             --muted: #5f7375;
@@ -200,8 +200,10 @@ def inject_css() -> None:
         }
         .stApp {
             background:
-                linear-gradient(90deg, rgba(15, 159, 143, .055) 1px, transparent 1px),
-                linear-gradient(180deg, #fbfefd 0%, var(--bg) 100%);
+                radial-gradient(circle at 12% 10%, rgba(38, 104, 184, .14), transparent 28%),
+                radial-gradient(circle at 88% 18%, rgba(15, 159, 143, .16), transparent 26%),
+                linear-gradient(90deg, rgba(15, 159, 143, .05) 1px, transparent 1px),
+                linear-gradient(180deg, #f8fcfb 0%, #edf7f6 48%, #e5f1f4 100%);
             background-size: 44px 44px, auto;
             color: var(--text);
             font-family: "Noto Sans Devanagari", "Mangal", "Nirmala UI", "Segoe UI", Arial, sans-serif;
@@ -289,7 +291,7 @@ def inject_css() -> None:
         .page-head {
             border: 1px solid var(--line);
             background:
-                linear-gradient(135deg, #ffffff 0%, #edf8f6 100%);
+                linear-gradient(135deg, #ffffff 0%, #e7f6f4 58%, #eaf2fb 100%);
             border-radius: 8px;
             padding: 18px 22px;
             margin-bottom: 18px;
@@ -320,7 +322,7 @@ def inject_css() -> None:
         .hero {
             border: 1px solid var(--line);
             background:
-                linear-gradient(135deg, #ffffff 0%, #eaf7f5 72%, #f8fbff 100%);
+                linear-gradient(135deg, #ffffff 0%, #e0f4f1 62%, #e9f1fb 100%);
             border-radius: 8px;
             padding: 24px;
             box-shadow: 0 18px 48px rgba(26, 74, 84, .1);
@@ -345,7 +347,7 @@ def inject_css() -> None:
         }
         .metric-card {
             border: 1px solid var(--line);
-            background: var(--surface);
+            background: linear-gradient(180deg, #ffffff 0%, #f2faf9 100%);
             border-radius: 8px;
             padding: 16px 16px 15px;
             min-height: 104px;
@@ -462,16 +464,16 @@ def inject_css() -> None:
             height: 72px;
             min-width: 72px;
             border-radius: 999px;
-            border: 1px solid rgba(69, 224, 199, .78);
-            background: linear-gradient(180deg, #1a4b43, #102b27);
-            box-shadow: 0 18px 60px rgba(0,0,0,.45), 0 0 34px rgba(69, 224, 199, .25);
-            color: #eafffb;
+            border: 2px solid #ffffff;
+            background: linear-gradient(180deg, #21c7b4, #0f8f83);
+            box-shadow: 0 18px 46px rgba(10, 81, 92, .28), 0 0 0 6px rgba(15, 159, 143, .16);
+            color: #ffffff;
             font-weight: 900;
         }
         div[data-testid="stPopover"] > button:hover {
-            border-color: var(--mint);
+            border-color: #ffffff;
             transform: translateY(-1px);
-            box-shadow: 0 22px 70px rgba(0,0,0,.5), 0 0 44px rgba(69, 224, 199, .35);
+            box-shadow: 0 22px 56px rgba(10, 81, 92, .34), 0 0 0 7px rgba(15, 159, 143, .2);
         }
         .small-title {
             color: var(--mint);
