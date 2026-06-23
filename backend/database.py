@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 from datetime import datetime
 from pathlib import Path
@@ -8,6 +9,35 @@ from typing import Any
 
 
 DB_PATH = Path("data/lifeline_cases.db")
+
+
+def _setting(name: str) -> str:
+    value = os.getenv(name, "").strip()
+    if value:
+        return value
+    try:
+        import streamlit as st
+
+        return str(st.secrets.get(name, "")).strip()
+    except Exception:
+        return ""
+
+
+def _supabase_client() -> Any | None:
+    url = _setting("SUPABASE_URL")
+    key = _setting("SUPABASE_ANON_KEY")
+    if not url or not key:
+        return None
+    try:
+        from supabase import create_client
+
+        return create_client(url, key)
+    except Exception:
+        return None
+
+
+def database_backend() -> str:
+    return "Supabase" if _supabase_client() else "SQLite local fallback"
 
 
 def init_db() -> None:
@@ -32,6 +62,22 @@ def init_db() -> None:
 
 
 def save_case(patient_data: dict[str, Any], triage_result: Any) -> None:
+    supabase = _supabase_client()
+    row = {
+        "created_at": datetime.now().isoformat(timespec="minutes"),
+        "patient_name": patient_data.get("patient_name") or "Anonymous",
+        "age": int(patient_data.get("age") or 0),
+        "symptoms": ", ".join(patient_data.get("symptoms", [])),
+        "category": triage_result.possible_category,
+        "risk_level": triage_result.risk_level,
+        "recommendation": triage_result.recommendation,
+        "score": int(triage_result.score),
+        "raw_data": patient_data,
+    }
+    if supabase:
+        supabase.table("patient_cases").insert(row).execute()
+        return
+
     init_db()
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute(
@@ -43,20 +89,31 @@ def save_case(patient_data: dict[str, Any], triage_result: Any) -> None:
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
-                datetime.now().strftime("%Y-%m-%d %H:%M"),
-                patient_data.get("patient_name") or "Anonymous",
-                int(patient_data.get("age") or 0),
-                ", ".join(patient_data.get("symptoms", [])),
-                triage_result.possible_category,
-                triage_result.risk_level,
-                triage_result.recommendation,
-                triage_result.score,
-                json.dumps(patient_data),
+                row["created_at"],
+                row["patient_name"],
+                row["age"],
+                row["symptoms"],
+                row["category"],
+                row["risk_level"],
+                row["recommendation"],
+                row["score"],
+                json.dumps(row["raw_data"]),
             ),
         )
 
 
 def list_cases() -> list[dict[str, Any]]:
+    supabase = _supabase_client()
+    if supabase:
+        response = (
+            supabase.table("patient_cases")
+            .select("*")
+            .order("score", desc=True)
+            .order("created_at", desc=True)
+            .execute()
+        )
+        return list(response.data or [])
+
     init_db()
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row

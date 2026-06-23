@@ -7,7 +7,7 @@ from typing import Any
 import pandas as pd
 import streamlit as st
 
-from backend.database import list_cases, save_case
+from backend.database import database_backend, list_cases, save_case
 from backend.disease_qa import answer_question
 from backend.medication_safety import analyze_medication_safety
 from backend.recommender import build_recommendations
@@ -960,6 +960,7 @@ def render_dashboard() -> None:
         "Review saved patient cases, sorted by urgency so serious cases are easier to notice first.",
         "Clinical queue",
     )
+    st.caption(f"{tr('Database')}: {database_backend()}")
     cases = list_cases()
     if not cases:
         st.info(tr("No saved patient cases yet. Use the Health Checker and save a case."))

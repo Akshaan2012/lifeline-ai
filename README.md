@@ -38,3 +38,27 @@ http://127.0.0.1:8501
 - ReportLab
 - SQLite
 - deep-translator
+
+## Supabase Setup
+
+LifeLine AI uses Supabase PostgreSQL in production when these secrets are present:
+
+```toml
+SUPABASE_URL = "https://your-project-ref.supabase.co"
+SUPABASE_ANON_KEY = "your-public-anon-key"
+```
+
+In Streamlit Community Cloud:
+
+1. Open the deployed app settings.
+2. Go to **Secrets**.
+3. Add `SUPABASE_URL` and `SUPABASE_ANON_KEY`.
+4. Reboot the app.
+
+In Supabase:
+
+1. Create a new project.
+2. Open **SQL Editor**.
+3. Paste and run the SQL from `supabase_schema.sql`.
+
+If Supabase secrets are missing, the app uses a local SQLite fallback for testing.
