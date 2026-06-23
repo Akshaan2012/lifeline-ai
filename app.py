@@ -236,8 +236,9 @@ def inject_css() -> None:
         div:has(> [title*="Manage app"]),
         div:has(> [data-testid="stAppDeployButton"]),
         div:has(> [data-testid="stManageAppButton"]) {
-            display: none !important;
-            visibility: hidden !important;
+            right: auto !important;
+            left: 16px !important;
+            bottom: 16px !important;
         }
         [data-testid="stSidebar"] {
             background:
@@ -460,7 +461,7 @@ def inject_css() -> None:
         div[data-testid="stPopover"] {
             position: fixed;
             right: 24px;
-            bottom: 104px;
+            bottom: 24px;
             z-index: 9999;
             width: 72px !important;
             min-width: 72px !important;
@@ -557,7 +558,7 @@ def inject_css() -> None:
             .summary-grid { grid-template-columns: 1fr; }
             div[data-testid="stPopover"] {
                 right: 16px;
-                bottom: 96px;
+                bottom: 16px;
             }
         }
         </style>
