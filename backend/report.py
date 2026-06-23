@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from datetime import datetime
 from io import BytesIO
-from textwrap import wrap
 from typing import Any
+from xml.sax.saxutils import escape
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
@@ -18,11 +18,11 @@ def _items(items: list[str]) -> str:
 
 def _short(value: Any) -> str:
     text = str(value or "Not provided")
-    return "<br/>".join(wrap(text, 85)) if len(text) > 90 else text
+    return text
 
 
 def _p(text: Any, style: Any) -> Paragraph:
-    return Paragraph(str(text), style)
+    return Paragraph(escape(str(text)), style)
 
 
 def generate_health_report_pdf(patient_data: dict[str, Any], result: Any, advice: dict[str, Any]) -> bytes:
@@ -55,7 +55,7 @@ def generate_health_report_pdf(patient_data: dict[str, Any], result: Any, advice
         [_p("Likely pattern", styles["BodyText"]), _p(result.possible_category, styles["BodyText"])],
         [_p("Recommended timeframe", styles["BodyText"]), _p(advice["timeframe"], styles["BodyText"])],
     ]
-    table = Table(summary, colWidths=[1.8 * inch, 5.0 * inch])
+    table = Table(summary, colWidths=[1.8 * inch, 4.65 * inch])
     table.setStyle(
         TableStyle(
             [
@@ -66,7 +66,9 @@ def generate_health_report_pdf(patient_data: dict[str, Any], result: Any, advice
                 ("VALIGN", (0, 0), (-1, -1), "TOP"),
                 ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
                 ("PADDING", (0, 0), (-1, -1), 7),
+                ("SPAN", (0, 2), (1, 2)),
                 ("SPAN", (0, 3), (1, 3)),
+                ("BACKGROUND", (0, 2), (1, 2), colors.HexColor("#E9F7F4")),
                 ("BACKGROUND", (0, 3), (1, 3), colors.white),
             ]
         )
