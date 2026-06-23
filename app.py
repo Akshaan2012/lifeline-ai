@@ -168,7 +168,30 @@ def inject_css() -> None:
         [data-testid="stToolbar"],
         [data-testid="stDecoration"],
         [data-testid="stStatusWidget"],
+        [data-testid="stAppDeployButton"],
+        [data-testid="stDeployButton"],
+        [data-testid="stManageAppButton"],
+        [data-testid="manage-app-button"],
+        button[aria-label*="Manage"],
+        a[aria-label*="Manage"],
+        div[aria-label*="Manage"],
+        [aria-label="Manage app"],
+        [aria-label*="Manage app"],
+        [title="Manage app"],
+        [title*="Manage app"],
+        [class*="stDeployButton"],
+        [class*="stAppDeployButton"],
+        [class*="deployButton"],
+        [class*="ManageApp"],
+        [class*="manageApp"],
         .stDeployButton {
+            display: none !important;
+            visibility: hidden !important;
+        }
+        div:has(> [aria-label*="Manage app"]),
+        div:has(> [title*="Manage app"]),
+        div:has(> [data-testid="stAppDeployButton"]),
+        div:has(> [data-testid="stManageAppButton"]) {
             display: none !important;
             visibility: hidden !important;
         }
