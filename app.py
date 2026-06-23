@@ -183,28 +183,26 @@ def inject_css() -> None:
         """
         <style>
         :root {
-            --bg: #edf7f6;
+            --bg: #dfeff2;
             --surface: #ffffff;
-            --surface-2: #e2f3f1;
+            --surface-2: #e8f5f7;
             --panel: #ffffff;
-            --line: #c7dfdc;
+            --line: #b7d3d7;
             --line-soft: rgba(24, 65, 72, .12);
-            --text: #17252a;
-            --muted: #5f7375;
-            --mint: #0f9f8f;
+            --text: #10252c;
+            --muted: #526b72;
+            --mint: #00a991;
             --mint-dim: rgba(15, 159, 143, .1);
-            --blue: #2668b8;
-            --amber: #b87514;
+            --blue: #1f5f8f;
+            --amber: #d1922b;
             --red: #c93b4a;
-            --ink: #0a1920;
+            --ink: #062632;
         }
         .stApp {
             background:
-                radial-gradient(circle at 12% 10%, rgba(38, 104, 184, .14), transparent 28%),
-                radial-gradient(circle at 88% 18%, rgba(15, 159, 143, .16), transparent 26%),
-                linear-gradient(90deg, rgba(15, 159, 143, .05) 1px, transparent 1px),
-                linear-gradient(180deg, #f8fcfb 0%, #edf7f6 48%, #e5f1f4 100%);
-            background-size: 44px 44px, auto;
+                linear-gradient(135deg, rgba(6, 38, 50, .14) 0%, transparent 34%),
+                linear-gradient(180deg, #eaf6f8 0%, #dcecef 48%, #d6e8ec 100%);
+            background-size: auto;
             color: var(--text);
             font-family: "Noto Sans Devanagari", "Mangal", "Nirmala UI", "Segoe UI", Arial, sans-serif;
         }
@@ -243,7 +241,7 @@ def inject_css() -> None:
         }
         [data-testid="stSidebar"] {
             background:
-                linear-gradient(180deg, #0b2b33 0%, #071a22 100%);
+                linear-gradient(180deg, #082d3b 0%, #061821 100%);
             border-right: 1px solid rgba(255,255,255,.1);
         }
         [data-testid="stSidebar"] * { color: #efffff; }
@@ -289,17 +287,18 @@ def inject_css() -> None:
             margin-right: 8px;
         }
         .page-head {
-            border: 1px solid var(--line);
+            border: 1px solid rgba(255,255,255,.22);
             background:
-                linear-gradient(135deg, #ffffff 0%, #e7f6f4 58%, #eaf2fb 100%);
+                linear-gradient(135deg, #0b3443 0%, #0d5962 58%, #126d6b 100%);
             border-radius: 8px;
-            padding: 18px 22px;
+            padding: 24px 26px;
             margin-bottom: 18px;
-            box-shadow: 0 16px 42px rgba(26, 74, 84, .08);
+            box-shadow: 0 24px 60px rgba(8, 45, 59, .24);
             position: relative;
             overflow: hidden;
         }
-        .page-head p { margin-bottom: 0; color: var(--muted); max-width: 860px; }
+        .page-head h1 { color: #ffffff; }
+        .page-head p { margin-bottom: 0; color: rgba(239, 255, 252, .82); max-width: 860px; }
         .clinical-rail {
             height: 24px;
             display: flex;
@@ -320,15 +319,17 @@ def inject_css() -> None:
         .clinical-rail span:nth-child(5) { height: 9px; }
         .clinical-rail span:nth-child(6) { height: 18px; }
         .hero {
-            border: 1px solid var(--line);
+            border: 1px solid rgba(255,255,255,.22);
             background:
-                linear-gradient(135deg, #ffffff 0%, #e0f4f1 62%, #e9f1fb 100%);
+                linear-gradient(135deg, #0b3443 0%, #0d5962 58%, #126d6b 100%);
             border-radius: 8px;
-            padding: 24px;
-            box-shadow: 0 18px 48px rgba(26, 74, 84, .1);
+            padding: 30px;
+            box-shadow: 0 24px 60px rgba(8, 45, 59, .24);
             position: relative;
             overflow: hidden;
         }
+        .hero h1 { color: #ffffff; }
+        .hero .muted { color: rgba(239,255,252,.84); }
         .hero:after, .page-head:after {
             content: "";
             position: absolute;
@@ -347,11 +348,11 @@ def inject_css() -> None:
         }
         .metric-card {
             border: 1px solid var(--line);
-            background: linear-gradient(180deg, #ffffff 0%, #f2faf9 100%);
+            background: linear-gradient(180deg, #ffffff 0%, #eef8fa 100%);
             border-radius: 8px;
             padding: 16px 16px 15px;
             min-height: 104px;
-            box-shadow: 0 10px 28px rgba(26, 74, 84, .07);
+            box-shadow: 0 16px 34px rgba(26, 74, 84, .12);
             transition: border-color .16s ease, transform .16s ease;
         }
         .metric-card:hover {
@@ -431,9 +432,9 @@ def inject_css() -> None:
         }
         .soft-badge {
             display: inline-block;
-            border: 1px solid rgba(69, 224, 199, .28);
-            background: var(--mint-dim);
-            color: #0c635b;
+            border: 1px solid rgba(255,255,255,.35);
+            background: rgba(255,255,255,.14);
+            color: #ffffff;
             border-radius: 999px;
             padding: 5px 10px;
             font-size: .82rem;
@@ -454,26 +455,35 @@ def inject_css() -> None:
             position: fixed;
             right: 24px;
             bottom: 24px;
-            z-index: 9999;
+            z-index: 100000 !important;
             width: 72px !important;
             min-width: 72px !important;
             max-width: 72px !important;
         }
-        div[data-testid="stPopover"] > button {
-            width: 72px;
-            height: 72px;
-            min-width: 72px;
-            border-radius: 999px;
-            border: 2px solid #ffffff;
-            background: linear-gradient(180deg, #21c7b4, #0f8f83);
-            box-shadow: 0 18px 46px rgba(10, 81, 92, .28), 0 0 0 6px rgba(15, 159, 143, .16);
-            color: #ffffff;
-            font-weight: 900;
+        div[data-testid="stPopover"] button,
+        div[data-testid="stPopover"] > button,
+        div[data-testid="stPopover"] button[kind],
+        div[data-testid="stPopover"] [role="button"] {
+            width: 72px !important;
+            height: 72px !important;
+            min-width: 72px !important;
+            border-radius: 999px !important;
+            border: 3px solid #ffffff !important;
+            background: linear-gradient(180deg, #21e0c8, #078f82) !important;
+            box-shadow: 0 18px 46px rgba(10, 81, 92, .36), 0 0 0 7px rgba(33, 224, 200, .28) !important;
+            color: #ffffff !important;
+            font-weight: 900 !important;
         }
-        div[data-testid="stPopover"] > button:hover {
-            border-color: #ffffff;
-            transform: translateY(-1px);
-            box-shadow: 0 22px 56px rgba(10, 81, 92, .34), 0 0 0 7px rgba(15, 159, 143, .2);
+        div[data-testid="stPopover"] button *,
+        div[data-testid="stPopover"] p,
+        div[data-testid="stPopover"] span {
+            color: #ffffff !important;
+            opacity: 1 !important;
+        }
+        div[data-testid="stPopover"] button:hover {
+            border-color: #ffffff !important;
+            transform: translateY(-2px);
+            box-shadow: 0 24px 60px rgba(10, 81, 92, .42), 0 0 0 8px rgba(33, 224, 200, .34) !important;
         }
         .small-title {
             color: var(--mint);
@@ -518,6 +528,12 @@ def inject_css() -> None:
             background: #ffffff;
             border-color: var(--line);
             border-radius: 7px;
+            color: var(--text);
+        }
+        [data-testid="stSidebar"] div[data-baseweb="select"] > div,
+        [data-testid="stSidebar"] div[data-baseweb="select"] span {
+            color: #10252c !important;
+            background: #ffffff !important;
         }
         [data-testid="stMultiSelect"] div {
             color: var(--text);
