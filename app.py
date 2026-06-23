@@ -1218,8 +1218,8 @@ def render_safety_videos() -> None:
     with video_col:
         st.markdown(f'<div class="section-label">{h("Featured video")}</div>', unsafe_allow_html=True)
         st.markdown('<div class="panel">', unsafe_allow_html=True)
-        st.video("https://www.youtube.com/watch?v=3PmVJQUCm4E")
-        st.caption(tr("WHO video: how to wash hands with soap and water. Hand hygiene is one of the simplest ways to reduce infection spread."))
+        st.video("https://www.youtube.com/watch?v=rb7TVW77ZCs")
+        st.caption(tr("Educational video: how vaccines help the body prepare for disease. It connects prevention, precautions, and disease safety in a simple way."))
         st.markdown("</div>", unsafe_allow_html=True)
     with guide_col:
         st.markdown(f'<div class="section-label">{h("Core safety rules")}</div>', unsafe_allow_html=True)
