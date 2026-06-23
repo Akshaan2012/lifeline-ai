@@ -1,6 +1,7 @@
 __pycache__/
 *.pyc
 data/*.db
-.streamlit/
+.streamlit/*
+!.streamlit/config.toml
 streamlit.*.log
 separated_images/
