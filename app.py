@@ -568,6 +568,10 @@ def inject_css() -> None:
 
 def init_state() -> None:
     st.session_state.setdefault("page", "Home")
+    pending_page = st.session_state.pop("pending_page", None)
+    if pending_page in PAGES:
+        st.session_state.page = pending_page
+        st.session_state.page_picker = pending_page
     if st.session_state.page not in PAGES:
         st.session_state.page = "Home"
     st.session_state.setdefault("page_picker", st.session_state.page)
@@ -617,8 +621,7 @@ def sidebar() -> None:
 
 
 def switch_page(page: str) -> None:
-    st.session_state.page = page
-    st.session_state.page_picker = page
+    st.session_state.pending_page = page
     st.rerun()
 
 
