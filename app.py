@@ -165,6 +165,13 @@ def inject_css() -> None:
         }
         header[data-testid="stHeader"] { background: transparent; }
         #MainMenu, footer { visibility: hidden; }
+        [data-testid="stToolbar"],
+        [data-testid="stDecoration"],
+        [data-testid="stStatusWidget"],
+        .stDeployButton {
+            display: none !important;
+            visibility: hidden !important;
+        }
         [data-testid="stSidebar"] {
             background:
                 linear-gradient(180deg, rgba(13, 20, 22, .98) 0%, rgba(6, 9, 10, .99) 100%);
