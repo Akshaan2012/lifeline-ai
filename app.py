@@ -1,6 +1,7 @@
 ﻿from __future__ import annotations
 
 import random
+import json
 from html import escape
 from typing import Any
 
@@ -73,6 +74,7 @@ CONDITION_OPTIONS = [
 PAGES = [
     "Home",
     "Patient Health Checker",
+    "Health Timeline",
     "Disease Q&A Assistant",
     "Medication Safety Checker",
     "Doctor Dashboard",
@@ -114,6 +116,46 @@ def unique_items(items: list[str]) -> list[str]:
             seen.add(key)
             clean_items.append(item.strip())
     return clean_items
+
+
+def parse_case_raw_data(raw_data: Any) -> dict[str, Any]:
+    if isinstance(raw_data, dict):
+        return raw_data
+    if isinstance(raw_data, str) and raw_data.strip():
+        try:
+            parsed = json.loads(raw_data)
+            return parsed if isinstance(parsed, dict) else {}
+        except json.JSONDecodeError:
+            return {}
+    return {}
+
+
+def split_known_conditions(conditions: list[str]) -> tuple[list[str], list[str]]:
+    known = [item for item in conditions if item in CONDITION_OPTIONS]
+    custom = [item for item in conditions if item not in CONDITION_OPTIONS]
+    return known, custom
+
+
+def load_profile_into_form(profile: dict[str, Any]) -> None:
+    known_conditions, custom_conditions = split_known_conditions(list(profile.get("conditions", [])))
+    st.session_state.patient_name_input = str(profile.get("patient_name", ""))
+    st.session_state.patient_age_input = int(profile.get("age") if profile.get("age") is not None else 25)
+    st.session_state.patient_gender_input = str(profile.get("gender") or "Prefer not to say")
+    st.session_state.patient_conditions_input = known_conditions
+    st.session_state.patient_custom_conditions_input = ", ".join(custom_conditions)
+    st.session_state.patient_medications_input = str(profile.get("medications", ""))
+
+
+def clear_profile_form() -> None:
+    for key in [
+        "patient_name_input",
+        "patient_age_input",
+        "patient_gender_input",
+        "patient_conditions_input",
+        "patient_custom_conditions_input",
+        "patient_medications_input",
+    ]:
+        st.session_state.pop(key, None)
 
 
 SCENARIOS = [
@@ -535,6 +577,7 @@ def init_state() -> None:
     st.session_state.setdefault("scenario_index", 0)
     st.session_state.setdefault("checker_result", None)
     st.session_state.setdefault("checker_patient_data", None)
+    st.session_state.setdefault("patient_profile", {})
     st.session_state.setdefault("language", "🇺🇸 English")
     if st.session_state.language not in LANGUAGE_OPTIONS:
         st.session_state.language = "🇺🇸 English"
@@ -581,6 +624,7 @@ def switch_page(page: str) -> None:
 def render_quick_jumps(prefix: str, exclude: str | None = None) -> None:
     targets = [
         ("Health Checker", "Patient Health Checker"),
+        ("Timeline", "Health Timeline"),
         ("Health & Medicine Q&A", "Disease Q&A Assistant"),
         ("Medication Safety", "Medication Safety Checker"),
         ("Doctor Dashboard", "Doctor Dashboard"),
@@ -699,13 +743,35 @@ def render_home() -> None:
 
 
 def patient_form() -> dict[str, Any]:
+    profile = st.session_state.get("patient_profile", {})
+    profile_conditions = list(profile.get("conditions", []))
+    known_conditions, custom_conditions = split_known_conditions(profile_conditions)
     st.markdown(f"**{tr('Basic details')}**")
-    patient_name = st.text_input(tr("Patient name or ID"), placeholder=tr("Example: Patient 001"))
+    patient_name = st.text_input(
+        tr("Patient name or ID"),
+        value=str(profile.get("patient_name", "")),
+        placeholder=tr("Example: Patient 001"),
+        key="patient_name_input",
+    )
     b1, b2 = st.columns(2)
     with b1:
-        age = st.number_input(tr("Age"), min_value=0, max_value=120, value=25)
+        age = st.number_input(
+            tr("Age"),
+            min_value=0,
+            max_value=120,
+            value=int(profile.get("age") if profile.get("age") is not None else 25),
+            key="patient_age_input",
+        )
     with b2:
-        gender = st.selectbox(tr("Gender"), ["Prefer not to say", "Female", "Male", "Other"], format_func=tr)
+        gender_options = ["Prefer not to say", "Female", "Male", "Other"]
+        profile_gender = str(profile.get("gender") or "Prefer not to say")
+        gender = st.selectbox(
+            tr("Gender"),
+            gender_options,
+            index=gender_options.index(profile_gender) if profile_gender in gender_options else 0,
+            format_func=tr,
+            key="patient_gender_input",
+        )
     st.markdown(f"**{tr('Symptoms')}**")
     selected_symptoms = st.multiselect(tr("Choose symptoms from list"), SYMPTOM_OPTIONS, format_func=tr)
     typed_symptoms = st.text_area(
@@ -765,14 +831,27 @@ def patient_form() -> dict[str, Any]:
             st.caption(tr("Most people at home will only know this if they have a pulse oximeter."))
 
     st.markdown(f"**{tr('Existing conditions')}**")
-    selected_conditions = st.multiselect(tr("Choose existing conditions from list"), CONDITION_OPTIONS, format_func=tr)
+    selected_conditions = st.multiselect(
+        tr("Choose existing conditions from list"),
+        CONDITION_OPTIONS,
+        default=known_conditions,
+        format_func=tr,
+        key="patient_conditions_input",
+    )
     typed_conditions = st.text_area(
         tr("Write any other existing conditions"),
+        value=", ".join(custom_conditions),
         placeholder=tr("Example: thyroid problem, anemia, migraine"),
         help=tr("Use commas if adding more than one condition."),
+        key="patient_custom_conditions_input",
     )
     conditions = unique_items(selected_conditions + split_free_text_items(typed_conditions))
-    medications = st.text_area(tr("Current medicines or allergies"), placeholder=tr("Example: allergic to penicillin, taking asthma inhaler"))
+    medications = st.text_area(
+        tr("Current medicines or allergies"),
+        value=str(profile.get("medications", "")),
+        placeholder=tr("Example: allergic to penicillin, taking asthma inhaler"),
+        key="patient_medications_input",
+    )
     return {
         "patient_name": patient_name,
         "age": age,
@@ -929,6 +1008,21 @@ def render_checker() -> None:
         st.markdown(f'<div class="section-label">{h("Patient intake")}</div>', unsafe_allow_html=True)
         st.markdown('<div class="panel">', unsafe_allow_html=True)
         data = patient_form()
+        p1, p2 = st.columns(2)
+        if p1.button(tr("Save patient profile"), width="stretch"):
+            st.session_state.patient_profile = {
+                "patient_name": data["patient_name"],
+                "age": int(data["age"] or 0),
+                "gender": data["gender"],
+                "conditions": data["conditions"],
+                "medications": data["medications"],
+            }
+            st.success(tr("Patient profile saved for this session."))
+        if p2.button(tr("Clear profile"), width="stretch"):
+            st.session_state.patient_profile = {}
+            clear_profile_form()
+            st.success(tr("Patient profile cleared."))
+            st.rerun()
         save_to_dashboard = st.checkbox(tr("Save this case to Doctor Dashboard"), value=True)
         if st.button(tr("Analyze Health"), type="primary", width="stretch"):
             if not data["symptoms"]:
@@ -981,6 +1075,78 @@ def render_checker() -> None:
     if stored and patient_data:
         render_followup_and_summary(patient_data, stored["result"], stored["advice"])
     st.write("")
+
+
+def render_timeline() -> None:
+    render_command_bar()
+    page_header(
+        "Health Timeline",
+        "See how a patient's symptoms, risk level, and recommendations changed across saved checks.",
+        "Patient history",
+    )
+    cases = list_cases()
+    if not cases:
+        st.info(tr("No saved cases yet. Use Patient Health Checker and save a case first."))
+        return
+
+    patient_names = sorted({str(case.get("patient_name") or "Anonymous") for case in cases})
+    default_name = st.session_state.get("patient_profile", {}).get("patient_name")
+    selected_index = patient_names.index(default_name) if default_name in patient_names else 0
+    selected_patient = st.selectbox(tr("Choose patient"), patient_names, index=selected_index)
+    patient_cases = [case for case in cases if str(case.get("patient_name") or "Anonymous") == selected_patient]
+    patient_cases.sort(key=lambda case: str(case.get("created_at", "")))
+
+    latest = patient_cases[-1]
+    raw_latest = parse_case_raw_data(latest.get("raw_data"))
+    st.markdown(f'<div class="section-label">{h("Patient profile snapshot")}</div>', unsafe_allow_html=True)
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric(tr("Saved checks"), len(patient_cases))
+    c2.metric(tr("Latest risk"), tr(str(latest.get("risk_level", "Unknown"))))
+    c3.metric(tr("Latest score"), f"{latest.get('score', 0)}/100")
+    c4.metric(tr("Age"), str(latest.get("age") or raw_latest.get("age") or "N/A"))
+
+    st.markdown('<div class="panel">', unsafe_allow_html=True)
+    st.markdown(f"**{tr('Known conditions')}**")
+    st.write(", ".join(raw_latest.get("conditions", [])) or tr("Not provided"))
+    st.markdown(f"**{tr('Medicines / allergies')}**")
+    st.write(raw_latest.get("medications") or tr("Not provided"))
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    st.write("")
+    st.markdown(f'<div class="section-label">{h("Timeline")}</div>', unsafe_allow_html=True)
+    for index, case in enumerate(patient_cases, start=1):
+        raw = parse_case_raw_data(case.get("raw_data"))
+        symptoms = case.get("symptoms") or ", ".join(raw.get("symptoms", [])) or "Not provided"
+        duration = raw.get("duration_days", "N/A")
+        pain = raw.get("pain_level", "N/A")
+        vitals = []
+        if raw.get("temperature"):
+            vitals.append(f"{raw['temperature']} C")
+        if raw.get("oxygen"):
+            vitals.append(f"O2 {raw['oxygen']}%")
+        if raw.get("heart_rate"):
+            vitals.append(f"pulse {raw['heart_rate']}")
+        if raw.get("systolic_bp") and raw.get("diastolic_bp"):
+            vitals.append(f"BP {raw['systolic_bp']}/{raw['diastolic_bp']}")
+        with st.expander(f"{index}. {case.get('created_at', '')} - {tr(str(case.get('risk_level', 'Unknown')))} - {case.get('score', 0)}/100", expanded=index == len(patient_cases)):
+            st.write(f"**{tr('Symptoms')}:** {symptoms}")
+            st.write(f"**{tr('Duration')}:** {duration} {tr('day(s)')} | **{tr('Pain')}:** {pain}/10")
+            st.write(f"**{tr('Measurements')}:** {', '.join(vitals) if vitals else tr('Not provided')}")
+            st.write(f"**{tr('Likely pattern')}:** {tr(str(case.get('category', 'General Health')))}")
+            st.write(f"**{tr('Recommendation')}:** {tr(str(case.get('recommendation', '')))}")
+
+    st.write("")
+    if st.button(tr("Use latest profile in Health Checker"), width="stretch"):
+        profile = {
+            "patient_name": selected_patient,
+            "age": int(latest.get("age") if latest.get("age") is not None else raw_latest.get("age") or 0),
+            "gender": raw_latest.get("gender", "Prefer not to say"),
+            "conditions": raw_latest.get("conditions", []),
+            "medications": raw_latest.get("medications", ""),
+        }
+        st.session_state.patient_profile = profile
+        load_profile_into_form(profile)
+        switch_page("Patient Health Checker")
 
 
 def render_qa() -> None:
@@ -1248,6 +1414,8 @@ def main() -> None:
         render_home()
     elif st.session_state.page == "Patient Health Checker":
         render_checker()
+    elif st.session_state.page == "Health Timeline":
+        render_timeline()
     elif st.session_state.page == "Disease Q&A Assistant":
         render_qa()
     elif st.session_state.page == "Medication Safety Checker":
