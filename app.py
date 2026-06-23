@@ -9,6 +9,8 @@ import streamlit as st
 
 from backend.database import clear_cases, database_backend, list_cases, save_case
 from backend.disease_qa import answer_question
+from backend.doctor_summary import build_doctor_summary
+from backend.followup import evaluate_follow_up
 from backend.medication_safety import analyze_medication_safety
 from backend.recommender import build_recommendations
 from backend.report import generate_health_report_pdf
@@ -757,6 +759,66 @@ def render_result_panel(result: Any, advice: dict[str, Any]) -> None:
     st.warning(tr(advice["disclaimer"]))
 
 
+def render_followup_and_summary(patient_data: dict[str, Any], result: Any, advice: dict[str, Any]) -> None:
+    st.write("")
+    st.markdown(f'<div class="section-label">{h("Follow-up and doctor summary")}</div>', unsafe_allow_html=True)
+    follow_col, summary_col = st.columns([1, 1], gap="large")
+    with follow_col:
+        st.markdown('<div class="panel">', unsafe_allow_html=True)
+        st.markdown(f"**{tr('Follow-up checker')}**")
+        st.caption(tr("Use this after some time has passed to check if the situation is improving or needs faster care."))
+        status = st.radio(
+            tr("Compared with the first check, how is the patient now?"),
+            ["Better", "Same", "Worse"],
+            horizontal=True,
+            format_func=tr,
+            key="followup_status",
+        )
+        hours_since_check = st.number_input(
+            tr("Hours since the first check"),
+            min_value=1,
+            max_value=168,
+            value=24,
+            step=1,
+            key="followup_hours",
+        )
+        new_notes = st.text_area(
+            tr("New symptoms or changes"),
+            placeholder=tr("Example: fever reduced, chest pain started, breathing worse, vomiting stopped"),
+            key="followup_notes",
+        )
+        if st.button(tr("Check follow-up"), width="stretch"):
+            st.session_state.followup_result = evaluate_follow_up(result, status, new_notes, int(hours_since_check))
+        followup = st.session_state.get("followup_result")
+        if followup:
+            st.info(tr(followup["level"]))
+            st.write(tr(followup["message"]))
+            for step in translate_items(followup["next_steps"], st.session_state.language):
+                st.write(f"- {step}")
+            st.caption(tr(followup["safety_note"]))
+        st.markdown("</div>", unsafe_allow_html=True)
+    with summary_col:
+        st.markdown('<div class="panel">', unsafe_allow_html=True)
+        st.markdown(f"**{tr('Doctor summary')}**")
+        summary = build_doctor_summary(patient_data, result, advice)
+        translated_summary = translate_text(summary, st.session_state.language)
+        st.text_area(
+            tr("Show this to a doctor"),
+            value=translated_summary,
+            height=220,
+            key="doctor_summary_text",
+        )
+        st.download_button(
+            tr("Download Doctor Summary"),
+            data=summary,
+            file_name="lifeline_ai_doctor_summary.txt",
+            mime="text/plain",
+            width="stretch",
+        )
+        st.caption(tr("This is written to make a doctor visit faster and clearer."))
+        st.markdown("</div>", unsafe_allow_html=True)
+
+
 def render_checker() -> None:
     render_command_bar()
     page_header(
@@ -782,6 +844,7 @@ def render_checker() -> None:
                     "saved": bool(save_to_dashboard),
                 }
                 st.session_state.checker_patient_data = data
+                st.session_state.pop("followup_result", None)
                 if save_to_dashboard:
                     save_case(data, result)
                 st.rerun()
@@ -815,6 +878,10 @@ def render_checker() -> None:
                 unsafe_allow_html=True,
             )
         st.markdown("</div>", unsafe_allow_html=True)
+    stored = st.session_state.get("checker_result")
+    patient_data = st.session_state.get("checker_patient_data") or {}
+    if stored and patient_data:
+        render_followup_and_summary(patient_data, stored["result"], stored["advice"])
     st.write("")
 
 
