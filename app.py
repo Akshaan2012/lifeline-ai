@@ -183,31 +183,30 @@ def inject_css() -> None:
         """
         <style>
         :root {
-            --bg: #07090b;
-            --bg-2: #0a1012;
-            --panel: #0f1618;
-            --panel-2: #141d20;
-            --panel-3: #182529;
-            --line: #26363a;
-            --line-soft: rgba(139, 160, 158, .18);
-            --text: #f1f7f4;
-            --muted: #9fb0aa;
-            --mint: #45e0c7;
-            --mint-dim: rgba(69, 224, 199, .12);
-            --blue: #7eb7ff;
-            --amber: #f4bd5f;
-            --red: #ff6f70;
-            --ink: #050708;
+            --bg: #f5faf9;
+            --surface: #ffffff;
+            --surface-2: #eef7f5;
+            --panel: #ffffff;
+            --line: #d9e8e5;
+            --line-soft: rgba(24, 65, 72, .12);
+            --text: #17252a;
+            --muted: #5f7375;
+            --mint: #0f9f8f;
+            --mint-dim: rgba(15, 159, 143, .1);
+            --blue: #2668b8;
+            --amber: #b87514;
+            --red: #c93b4a;
+            --ink: #0a1920;
         }
         .stApp {
             background:
-                linear-gradient(90deg, rgba(69, 224, 199, .045) 1px, transparent 1px),
-                linear-gradient(180deg, #0a0f11 0%, var(--bg) 48%, #060809 100%);
-            background-size: 42px 42px, auto;
+                linear-gradient(90deg, rgba(15, 159, 143, .055) 1px, transparent 1px),
+                linear-gradient(180deg, #fbfefd 0%, var(--bg) 100%);
+            background-size: 44px 44px, auto;
             color: var(--text);
             font-family: "Noto Sans Devanagari", "Mangal", "Nirmala UI", "Segoe UI", Arial, sans-serif;
         }
-        header[data-testid="stHeader"] { background: transparent; }
+        header[data-testid="stHeader"] { background: rgba(245, 250, 249, .82); backdrop-filter: blur(10px); }
         #MainMenu, footer { visibility: hidden; }
         [data-testid="stToolbar"],
         [data-testid="stDecoration"],
@@ -242,10 +241,10 @@ def inject_css() -> None:
         }
         [data-testid="stSidebar"] {
             background:
-                linear-gradient(180deg, rgba(13, 20, 22, .98) 0%, rgba(6, 9, 10, .99) 100%);
-            border-right: 1px solid var(--line);
+                linear-gradient(180deg, #0b2b33 0%, #071a22 100%);
+            border-right: 1px solid rgba(255,255,255,.1);
         }
-        [data-testid="stSidebar"] * { color: var(--text); }
+        [data-testid="stSidebar"] * { color: #efffff; }
         [data-testid="stSidebar"] h2 {
             font-size: 1.35rem;
             margin: 0 0 1rem 0;
@@ -255,17 +254,17 @@ def inject_css() -> None:
             border-radius: 8px;
             padding: 9px 10px;
             margin: 5px 0;
-            background: rgba(255, 255, 255, .02);
+            background: rgba(255, 255, 255, .055);
             transition: border-color .16s ease, background .16s ease, transform .16s ease;
         }
         [data-testid="stSidebar"] [role="radiogroup"] label:hover {
-            border-color: rgba(69, 224, 199, .34);
-            background: rgba(69, 224, 199, .07);
+            border-color: rgba(98, 224, 204, .6);
+            background: rgba(98, 224, 204, .14);
             transform: translateX(2px);
         }
-        .block-container { padding-top: 1.05rem; padding-bottom: 2rem; max-width: 1380px; }
+        .block-container { padding-top: 1rem; padding-bottom: 2.5rem; max-width: 1260px; }
         h1, h2, h3 { letter-spacing: 0; color: var(--text); }
-        h1 { font-size: 3.65rem; line-height: .98; margin-bottom: .55rem; font-weight: 850; }
+        h1 { font-size: 2.6rem; line-height: 1.05; margin-bottom: .55rem; font-weight: 850; }
         h2 { font-size: 1.35rem; }
         h3 { font-size: 1.05rem; }
         p, li, label, .stMarkdown { color: var(--text); }
@@ -273,15 +272,15 @@ def inject_css() -> None:
         .muted { color: var(--muted); }
         .command-bar {
             border: 1px solid var(--line);
-            background: linear-gradient(90deg, rgba(17, 25, 28, .93), rgba(11, 15, 17, .94));
+            background: rgba(255,255,255,.92);
             border-radius: 8px;
             padding: 12px 14px 12px 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             gap: 12px;
-            box-shadow: 0 16px 44px rgba(0, 0, 0, .18), inset 3px 0 0 rgba(69, 224, 199, .65);
-            margin-bottom: 18px;
+            box-shadow: 0 12px 30px rgba(15, 42, 48, .08), inset 3px 0 0 var(--mint);
+            margin-bottom: 14px;
         }
         .command-text {
             color: var(--muted);
@@ -299,11 +298,11 @@ def inject_css() -> None:
         .page-head {
             border: 1px solid var(--line);
             background:
-                linear-gradient(135deg, rgba(19, 29, 31, .97), rgba(9, 14, 15, .98));
+                linear-gradient(135deg, #ffffff 0%, #edf8f6 100%);
             border-radius: 8px;
             padding: 22px 24px;
-            margin-bottom: 18px;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 18px 70px rgba(0,0,0,.2);
+            margin-bottom: 16px;
+            box-shadow: 0 16px 42px rgba(26, 74, 84, .08);
             position: relative;
             overflow: hidden;
         }
@@ -330,10 +329,10 @@ def inject_css() -> None:
         .hero {
             border: 1px solid var(--line);
             background:
-                linear-gradient(135deg, rgba(18, 29, 31, .98) 0%, rgba(9, 14, 16, .98) 70%, rgba(15, 21, 19, .98) 100%);
+                linear-gradient(135deg, #ffffff 0%, #eaf7f5 72%, #f8fbff 100%);
             border-radius: 8px;
-            padding: 34px;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,.045), 0 22px 80px rgba(0,0,0,.28);
+            padding: 28px;
+            box-shadow: 0 18px 48px rgba(26, 74, 84, .1);
             position: relative;
             overflow: hidden;
         }
@@ -343,24 +342,23 @@ def inject_css() -> None:
             inset: auto 22px 18px auto;
             width: 148px;
             height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(69, 224, 199, .8), transparent);
+            background: linear-gradient(90deg, transparent, rgba(15, 159, 143, .7), transparent);
         }
         .panel {
             border: 1px solid var(--line);
-            background:
-                linear-gradient(180deg, rgba(16, 23, 25, .98), rgba(10, 15, 17, .98));
+            background: var(--surface);
             border-radius: 8px;
             padding: 20px;
             min-height: 100%;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,.035), 0 12px 42px rgba(0,0,0,.16);
+            box-shadow: 0 12px 32px rgba(26, 74, 84, .08);
         }
         .metric-card {
             border: 1px solid var(--line);
-            background: linear-gradient(180deg, rgba(20, 29, 32, .98), rgba(11, 16, 18, .98));
+            background: var(--surface);
             border-radius: 8px;
             padding: 16px 16px 15px;
             min-height: 112px;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,.035);
+            box-shadow: 0 10px 28px rgba(26, 74, 84, .07);
             transition: border-color .16s ease, transform .16s ease;
         }
         .metric-card:hover {
@@ -399,17 +397,18 @@ def inject_css() -> None:
         }
         .danger-banner p { margin: 0; color: rgba(255,255,255,.82); }
         .danger-low {
-            background: linear-gradient(135deg, rgba(41, 190, 125, .24), rgba(16, 23, 28, .96));
-            border-color: rgba(41, 190, 125, .65);
+            background: linear-gradient(135deg, #e8fbf2, #ffffff);
+            border-color: #8bdfb9;
         }
         .danger-moderate {
-            background: linear-gradient(135deg, rgba(243, 184, 76, .26), rgba(16, 23, 28, .96));
-            border-color: rgba(243, 184, 76, .7);
+            background: linear-gradient(135deg, #fff5df, #ffffff);
+            border-color: #e9bd69;
         }
         .danger-high {
-            background: linear-gradient(135deg, rgba(255, 108, 108, .28), rgba(16, 23, 28, .96));
-            border-color: rgba(255, 108, 108, .72);
+            background: linear-gradient(135deg, #ffe8eb, #ffffff);
+            border-color: #e7909a;
         }
+        .danger-banner h2, .danger-banner p { color: var(--text); }
         .summary-grid {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -417,7 +416,7 @@ def inject_css() -> None:
             margin-bottom: 14px;
         }
         .summary-item {
-            background: rgba(255,255,255,.03);
+            background: #f8fbfb;
             border: 1px solid var(--line-soft);
             border-radius: 8px;
             padding: 10px;
@@ -431,8 +430,8 @@ def inject_css() -> None:
             margin-bottom: 4px;
         }
         .empty-result {
-            border: 1px dashed rgba(153, 170, 165, .35);
-            background: rgba(255,255,255,.018);
+            border: 1px dashed #b9cfcc;
+            background: #f8fbfb;
             border-radius: 8px;
             padding: 22px;
             color: var(--muted);
@@ -441,7 +440,7 @@ def inject_css() -> None:
             display: inline-block;
             border: 1px solid rgba(69, 224, 199, .28);
             background: var(--mint-dim);
-            color: #bffdf2;
+            color: #0c635b;
             border-radius: 999px;
             padding: 5px 10px;
             font-size: .82rem;
@@ -500,29 +499,29 @@ def inject_css() -> None:
         }
         .stButton>button {
             border-radius: 6px;
-            border: 1px solid rgba(69, 224, 199, .45);
-            background: linear-gradient(180deg, #15302c, #102420);
-            color: var(--text);
+            border: 1px solid #0d8f81;
+            background: linear-gradient(180deg, #14aa98, #08786d);
+            color: #ffffff;
             font-weight: 700;
             min-height: 2.45rem;
         }
         .stButton>button:hover {
             border-color: var(--mint);
-            color: #dffff8;
-            background: #173c36;
+            color: #ffffff;
+            background: #086f66;
         }
         .stButton>button:focus, .stTextInput input:focus, .stNumberInput input:focus, .stTextArea textarea:focus {
             outline: 2px solid rgba(126, 183, 255, .55) !important;
             outline-offset: 2px;
         }
         .stTextInput input, .stNumberInput input, .stTextArea textarea {
-            background: #0b1214;
+            background: #ffffff;
             color: var(--text);
             border: 1px solid var(--line);
             border-radius: 7px;
         }
         div[data-baseweb="select"] > div {
-            background: #0b1214;
+            background: #ffffff;
             border-color: var(--line);
             border-radius: 7px;
         }
@@ -531,7 +530,7 @@ def inject_css() -> None:
         }
         [data-testid="stMetric"] {
             border: 1px solid var(--line);
-            background: var(--panel);
+            background: var(--surface);
             border-radius: 8px;
             padding: 14px;
         }
@@ -544,8 +543,8 @@ def inject_css() -> None:
             border-radius: 8px;
         }
         code {
-            color: #d7fff5;
-            background: #0f171b;
+            color: #075e57;
+            background: #edf8f6;
             border: 1px solid var(--line);
             border-radius: 6px;
             padding: 2px 5px;
@@ -704,16 +703,23 @@ def render_sam() -> None:
     with st.popover("Sam"):
         st.markdown(f'<div class="small-title">{h("Sam assistant")}</div>', unsafe_allow_html=True)
         st.write(tr("Hello, I'm Sam. I'm here to help you."))
-        message = st.text_input(
-            tr("Type to Sam"),
-            placeholder=tr("Example: I have fever and cough"),
-            key="sam_bubble_input",
-        )
-        if message:
-            command = answer_message(message)
-            st.write(translate_text(command.message, st.session_state.language))
-            if command.target_page and st.button(tr(f"Open {command.target_page}"), key="sam_bubble_open", width="stretch"):
-                switch_page(command.target_page)
+        with st.form("sam_chat_form", clear_on_submit=True):
+            message = st.text_input(
+                tr("Type to Sam"),
+                placeholder=tr("Example: explain diabetes simply"),
+                key="sam_bubble_input",
+            )
+            submitted = st.form_submit_button(tr("Ask Sam"), width="stretch")
+        if submitted and message.strip():
+            with st.spinner(tr("Sam is thinking...")):
+                command = answer_message(message.strip())
+            st.session_state.sam_last_reply = command.to_json()
+        last_reply = st.session_state.get("sam_last_reply")
+        if last_reply:
+            st.write(translate_text(str(last_reply.get("message", "")), st.session_state.language))
+            target_page = last_reply.get("target_page")
+            if target_page and st.button(tr(f"Open {target_page}"), key=f"sam_bubble_open_{target_page}", width="stretch"):
+                switch_page(str(target_page))
 
 
 def render_home() -> None:
@@ -907,7 +913,6 @@ def render_result_panel(result: Any, advice: dict[str, Any]) -> None:
 
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown('<div class="panel">', unsafe_allow_html=True)
         st.markdown(f"**{tr('Why the app thinks this')}**")
         for signal in translate_items(result.signals, st.session_state.language):
             st.write(f"- {signal}")
@@ -917,9 +922,7 @@ def render_result_panel(result: Any, advice: dict[str, Any]) -> None:
         st.markdown(f"**{tr('Home care support')}**")
         for step in translate_items(advice["home_care"], st.session_state.language):
             st.write(f"- {step}")
-        st.markdown("</div>", unsafe_allow_html=True)
     with col2:
-        st.markdown('<div class="panel">', unsafe_allow_html=True)
         st.markdown(f"**{tr('Precautions')}**")
         for item in translate_items(advice["precautions"], st.session_state.language):
             st.write(f"- {item}")
@@ -932,12 +935,9 @@ def render_result_panel(result: Any, advice: dict[str, Any]) -> None:
         st.markdown(f"**{tr('Red Flags')}**")
         for item in translate_items(advice["red_flags"], st.session_state.language):
             st.write(f"- {item}")
-        st.markdown("</div>", unsafe_allow_html=True)
-    st.markdown('<div class="panel">', unsafe_allow_html=True)
     st.markdown(f"**{tr('Questions to ask a doctor')}**")
     for item in translate_items(advice["doctor_questions"], st.session_state.language):
         st.write(f"- {item}")
-    st.markdown("</div>", unsafe_allow_html=True)
     st.warning(tr(advice["disclaimer"]))
 
 
@@ -946,7 +946,6 @@ def render_followup_and_summary(patient_data: dict[str, Any], result: Any, advic
     st.markdown(f'<div class="section-label">{h("Follow-up and doctor summary")}</div>', unsafe_allow_html=True)
     follow_col, summary_col = st.columns([1, 1], gap="large")
     with follow_col:
-        st.markdown('<div class="panel">', unsafe_allow_html=True)
         st.markdown(f"**{tr('Follow-up checker')}**")
         st.caption(tr("Use this after some time has passed to check if the situation is improving or needs faster care."))
         status = st.radio(
@@ -978,9 +977,7 @@ def render_followup_and_summary(patient_data: dict[str, Any], result: Any, advic
             for step in translate_items(followup["next_steps"], st.session_state.language):
                 st.write(f"- {step}")
             st.caption(tr(followup["safety_note"]))
-        st.markdown("</div>", unsafe_allow_html=True)
     with summary_col:
-        st.markdown('<div class="panel">', unsafe_allow_html=True)
         st.markdown(f"**{tr('Doctor summary')}**")
         summary = build_doctor_summary(patient_data, result, advice)
         translated_summary = translate_text(summary, st.session_state.language)
@@ -998,7 +995,6 @@ def render_followup_and_summary(patient_data: dict[str, Any], result: Any, advic
             width="stretch",
         )
         st.caption(tr("This is written to make a doctor visit faster and clearer."))
-        st.markdown("</div>", unsafe_allow_html=True)
 
 
 def render_checker() -> None:
@@ -1011,7 +1007,6 @@ def render_checker() -> None:
     form_col, result_col = st.columns([1.05, .95], gap="large")
     with form_col:
         st.markdown(f'<div class="section-label">{h("Patient intake")}</div>', unsafe_allow_html=True)
-        st.markdown('<div class="panel">', unsafe_allow_html=True)
         data = patient_form()
         p1, p2 = st.columns(2)
         if p1.button(tr("Save patient profile"), width="stretch"):
@@ -1045,10 +1040,8 @@ def render_checker() -> None:
                 if save_to_dashboard:
                     save_case(data, result)
                 st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
     with result_col:
         st.markdown(f'<div class="section-label">{h("Live result")}</div>', unsafe_allow_html=True)
-        st.markdown('<div class="panel">', unsafe_allow_html=True)
         stored = st.session_state.get("checker_result")
         if stored:
             if stored.get("saved"):
@@ -1074,7 +1067,6 @@ def render_checker() -> None:
                 """,
                 unsafe_allow_html=True,
             )
-        st.markdown("</div>", unsafe_allow_html=True)
     stored = st.session_state.get("checker_result")
     patient_data = st.session_state.get("checker_patient_data") or {}
     if stored and patient_data:
@@ -1110,12 +1102,10 @@ def render_timeline() -> None:
     c3.metric(tr("Latest score"), f"{latest.get('score', 0)}/100")
     c4.metric(tr("Age"), str(latest.get("age") or raw_latest.get("age") or "N/A"))
 
-    st.markdown('<div class="panel">', unsafe_allow_html=True)
     st.markdown(f"**{tr('Known conditions')}**")
     st.write(", ".join(raw_latest.get("conditions", [])) or tr("Not provided"))
     st.markdown(f"**{tr('Medicines / allergies')}**")
     st.write(raw_latest.get("medications") or tr("Not provided"))
-    st.markdown("</div>", unsafe_allow_html=True)
 
     st.write("")
     st.markdown(f'<div class="section-label">{h("Timeline")}</div>', unsafe_allow_html=True)
@@ -1179,7 +1169,6 @@ def render_qa() -> None:
                 question = example
         if question:
             answer = translate_answer(answer_question(question), st.session_state.language)
-            st.markdown('<div class="panel">', unsafe_allow_html=True)
             st.subheader(answer["title"])
             st.write(answer["meaning"])
             is_medicine = answer.get("kind") == "medicine"
@@ -1210,7 +1199,6 @@ def render_qa() -> None:
                 st.warning(tr("This is general health education only. A doctor must diagnose and treat medical conditions."))
             if answer.get("source"):
                 st.caption(f"{tr('Source')}: {answer['source']}")
-            st.markdown("</div>", unsafe_allow_html=True)
             st.markdown(f'<div class="section-label">{h("Next step")}</div>', unsafe_allow_html=True)
             n1, n2, n3 = st.columns(3)
             if n1.button(tr("Check my symptoms"), key="qa_next_checker", width="stretch"):
@@ -1235,7 +1223,6 @@ def render_medication_safety() -> None:
     form, result_area = st.columns([1.0, 1.0], gap="large")
     with form:
         st.markdown(f'<div class="section-label">{h("Medicine details")}</div>', unsafe_allow_html=True)
-        st.markdown('<div class="panel">', unsafe_allow_html=True)
         medicine_name = st.text_input(tr("Medicine name"), placeholder=tr("Example: ibuprofen, paracetamol, insulin"))
         m1, m2 = st.columns(2)
         with m1:
@@ -1246,10 +1233,8 @@ def render_medication_safety() -> None:
         allergies = st.text_area(tr("Allergies"), placeholder=tr("Example: penicillin allergy, aspirin allergy"))
         current_medicines = st.text_area(tr("Other medicines currently taken"), placeholder=tr("Example: blood thinner, diabetes medicine, asthma inhaler"))
         run_check = st.button(tr("Check Medicine Safety"), type="primary", width="stretch")
-        st.markdown("</div>", unsafe_allow_html=True)
     with result_area:
         st.markdown(f'<div class="section-label">{h("Safety result")}</div>', unsafe_allow_html=True)
-        st.markdown('<div class="panel">', unsafe_allow_html=True)
         if run_check:
             if not medicine_name.strip():
                 st.error(tr("Please enter a medicine name."))
@@ -1286,7 +1271,6 @@ def render_medication_safety() -> None:
                 """,
                 unsafe_allow_html=True,
             )
-        st.markdown("</div>", unsafe_allow_html=True)
 
 
 def render_dashboard() -> None:
@@ -1326,13 +1310,11 @@ def render_dashboard() -> None:
     c4.metric(tr("Doctor visits"), int((df["risk_level"] == "Doctor Visit Recommended").sum()))
 
     st.markdown(f'<div class="section-label">{h("Patient cases")}</div>', unsafe_allow_html=True)
-    st.markdown('<div class="panel">', unsafe_allow_html=True)
     st.dataframe(
         df[["created_at", "patient_name", "age", "symptoms", "category", "risk_level", "recommendation", "score"]],
         width="stretch",
         hide_index=True,
     )
-    st.markdown("</div>", unsafe_allow_html=True)
     chart_col1, chart_col2 = st.columns(2)
     with chart_col1:
         st.markdown(f'<div class="section-label">{h("Risk levels")}</div>', unsafe_allow_html=True)
@@ -1357,7 +1339,6 @@ def render_challenge() -> None:
     index = scenario_index % len(SCENARIOS)
     scenario = SCENARIOS[index]
 
-    st.markdown('<div class="panel">', unsafe_allow_html=True)
     st.markdown(f'<div class="section-label">{h("Current case")}</div>', unsafe_allow_html=True)
     st.subheader(tr("Patient Case"))
     st.write(tr(scenario["case"]))
@@ -1376,7 +1357,6 @@ def render_challenge() -> None:
         st.session_state.scenario_index = random.randint(0, len(SCENARIOS) - 1)
         st.rerun()
     st.metric(tr("Score"), st.session_state.score)
-    st.markdown("</div>", unsafe_allow_html=True)
 
 
 def render_safety_videos() -> None:
@@ -1389,13 +1369,10 @@ def render_safety_videos() -> None:
     video_col, guide_col = st.columns([1.2, .8], gap="large")
     with video_col:
         st.markdown(f'<div class="section-label">{h("Featured video")}</div>', unsafe_allow_html=True)
-        st.markdown('<div class="panel">', unsafe_allow_html=True)
         components.iframe("https://www.youtube.com/embed/-dmJSLNgjxo", height=420, scrolling=False)
         st.caption(tr("CDC video: Introduction to Public Health. It explains disease prevention, tracking, public-health programs, and how safety measures protect people."))
-        st.markdown("</div>", unsafe_allow_html=True)
     with guide_col:
         st.markdown(f'<div class="section-label">{h("Core safety rules")}</div>', unsafe_allow_html=True)
-        st.markdown('<div class="panel">', unsafe_allow_html=True)
         safety_sections = [
             ("Prevention", ["Wash hands often.", "Keep vaccines up to date.", "Sleep well, drink water, and avoid smoking.", "Stay away from sick people when possible."]),
             ("Precautions", ["Wear a mask if coughing or around high-risk people.", "Do not share towels, bottles, or utensils when sick.", "Clean frequently touched surfaces.", "Watch symptoms for worsening."]),
@@ -1407,7 +1384,6 @@ def render_safety_videos() -> None:
             for item in translate_items(items, st.session_state.language):
                 st.write(f"- {item}")
         st.warning(tr("Videos and tips are for education only. They do not replace medical care."))
-        st.markdown("</div>", unsafe_allow_html=True)
 
 
 def main() -> None:

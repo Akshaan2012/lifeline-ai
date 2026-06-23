@@ -144,7 +144,7 @@ def _ai_reply(message: str) -> str | None:
     model = _setting("OPENAI_MODEL", "gpt-5.4-nano")
     system = (
         "You are Sam, the friendly AI assistant inside LifeLine AI. "
-        "Answer any normal question clearly and briefly. For health questions, use simple patient-friendly language, "
+        "Answer any normal question clearly in 2 to 5 short sentences. For health questions, use simple patient-friendly language, "
         "give safe general education, mention red flags when relevant, and never claim to diagnose, prescribe, or replace a doctor. "
         "If emergency symptoms are mentioned, advise urgent local medical help. "
         "You can also guide users to these app pages: Patient Health Checker, Health Timeline, Disease Q&A Assistant, "
@@ -153,14 +153,14 @@ def _ai_reply(message: str) -> str | None:
     try:
         from openai import OpenAI
 
-        client = OpenAI(api_key=api_key, timeout=float(_setting("OPENAI_TIMEOUT_SECONDS", "8")))
+        client = OpenAI(api_key=api_key, timeout=float(_setting("OPENAI_TIMEOUT_SECONDS", "6")))
         response = client.responses.create(
             model=model,
             input=[
                 {"role": "system", "content": system},
                 {"role": "user", "content": message},
             ],
-            max_output_tokens=int(_setting("OPENAI_MAX_OUTPUT_TOKENS", "220")),
+            max_output_tokens=int(_setting("OPENAI_MAX_OUTPUT_TOKENS", "140")),
         )
         return (response.output_text or "").strip() or None
     except Exception:
