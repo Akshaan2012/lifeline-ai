@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, asdict
+from functools import lru_cache
 import os
 
 
@@ -125,6 +126,7 @@ def route_message(message: str) -> SamCommand:
     )
 
 
+@lru_cache(maxsize=64)
 def _setting(name: str, default: str = "") -> str:
     value = os.getenv(name, "").strip()
     if value:
@@ -153,14 +155,14 @@ def _ai_reply(message: str) -> str | None:
     try:
         from openai import OpenAI
 
-        client = OpenAI(api_key=api_key, timeout=float(_setting("OPENAI_TIMEOUT_SECONDS", "6")))
+        client = OpenAI(api_key=api_key, timeout=float(_setting("OPENAI_TIMEOUT_SECONDS", "3.5")))
         response = client.responses.create(
             model=model,
             input=[
                 {"role": "system", "content": system},
                 {"role": "user", "content": message},
             ],
-            max_output_tokens=int(_setting("OPENAI_MAX_OUTPUT_TOKENS", "140")),
+            max_output_tokens=int(_setting("OPENAI_MAX_OUTPUT_TOKENS", "90")),
         )
         return (response.output_text or "").strip() or None
     except Exception:
@@ -172,11 +174,35 @@ def _wants_navigation(message: str) -> bool:
     return any(word in text for word in ["open", "go to", "take me", "show me", "switch", "page", "button"])
 
 
+def _wants_explanation(message: str) -> bool:
+    text = message.lower().strip()
+    question_starts = ("what", "why", "how", "when", "where", "explain", "tell me", "define")
+    return text.startswith(question_starts) or "?" in text
+
+
+def _is_clear_app_request(message: str, command: SamCommand) -> bool:
+    if _wants_explanation(message) and command.intent != "explain_app":
+        return False
+    return command.confidence >= 0.86 and command.intent in {
+        "navigate",
+        "explain_app",
+        "recommend_feature",
+    }
+
+
+@lru_cache(maxsize=256)
+def _cached_ai_reply(message: str) -> str | None:
+    return _ai_reply(message)
+
+
 def answer_message(message: str) -> SamCommand:
-    routed = route_message(message)
-    if _wants_navigation(message) and routed.target_page:
+    clean_message = " ".join(message.strip().split())
+    routed = route_message(clean_message)
+    if _wants_navigation(clean_message) and routed.target_page:
         return routed
-    reply = _ai_reply(message)
+    if _is_clear_app_request(clean_message, routed):
+        return routed
+    reply = _cached_ai_reply(clean_message.lower())
     if not reply:
         return routed
     return SamCommand(

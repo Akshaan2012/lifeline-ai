@@ -686,8 +686,6 @@ def sidebar() -> None:
     page_changed = selected_page != st.session_state.page
     if page_changed:
         st.session_state.page = selected_page
-    if language_changed or page_changed:
-        st.rerun()
     st.sidebar.divider()
     st.sidebar.markdown(f'<span class="soft-badge">{h("V1 prototype")}</span>', unsafe_allow_html=True)
     st.sidebar.write("")
@@ -695,7 +693,11 @@ def sidebar() -> None:
 
 
 def switch_page(page: str) -> None:
-    st.session_state.pending_page = page
+    if page in PAGES:
+        st.session_state.page = page
+        st.session_state.page_picker = page
+    else:
+        st.session_state.pending_page = page
     st.rerun()
 
 
