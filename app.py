@@ -711,6 +711,12 @@ def danger_status(risk_level: str) -> dict[str, str]:
     }
 
 
+def compact_risk_label(risk_level: str) -> str:
+    if risk_level == "Emergency":
+        return "Critical"
+    return risk_level
+
+
 def fast_analyze_patient(data: dict[str, Any]) -> Any:
     try:
         return analyze_patient(data, use_ml=False)
@@ -1148,7 +1154,7 @@ def render_timeline() -> None:
     st.markdown(f'<div class="section-label">{h("Patient profile snapshot")}</div>', unsafe_allow_html=True)
     c1, c2, c3, c4 = st.columns(4)
     c1.metric(tr("Saved checks"), len(patient_cases))
-    c2.metric(tr("Latest risk"), tr(str(latest.get("risk_level", "Unknown"))))
+    c2.metric(tr("Latest risk"), tr(compact_risk_label(str(latest.get("risk_level", "Unknown")))))
     c3.metric(tr("Latest score"), f"{latest.get('score', 0)}/100")
     c4.metric(tr("Age"), str(latest.get("age") or raw_latest.get("age") or "N/A"))
 
