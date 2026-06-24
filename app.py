@@ -430,6 +430,30 @@ def inject_css() -> None:
             padding: 22px;
             color: var(--muted);
         }
+        [data-testid="stExpander"] {
+            border: 1px solid var(--line) !important;
+            border-radius: 8px !important;
+            background: rgba(255, 255, 255, .45) !important;
+            overflow: hidden;
+            box-shadow: 0 10px 26px rgba(26, 74, 84, .07);
+        }
+        [data-testid="stExpander"] details {
+            border: 0 !important;
+        }
+        [data-testid="stExpander"] summary {
+            background: linear-gradient(180deg, #ffffff 0%, #eef8fa 100%) !important;
+            border-bottom: 1px solid var(--line-soft) !important;
+        }
+        [data-testid="stExpander"] summary,
+        [data-testid="stExpander"] summary * {
+            color: #10252c !important;
+            -webkit-text-fill-color: #10252c !important;
+            opacity: 1 !important;
+        }
+        [data-testid="stExpander"] svg {
+            color: #0d8f81 !important;
+            fill: #0d8f81 !important;
+        }
         .soft-badge {
             display: inline-block;
             border: 1px solid rgba(255,255,255,.35);
@@ -1179,7 +1203,8 @@ def render_timeline() -> None:
             vitals.append(f"pulse {raw['heart_rate']}")
         if raw.get("systolic_bp") and raw.get("diastolic_bp"):
             vitals.append(f"BP {raw['systolic_bp']}/{raw['diastolic_bp']}")
-        with st.expander(f"{index}. {case.get('created_at', '')} - {tr(str(case.get('risk_level', 'Unknown')))} - {case.get('score', 0)}/100", expanded=index == len(patient_cases)):
+        risk_label = tr(compact_risk_label(str(case.get("risk_level", "Unknown"))))
+        with st.expander(f"{index}. {case.get('created_at', '')} - {risk_label} - {case.get('score', 0)}/100", expanded=index == len(patient_cases)):
             st.write(f"**{tr('Symptoms')}:** {symptoms}")
             st.write(f"**{tr('Duration')}:** {duration} {tr('day(s)')} | **{tr('Pain')}:** {pain}/10")
             st.write(f"**{tr('Measurements')}:** {', '.join(vitals) if vitals else tr('Not provided')}")
