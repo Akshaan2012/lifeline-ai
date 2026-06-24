@@ -521,7 +521,8 @@ def inject_css() -> None:
             letter-spacing: .08em;
             margin: 6px 0 8px;
         }
-        .stButton>button {
+        .stButton>button,
+        [data-testid="stDownloadButton"] button {
             border-radius: 6px;
             border: 1px solid #0d8f81;
             background: linear-gradient(180deg, #14aa98, #08786d);
@@ -529,12 +530,17 @@ def inject_css() -> None:
             font-weight: 700;
             min-height: 2.45rem;
         }
-        .stButton>button:hover {
+        [data-testid="stDownloadButton"] button *,
+        [data-testid="stDownloadButton"] button p {
+            color: #ffffff;
+        }
+        .stButton>button:hover,
+        [data-testid="stDownloadButton"] button:hover {
             border-color: var(--mint);
             color: #ffffff;
             background: #086f66;
         }
-        .stButton>button:focus, .stTextInput input:focus, .stNumberInput input:focus, .stTextArea textarea:focus {
+        .stButton>button:focus, [data-testid="stDownloadButton"] button:focus, .stTextInput input:focus, .stNumberInput input:focus, .stTextArea textarea:focus {
             outline: 2px solid rgba(126, 183, 255, .55) !important;
             outline-offset: 2px;
         }
@@ -555,6 +561,19 @@ def inject_css() -> None:
         [data-testid="stSidebar"] div[data-baseweb="select"] span {
             color: #10252c !important;
             background: #ffffff !important;
+        }
+        [data-testid="stSidebar"] div[data-baseweb="select"] > div * {
+            color: #10252c !important;
+            -webkit-text-fill-color: #10252c !important;
+            opacity: 1 !important;
+        }
+        [data-testid="stSidebar"] div[data-baseweb="select"] input {
+            color: #10252c !important;
+            -webkit-text-fill-color: #10252c !important;
+        }
+        [data-testid="stSidebar"] div[data-baseweb="select"] svg {
+            color: #0d8f81 !important;
+            fill: #0d8f81 !important;
         }
         [data-testid="stMultiSelect"] div {
             color: var(--text);
