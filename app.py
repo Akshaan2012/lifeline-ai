@@ -685,6 +685,30 @@ def inject_css() -> None:
             white-space: normal;
             overflow-wrap: anywhere;
         }
+        .snapshot-card {
+            border: 1px solid var(--line);
+            background: var(--surface);
+            border-radius: 8px;
+            padding: 16px 18px;
+            min-height: 118px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 10px;
+        }
+        .snapshot-label {
+            color: var(--muted);
+            font-size: .96rem;
+            font-weight: 650;
+        }
+        .snapshot-value {
+            color: var(--text);
+            font-size: clamp(1.8rem, 2.6vw, 2.65rem);
+            line-height: 1.05;
+            font-weight: 550;
+            white-space: normal;
+            overflow-wrap: anywhere;
+        }
         [data-testid="stDataFrame"] {
             border: 1px solid var(--line);
             border-radius: 8px;
@@ -833,6 +857,18 @@ def compact_risk_label(risk_level: str) -> str:
     if risk_level == "Doctor Visit Recommended":
         return "Doctor Visit"
     return risk_level
+
+
+def snapshot_card(label: str, value: str) -> None:
+    st.markdown(
+        f"""
+        <div class="snapshot-card">
+            <div class="snapshot-label">{h(label)}</div>
+            <div class="snapshot-value">{h(value)}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def fast_analyze_patient(data: dict[str, Any]) -> Any:
@@ -1299,10 +1335,14 @@ def render_timeline() -> None:
     raw_latest = parse_case_raw_data(latest.get("raw_data"))
     st.markdown(f'<div class="section-label">{h("Patient profile snapshot")}</div>', unsafe_allow_html=True)
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric(tr("Saved checks"), len(patient_cases))
-    c2.metric(tr("Latest risk"), tr(compact_risk_label(str(latest.get("risk_level", "Unknown")))))
-    c3.metric(tr("Latest score"), f"{latest.get('score', 0)}/100")
-    c4.metric(tr("Age"), str(latest.get("age") or raw_latest.get("age") or "N/A"))
+    with c1:
+        snapshot_card("Saved checks", str(len(patient_cases)))
+    with c2:
+        snapshot_card("Latest risk", compact_risk_label(str(latest.get("risk_level", "Unknown"))))
+    with c3:
+        snapshot_card("Latest score", f"{latest.get('score', 0)}/100")
+    with c4:
+        snapshot_card("Age", str(latest.get("age") or raw_latest.get("age") or "N/A"))
 
     st.markdown(f"**{tr('Known conditions')}**")
     st.write(", ".join(raw_latest.get("conditions", [])) or tr("Not provided"))
