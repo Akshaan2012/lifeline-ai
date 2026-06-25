@@ -1,11 +1,8 @@
 ﻿from __future__ import annotations
 
-import io
 import random
 import json
-import zipfile
 from html import escape
-from pathlib import Path
 from typing import Any
 
 import pandas as pd
@@ -263,19 +260,6 @@ COMMON_TRANSLATION_TEXTS = [
     "No urgent queue pressure right now.",
     "Review emergency and urgent cases first.",
     "Review new cases before resolved cases.",
-    "Download the app",
-    "Get a portable ZIP with Windows, macOS, and Linux launch scripts.",
-    "Desktop bundle",
-    "Download LifeLine AI ZIP",
-    "Windows",
-    "macOS",
-    "Linux",
-    "Run the included .bat file",
-    "Run the included .sh file",
-    "Requires Python 3.10 or newer",
-    "What is included",
-    "App source, backend modules, model file, requirements, and setup instructions.",
-    "The bundle runs locally with Streamlit and keeps the SQLite fallback for offline testing.",
 ]
 
 
@@ -1439,95 +1423,6 @@ def render_queue_insights(cases: list[dict[str, Any]]) -> None:
     )
 
 
-def bundle_project_files() -> list[Path]:
-    root = Path(__file__).resolve().parent
-    files: list[Path] = []
-    for name in ["app.py", "requirements.txt", "README.md", ".env.example", "supabase_schema.sql"]:
-        path = root / name
-        if path.exists():
-            files.append(path)
-    for folder_name in ["backend", "models"]:
-        folder = root / folder_name
-        if not folder.exists():
-            continue
-        for path in folder.rglob("*"):
-            if path.is_file() and "__pycache__" not in path.parts and path.suffix != ".pyc":
-                files.append(path)
-    return files
-
-
-def build_download_bundle() -> bytes:
-    root = Path(__file__).resolve().parent
-    bundle = io.BytesIO()
-    windows_script = r"""@echo off
-setlocal
-cd /d "%~dp0"
-echo Starting LifeLine AI for Windows...
-py -3 -m venv .venv 2>NUL
-if errorlevel 1 python -m venv .venv
-if not exist ".venv\Scripts\python.exe" (
-  echo Python 3.10 or newer is required. Install it from https://www.python.org/downloads/
-  pause
-  exit /b 1
-)
-".venv\Scripts\python.exe" -m pip install --upgrade pip
-".venv\Scripts\python.exe" -m pip install -r requirements.txt
-".venv\Scripts\python.exe" -m streamlit run app.py
-pause
-"""
-    unix_script = """#!/usr/bin/env bash
-set -e
-cd "$(dirname "$0")"
-echo "Starting LifeLine AI for macOS/Linux..."
-PYTHON_BIN="${PYTHON_BIN:-python3}"
-"$PYTHON_BIN" -m venv .venv
-. ".venv/bin/activate"
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-python -m streamlit run app.py
-"""
-    install_md = """# LifeLine AI local install
-
-This ZIP runs LifeLine AI locally on Windows, macOS, and Linux.
-
-## Windows
-
-1. Install Python 3.10 or newer from https://www.python.org/downloads/
-2. Double-click `run_lifeline_ai_windows.bat`.
-3. The script installs requirements and opens the Streamlit app.
-
-## macOS / Linux
-
-1. Install Python 3.10 or newer.
-2. Open Terminal in this folder.
-3. Run:
-
-```bash
-chmod +x run_lifeline_ai_mac_linux.sh
-./run_lifeline_ai_mac_linux.sh
-```
-
-## Notes
-
-- The app runs in your browser at `http://localhost:8501`.
-- If Supabase settings are missing, local SQLite fallback is used.
-- This is general health education and decision support, not medical diagnosis.
-"""
-    with zipfile.ZipFile(bundle, "w", zipfile.ZIP_DEFLATED) as archive:
-        for path in bundle_project_files():
-            archive.write(path, f"lifeline-ai/{path.relative_to(root).as_posix()}")
-
-        def write_text(path: str, text: str, mode: int = 0o644) -> None:
-            info = zipfile.ZipInfo(f"lifeline-ai/{path}")
-            info.external_attr = mode << 16
-            archive.writestr(info, text)
-
-        write_text("run_lifeline_ai_windows.bat", windows_script)
-        write_text("run_lifeline_ai_mac_linux.sh", unix_script, 0o755)
-        write_text("INSTALL.md", install_md)
-    return bundle.getvalue()
-
-
 def fast_analyze_patient(data: dict[str, Any]) -> Any:
     try:
         return analyze_patient(data, use_ml=False)
@@ -1696,8 +1591,6 @@ def render_home() -> None:
             switch_page("Health Timeline")
         if action3.button(tr("Open Doctor Dashboard"), width="stretch"):
             switch_page("Doctor Dashboard")
-    st.write("")
-    render_download_panel()
 
 
 def patient_form() -> dict[str, Any]:
@@ -2465,29 +2358,6 @@ def render_safety_videos() -> None:
             for item in translate_items(items, st.session_state.language):
                 st.write(f"- {item}")
         st.warning(tr("Videos and tips are for education only. They do not replace medical care."))
-
-
-def render_download_panel() -> None:
-    st.markdown(f'<div class="section-label">{h("Download the app")}</div>', unsafe_allow_html=True)
-    st.write(tr("Get a portable ZIP with Windows, macOS, and Linux launch scripts."))
-    render_command_center_cards(
-        [
-            ("Windows", "BAT", "Run the included .bat file"),
-            ("macOS", "SH", "Run the included .sh file"),
-            ("Linux", "SH", "Run the included .sh file"),
-            ("Python", "3.10+", "Requires Python 3.10 or newer"),
-        ]
-    )
-    st.download_button(
-        tr("Download LifeLine AI ZIP"),
-        data=build_download_bundle(),
-        file_name="lifeline-ai-cross-platform.zip",
-        mime="application/zip",
-        width="stretch",
-    )
-    st.markdown(f"**{tr('What is included')}**")
-    st.write(tr("App source, backend modules, model file, requirements, and setup instructions."))
-    st.info(tr("The bundle runs locally with Streamlit and keeps the SQLite fallback for offline testing."))
 
 
 def main() -> None:
