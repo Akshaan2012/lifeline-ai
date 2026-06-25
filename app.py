@@ -151,9 +151,24 @@ def clear_profile_form() -> None:
         "patient_name_input",
         "patient_age_input",
         "patient_gender_input",
+        "patient_symptoms_input",
+        "patient_custom_symptoms_input",
+        "patient_duration_input",
+        "patient_pain_input",
+        "patient_temperature_input",
+        "patient_know_heart_rate_input",
+        "patient_heart_rate_input",
+        "patient_know_bp_input",
+        "patient_systolic_input",
+        "patient_diastolic_input",
+        "patient_know_oxygen_input",
+        "patient_oxygen_input",
         "patient_conditions_input",
         "patient_custom_conditions_input",
         "patient_medications_input",
+        "checker_result",
+        "checker_patient_data",
+        "followup_result",
     ]:
         st.session_state.pop(key, None)
 
@@ -877,23 +892,42 @@ def patient_form() -> dict[str, Any]:
             key="patient_gender_input",
         )
     st.markdown(f"**{tr('Symptoms')}**")
-    selected_symptoms = st.multiselect(tr("Choose symptoms from list"), SYMPTOM_OPTIONS, format_func=tr)
+    selected_symptoms = st.multiselect(
+        tr("Choose symptoms from list"),
+        SYMPTOM_OPTIONS,
+        format_func=tr,
+        key="patient_symptoms_input",
+    )
     typed_symptoms = st.text_area(
         tr("Write any other symptoms"),
         placeholder=tr("Example: ear pain, burning urination, neck stiffness"),
         help=tr("Use commas if adding more than one symptom."),
+        key="patient_custom_symptoms_input",
     )
     symptoms = unique_items(selected_symptoms + split_free_text_items(typed_symptoms))
     s1, s2 = st.columns(2)
     with s1:
-        duration_days = st.number_input(tr("Symptom duration in days"), min_value=0, max_value=90, value=1)
+        duration_days = st.number_input(
+            tr("Symptom duration in days"),
+            min_value=0,
+            max_value=90,
+            value=1,
+            key="patient_duration_input",
+        )
     with s2:
-        pain_level = st.slider(tr("Pain level"), 0, 10, 3)
+        pain_level = st.slider(tr("Pain level"), 0, 10, 3, key="patient_pain_input")
 
     st.markdown(f"**{tr('Optional measurements')}**")
     with st.expander(tr("Add temperature, pulse, blood pressure, or oxygen"), expanded=True):
-        temperature = st.number_input(tr("Temperature in Celsius"), min_value=32.0, max_value=43.0, value=37.0, step=0.1)
-        know_heart_rate = st.checkbox(tr("I know my heart rate / pulse"), value=False)
+        temperature = st.number_input(
+            tr("Temperature in Celsius"),
+            min_value=32.0,
+            max_value=43.0,
+            value=37.0,
+            step=0.1,
+            key="patient_temperature_input",
+        )
+        know_heart_rate = st.checkbox(tr("I know my heart rate / pulse"), value=False, key="patient_know_heart_rate_input")
         heart_rate = 0
         if know_heart_rate:
             heart_rate = st.number_input(
@@ -902,8 +936,9 @@ def patient_form() -> dict[str, Any]:
                 max_value=240,
                 value=80,
                 help=tr("You can count your pulse for 60 seconds, or use a smartwatch/pulse oximeter if available."),
+                key="patient_heart_rate_input",
             )
-        know_bp = st.checkbox(tr("I know my blood pressure numbers"), value=False)
+        know_bp = st.checkbox(tr("I know my blood pressure numbers"), value=False, key="patient_know_bp_input")
         systolic_bp = 0
         diastolic_bp = 0
         if know_bp:
@@ -913,6 +948,7 @@ def patient_form() -> dict[str, Any]:
                 max_value=260,
                 value=120,
                 help=tr("This is called systolic BP. It is the first/top number, like 120 in 120/80."),
+                key="patient_systolic_input",
             )
             diastolic_bp = st.number_input(
                 tr("Blood pressure bottom number"),
@@ -920,9 +956,10 @@ def patient_form() -> dict[str, Any]:
                 max_value=180,
                 value=80,
                 help=tr("This is called diastolic BP. It is the second/bottom number, like 80 in 120/80."),
+                key="patient_diastolic_input",
             )
             st.caption(tr("If your BP machine shows 120/80, enter 120 as top number and 80 as bottom number."))
-        know_oxygen = st.checkbox(tr("I know my oxygen level"), value=False)
+        know_oxygen = st.checkbox(tr("I know my oxygen level"), value=False, key="patient_know_oxygen_input")
         oxygen = 0
         if know_oxygen:
             oxygen = st.number_input(
@@ -931,6 +968,7 @@ def patient_form() -> dict[str, Any]:
                 max_value=100,
                 value=98,
                 help=tr("This is SpO2. It usually needs a pulse oximeter finger device. If you do not have one, leave this unchecked."),
+                key="patient_oxygen_input",
             )
             st.caption(tr("Most people at home will only know this if they have a pulse oximeter."))
 
@@ -1121,7 +1159,7 @@ def render_checker() -> None:
             if not data["symptoms"]:
                 st.error(tr("Please choose at least one symptom."))
             else:
-                result = analyze_patient(data)
+                result = analyze_patient(data, use_ml=False)
                 advice = build_recommendations(result)
                 st.session_state.checker_result = {
                     "result": result,
