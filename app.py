@@ -679,6 +679,12 @@ def inject_css() -> None:
             border-radius: 8px;
             padding: 14px;
         }
+        [data-testid="stMetricValue"] {
+            font-size: clamp(1.6rem, 3vw, 2.45rem);
+            line-height: 1.08;
+            white-space: normal;
+            overflow-wrap: anywhere;
+        }
         [data-testid="stDataFrame"] {
             border: 1px solid var(--line);
             border-radius: 8px;
@@ -824,6 +830,8 @@ def danger_status(risk_level: str) -> dict[str, str]:
 def compact_risk_label(risk_level: str) -> str:
     if risk_level == "Emergency":
         return "Critical"
+    if risk_level == "Doctor Visit Recommended":
+        return "Doctor Visit"
     return risk_level
 
 
