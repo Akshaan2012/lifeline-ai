@@ -110,20 +110,68 @@ def language_name(selected: str) -> str:
     return selected.split(" ", 1)[1] if " " in selected else selected
 
 
-@lru_cache(maxsize=2000)
-def translate_text(text: str, selected_language: str) -> str:
+def _target_code(selected_language: str) -> str:
     language = language_name(selected_language)
-    target = LANGUAGE_CODES.get(language, "en")
+    return LANGUAGE_CODES.get(language, "en")
+
+
+def _should_skip_translation(text: str, target: str) -> bool:
+    return target == "en" or not text.strip() or not any(char.isalpha() for char in text)
+
+
+@lru_cache(maxsize=64)
+def _translator(target: str) -> Any:
+    from deep_translator import GoogleTranslator
+
+    return GoogleTranslator(source="auto", target=target)
+
+
+@lru_cache(maxsize=1000)
+def _translate_batch_cached(items: tuple[str, ...], selected_language: str) -> tuple[str, ...]:
+    target = _target_code(selected_language)
+    if _offline_mode():
+        if target == "hi":
+            return tuple(HINDI_FALLBACKS.get(item, item) for item in items)
+        return items
+
+    translated: list[str] = list(items)
+    pending: list[str] = []
+    pending_indexes: list[int] = []
+    for index, item in enumerate(items):
+        if _should_skip_translation(item, target):
+            continue
+        if target == "hi" and item in HINDI_FALLBACKS:
+            translated[index] = HINDI_FALLBACKS[item]
+            continue
+        pending.append(item)
+        pending_indexes.append(index)
+
+    if not pending:
+        return tuple(translated)
+
+    try:
+        batch = _translator(target).translate_batch(pending)
+        for index, value in zip(pending_indexes, batch):
+            translated[index] = value or items[index]
+    except Exception:
+        for index in pending_indexes:
+            translated[index] = HINDI_FALLBACKS.get(items[index], items[index]) if target == "hi" else items[index]
+    return tuple(translated)
+
+
+@lru_cache(maxsize=3000)
+def translate_text(text: str, selected_language: str) -> str:
+    target = _target_code(selected_language)
     if target == "en" or not text.strip():
         return text
     if target == "hi" and text in HINDI_FALLBACKS:
         return HINDI_FALLBACKS[text]
+    if _should_skip_translation(text, target):
+        return text
     if _offline_mode():
         return HINDI_FALLBACKS.get(text, text) if target == "hi" else text
     try:
-        from deep_translator import GoogleTranslator
-
-        translated = GoogleTranslator(source="auto", target=target).translate(text)
+        translated = _translator(target).translate(text)
         return translated or text
     except Exception:
         if target == "hi":
@@ -132,15 +180,32 @@ def translate_text(text: str, selected_language: str) -> str:
 
 
 def translate_items(items: list[str], selected_language: str) -> list[str]:
-    return [translate_text(item, selected_language) for item in items]
+    return list(_translate_batch_cached(tuple(items), selected_language))
 
 
 def translate_answer(answer: dict[str, Any], selected_language: str) -> dict[str, Any]:
     translated = dict(answer)
-    for key in ["title", "meaning", "doctor", "source"]:
+    string_keys = ["title", "meaning", "doctor", "source", "safety_note"]
+    list_keys = ["symptoms", "precautions", "prevention", "emergency", "what_to_do_now", "avoid", "doctor_questions"]
+    texts: list[str] = []
+    locations: list[tuple[str, int | None]] = []
+
+    for key in string_keys:
         if isinstance(translated.get(key), str):
-            translated[key] = translate_text(translated[key], selected_language)
-    for key in ["symptoms", "precautions", "prevention", "emergency", "what_to_do_now", "avoid", "doctor_questions"]:
+            texts.append(translated[key])
+            locations.append((key, None))
+    for key in list_keys:
         if isinstance(translated.get(key), list):
-            translated[key] = translate_items(translated[key], selected_language)
+            for index, value in enumerate(translated[key]):
+                if isinstance(value, str):
+                    texts.append(value)
+                    locations.append((key, index))
+
+    translated_texts = list(_translate_batch_cached(tuple(texts), selected_language)) if texts else []
+    for location, value in zip(locations, translated_texts):
+        key, index = location
+        if index is None:
+            translated[key] = value
+        else:
+            translated[key][index] = value
     return translated
