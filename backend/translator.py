@@ -1,8 +1,14 @@
 from __future__ import annotations
 
 from functools import lru_cache
+import json
 import os
+from pathlib import Path
 from typing import Any
+
+
+TRANSLATION_CACHE_PATH = Path("data/translation_cache.json")
+_TRANSLATION_MEMORY: dict[str, dict[str, str]] | None = None
 
 
 LANGUAGE_CODES = {
@@ -110,6 +116,34 @@ def language_name(selected: str) -> str:
     return selected.split(" ", 1)[1] if " " in selected else selected
 
 
+def _memory() -> dict[str, dict[str, str]]:
+    global _TRANSLATION_MEMORY
+    if _TRANSLATION_MEMORY is None:
+        try:
+            _TRANSLATION_MEMORY = json.loads(TRANSLATION_CACHE_PATH.read_text(encoding="utf-8"))
+        except Exception:
+            _TRANSLATION_MEMORY = {}
+    return _TRANSLATION_MEMORY
+
+
+def _save_memory() -> None:
+    if _TRANSLATION_MEMORY is None:
+        return
+    try:
+        TRANSLATION_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        TRANSLATION_CACHE_PATH.write_text(
+            json.dumps(_TRANSLATION_MEMORY, ensure_ascii=False),
+            encoding="utf-8",
+        )
+    except Exception:
+        pass
+
+
+def _remember(selected_language: str, original: str, translated: str) -> None:
+    if translated and translated != original:
+        _memory().setdefault(selected_language, {})[original] = translated
+
+
 def _target_code(selected_language: str) -> str:
     language = language_name(selected_language)
     return LANGUAGE_CODES.get(language, "en")
@@ -126,9 +160,38 @@ def _translator(target: str) -> Any:
     return GoogleTranslator(source="auto", target=target)
 
 
+def _direct_google_batch(texts: list[str], target: str) -> list[str] | None:
+    try:
+        import requests
+
+        params: list[tuple[str, str]] = [
+            ("client", "gtx"),
+            ("sl", "auto"),
+            ("tl", target),
+            ("dt", "t"),
+        ]
+        params.extend(("q", text) for text in texts)
+        response = requests.get(
+            "https://translate.googleapis.com/translate_a/single",
+            params=params,
+            timeout=4,
+        )
+        response.raise_for_status()
+        data = response.json()
+        rows = data[0] if isinstance(data, list) and data else []
+        if len(rows) == len(texts):
+            values = [str(row[0] or texts[index]) for index, row in enumerate(rows)]
+            if values:
+                return values
+    except Exception:
+        return None
+    return None
+
+
 @lru_cache(maxsize=1000)
 def _translate_batch_cached(items: tuple[str, ...], selected_language: str) -> tuple[str, ...]:
     target = _target_code(selected_language)
+    memory = _memory().get(selected_language, {})
     if _offline_mode():
         if target == "hi":
             return tuple(HINDI_FALLBACKS.get(item, item) for item in items)
@@ -140,8 +203,12 @@ def _translate_batch_cached(items: tuple[str, ...], selected_language: str) -> t
     for index, item in enumerate(items):
         if _should_skip_translation(item, target):
             continue
+        if item in memory:
+            translated[index] = memory[item]
+            continue
         if target == "hi" and item in HINDI_FALLBACKS:
             translated[index] = HINDI_FALLBACKS[item]
+            _remember(selected_language, item, translated[index])
             continue
         pending.append(item)
         pending_indexes.append(index)
@@ -150,9 +217,11 @@ def _translate_batch_cached(items: tuple[str, ...], selected_language: str) -> t
         return tuple(translated)
 
     try:
-        batch = _translator(target).translate_batch(pending)
+        batch = _direct_google_batch(pending, target) or _translator(target).translate_batch(pending)
         for index, value in zip(pending_indexes, batch):
             translated[index] = value or items[index]
+            _remember(selected_language, items[index], translated[index])
+        _save_memory()
     except Exception:
         for index in pending_indexes:
             translated[index] = HINDI_FALLBACKS.get(items[index], items[index]) if target == "hi" else items[index]
@@ -164,7 +233,11 @@ def translate_text(text: str, selected_language: str) -> str:
     target = _target_code(selected_language)
     if target == "en" or not text.strip():
         return text
+    memory = _memory().get(selected_language, {})
+    if text in memory:
+        return memory[text]
     if target == "hi" and text in HINDI_FALLBACKS:
+        _remember(selected_language, text, HINDI_FALLBACKS[text])
         return HINDI_FALLBACKS[text]
     if _should_skip_translation(text, target):
         return text
@@ -172,6 +245,8 @@ def translate_text(text: str, selected_language: str) -> str:
         return HINDI_FALLBACKS.get(text, text) if target == "hi" else text
     try:
         translated = _translator(target).translate(text)
+        _remember(selected_language, text, translated or text)
+        _save_memory()
         return translated or text
     except Exception:
         if target == "hi":
@@ -181,6 +256,12 @@ def translate_text(text: str, selected_language: str) -> str:
 
 def translate_items(items: list[str], selected_language: str) -> list[str]:
     return list(_translate_batch_cached(tuple(items), selected_language))
+
+
+def preload_translations(items: list[str], selected_language: str) -> None:
+    unique_items = list(dict.fromkeys(items))
+    for index in range(0, len(unique_items), 25):
+        translate_items(unique_items[index : index + 25], selected_language)
 
 
 def translate_answer(answer: dict[str, Any], selected_language: str) -> dict[str, Any]:

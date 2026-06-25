@@ -17,7 +17,7 @@ from backend.medication_safety import analyze_medication_safety
 from backend.recommender import build_recommendations
 from backend.report import generate_health_report_pdf
 from backend.sam import answer_message
-from backend.translator import translate_answer, translate_items, translate_text
+from backend.translator import preload_translations, translate_answer, translate_items, translate_text
 from backend.triage_engine import RISK_ORDER, analyze_patient
 
 
@@ -89,6 +89,62 @@ LANGUAGE_OPTIONS = [
     "\U0001f1e8\U0001f1f3 Mandarin", "\U0001f1f9\U0001f1ed Thai", "\U0001f1ef\U0001f1f5 Japanese", "\U0001f1f3\U0001f1f4 Norwegian", "\U0001f1f8\U0001f1ea Swedish",
     "\U0001f1eb\U0001f1ee Finnish", "\U0001f1f5\U0001f1f9 Portuguese", "\U0001f1f7\U0001f1f4 Romanian", "\U0001f1ee\U0001f1f9 Italian", "\U0001f1ee\U0001f1f8 Icelandic",
     "\U0001f1f3\U0001f1f1 Dutch", "\U0001f1f2\U0001f1fe Malay", "\U0001f1f0\U0001f1ea Swahili", "\U0001f1ff\U0001f1e6 Afrikaans", "\U0001f1ee\U0001f1f1 Hebrew", "\U0001f1f8\U0001f1e6 Arabic",
+]
+
+COMMON_TRANSLATION_TEXTS = [
+    *PAGES,
+    *SYMPTOM_OPTIONS,
+    *CONDITION_OPTIONS,
+    "LifeLine AI workspace is ready",
+    "Use Sam or the sidebar to move between tools",
+    "Smart inside. Simple outside.",
+    "Navigation",
+    "Decision-support prototype. Not a replacement for doctors.",
+    "AI health guidance",
+    "A simple health risk and doctor-visit advisor. It helps users check symptoms, learn about diseases, get precautions, and understand when medical help is needed.",
+    "Prediction",
+    "Recommendations",
+    "Simple language",
+    "Sam bubble assistant",
+    "Risk Prediction",
+    "Advanced Advice",
+    "Sam Assistant",
+    "Click the bottom-right bubble to ask for help.",
+    "Basic details",
+    "Symptoms",
+    "Choose symptoms from list",
+    "Write any other symptoms",
+    "Existing conditions",
+    "Current medicines or allergies",
+    "Analyze Health",
+    "Clear profile",
+    "Save patient profile",
+    "Live result",
+    "Care Level",
+    "Risk Score",
+    "Pattern",
+    "Timeframe",
+    "How this score works",
+    "Self-Care",
+    "Doctor Visit Recommended",
+    "Urgent Care",
+    "Emergency",
+    "Likely health pattern",
+    "Why the app thinks this",
+    "What to do now",
+    "Home care support",
+    "Precautions",
+    "What to avoid",
+    "Prevention tips",
+    "Red Flags",
+    "Questions to ask a doctor",
+    "Health & Medicine Q&A",
+    "Medication Safety Checker",
+    "Doctor / Hospital Dashboard",
+    "Scenario Challenge",
+    "Safety Videos",
+    "Language",
+    "Offline mode",
 ]
 
 
@@ -678,6 +734,7 @@ def init_state() -> None:
     if st.session_state.language_picker not in LANGUAGE_OPTIONS:
         st.session_state.language_picker = st.session_state.language
     st.session_state.setdefault("offline_mode", False)
+    st.session_state.setdefault("preloaded_languages", [])
 
 
 def sidebar() -> None:
@@ -691,6 +748,10 @@ def sidebar() -> None:
     language_changed = selected_language != st.session_state.language
     if language_changed:
         st.session_state.language = selected_language
+    if selected_language != LANGUAGE_OPTIONS[0] and selected_language not in st.session_state.preloaded_languages:
+        with st.spinner("Loading language..."):
+            preload_translations(COMMON_TRANSLATION_TEXTS, selected_language)
+        st.session_state.preloaded_languages.append(selected_language)
     offline_mode = st.sidebar.checkbox(
         "Offline mode",
         value=bool(st.session_state.offline_mode),
