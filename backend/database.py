@@ -204,6 +204,22 @@ def clear_cases() -> None:
         conn.execute("DELETE FROM patient_cases")
 
 
+def delete_patient_cases(patient_name: str) -> None:
+    name = patient_name or "Anonymous"
+    supabase = _supabase_client()
+    if supabase:
+        try:
+            supabase.table("patient_cases").delete().eq("patient_name", name).execute()
+            _set_database_error("")
+            return
+        except Exception as exc:
+            _set_database_error(str(exc))
+
+    init_db()
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("DELETE FROM patient_cases WHERE patient_name = ?", (name,))
+
+
 def update_case_review(case_id: int | str, review_status: str, doctor_notes: str) -> bool:
     supabase = _supabase_client()
     if supabase:

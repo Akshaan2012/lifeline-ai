@@ -7,9 +7,8 @@ from typing import Any
 
 import pandas as pd
 import streamlit as st
-import streamlit.components.v1 as components
 
-from backend.database import clear_cases, database_backend, database_error_message, list_cases, save_case, update_case_review
+from backend.database import clear_cases, database_backend, database_error_message, delete_patient_cases, list_cases, save_case, update_case_review
 from backend.disease_qa import answer_question
 from backend.doctor_summary import build_doctor_summary
 from backend.followup import evaluate_follow_up
@@ -17,7 +16,7 @@ from backend.medication_safety import analyze_medication_safety
 from backend.recommender import build_recommendations
 from backend.report import generate_health_report_pdf
 from backend.sam import answer_message
-from backend.translator import preload_translations, translate_answer, translate_items, translate_text
+from backend.translator import translate_answer, translate_items, translate_text
 from backend.triage_engine import RISK_ORDER, analyze_patient
 
 
@@ -600,30 +599,6 @@ def inject_css() -> None:
         }
         .page-head h1 { color: #ffffff; }
         .page-head p { margin-bottom: 0; color: rgba(239, 255, 252, .82); max-width: 860px; }
-        .page-head-inner {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) 220px;
-            gap: 24px;
-            align-items: end;
-        }
-        .page-vitals {
-            border: 1px solid rgba(255,255,255,.2);
-            background: rgba(255,255,255,.09);
-            border-radius: 8px;
-            padding: 14px;
-            min-height: 132px;
-        }
-        .page-vitals span {
-            display: flex;
-            justify-content: space-between;
-            gap: 12px;
-            padding: 7px 0;
-            border-bottom: 1px solid rgba(255,255,255,.12);
-            color: rgba(239,255,252,.75);
-            font-size: .82rem;
-        }
-        .page-vitals span:last-child { border-bottom: 0; }
-        .page-vitals b { color: #ffffff; font-weight: 850; }
         .clinical-rail {
             height: 24px;
             display: flex;
@@ -1284,7 +1259,7 @@ def inject_css() -> None:
         @media (max-width: 720px) {
             h1 { font-size: 2.35rem; }
             .hero, .page-head, .panel { padding: 18px; }
-            .hero-layout, .page-head-inner { grid-template-columns: 1fr; }
+            .hero-layout { grid-template-columns: 1fr; }
             .hero-stats { grid-template-columns: 1fr; }
             .monitor-card { display: none; }
             .command-center { grid-template-columns: 1fr; }
@@ -1351,10 +1326,6 @@ def sidebar() -> None:
     language_changed = selected_language != st.session_state.language
     if language_changed:
         st.session_state.language = selected_language
-    if selected_language != LANGUAGE_OPTIONS[0] and selected_language not in st.session_state.preloaded_languages:
-        with st.spinner("Loading language..."):
-            preload_translations(COMMON_TRANSLATION_TEXTS, selected_language)
-        st.session_state.preloaded_languages.append(selected_language)
     offline_mode = st.sidebar.checkbox(
         "Offline mode",
         value=bool(st.session_state.offline_mode),
@@ -1651,7 +1622,7 @@ def render_count_bar_chart(counts: pd.Series, label: str) -> None:
             },
         },
     }
-    st.vega_lite_chart(chart_df, spec, use_container_width=True)
+    st.vega_lite_chart(chart_df, spec, width="stretch")
 
 
 def fast_analyze_patient(data: dict[str, Any]) -> Any:
@@ -1740,20 +1711,11 @@ def page_header(title: str, subtitle: str, badge: str) -> None:
     st.markdown(
         f"""
         <div class="page-head">
-            <div class="page-head-inner">
-                <div>
-                    <div class="clinical-rail"><span></span><span></span><span></span><span></span><span></span><span></span></div>
-                    <div class="small-title">{badge}</div>
-                    <h1>{title}</h1>
-                    <p>{subtitle}</p>
-                    <div class="pulse-line"></div>
-                </div>
-                <div class="page-vitals">
-                    <span>Mode <b>Guidance</b></span>
-                    <span>Priority <b>Red flags</b></span>
-                    <span>Output <b>Next step</b></span>
-                </div>
-            </div>
+            <div class="clinical-rail"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+            <div class="small-title">{badge}</div>
+            <h1>{title}</h1>
+            <p>{subtitle}</p>
+            <div class="pulse-line"></div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -2217,6 +2179,22 @@ def render_timeline() -> None:
     selected_patient = st.selectbox(tr("Choose patient"), patient_names, index=selected_index)
     patient_cases = [case for case in cases if str(case.get("patient_name") or "Anonymous") == selected_patient]
     patient_cases.sort(key=lambda case: str(case.get("created_at", "")))
+    remove_col, action_col = st.columns([0.65, 0.35])
+    confirm_patient_reset = remove_col.checkbox(
+        tr(f"Remove all saved timeline entries for {selected_patient}"),
+        key=f"confirm_timeline_reset_{selected_patient}",
+    )
+    if action_col.button(
+        tr("Reset selected patient"),
+        disabled=not confirm_patient_reset,
+        width="stretch",
+    ):
+        delete_patient_cases(selected_patient)
+        profile_name = st.session_state.get("patient_profile", {}).get("patient_name")
+        if profile_name == selected_patient:
+            st.session_state.patient_profile = {}
+        st.success(tr("Selected patient was removed from the timeline."))
+        st.rerun()
 
     latest = patient_cases[-1]
     raw_latest = parse_case_raw_data(latest.get("raw_data"))
@@ -2581,20 +2559,7 @@ def render_safety_videos() -> None:
         if st.session_state.offline_mode:
             st.info(tr("Offline mode is on, so online videos are hidden. Use the safety checklist on this page."))
         else:
-            components.html(
-                """
-                <iframe
-                    width="100%"
-                    height="420"
-                    src="https://www.youtube.com/embed/Y6DPDC_Mf90"
-                    title="What is Public Health? - Let's Learn Public Health"
-                    frameborder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    allowfullscreen>
-                </iframe>
-                """,
-                height=420,
-            )
+            st.video("https://www.youtube.com/watch?v=Y6DPDC_Mf90")
             st.caption(tr("Video: What is Public Health? It explains public health, prevention, and how health systems protect communities."))
     with guide_col:
         st.markdown(f'<div class="section-label">{h("Core safety rules")}</div>', unsafe_allow_html=True)
