@@ -840,20 +840,48 @@ def inject_css() -> None:
             background: linear-gradient(90deg, var(--mint), transparent);
         }
         .stButton>button,
+        [data-testid="stFormSubmitButton"] button {
+            border-radius: 6px;
+            border: 1px solid var(--line);
+            background:
+                linear-gradient(180deg, rgba(255,255,255,.98), rgba(244,250,248,.98));
+            color: var(--text);
+            font-weight: 700;
+            min-height: 2.45rem;
+            box-shadow: 0 6px 16px rgba(20, 55, 58, .08);
+        }
+        .stButton>button *,
+        .stButton>button p,
+        [data-testid="stFormSubmitButton"] button *,
+        [data-testid="stFormSubmitButton"] button p {
+            color: var(--text);
+        }
+        .stButton>button:hover,
+        [data-testid="stFormSubmitButton"] button:hover {
+            border-color: rgba(10, 168, 148, .45);
+            color: var(--text);
+            background:
+                linear-gradient(180deg, #ffffff, #eef8f4);
+            box-shadow: 0 10px 22px rgba(20, 55, 58, .12);
+            transform: translateY(-1px);
+        }
+        .stButton>button[kind="primary"],
         [data-testid="stDownloadButton"] button {
             border-radius: 6px;
             border: 1px solid #0a897b;
             background: linear-gradient(180deg, #13aa98, #08796d);
             color: #ffffff;
-            font-weight: 700;
+            font-weight: 750;
             min-height: 2.45rem;
             box-shadow: 0 8px 18px rgba(8, 121, 109, .18);
         }
+        .stButton>button[kind="primary"] *,
+        .stButton>button[kind="primary"] p,
         [data-testid="stDownloadButton"] button *,
         [data-testid="stDownloadButton"] button p {
             color: #ffffff;
         }
-        .stButton>button:hover,
+        .stButton>button[kind="primary"]:hover,
         [data-testid="stDownloadButton"] button:hover {
             border-color: var(--mint);
             color: #ffffff;
