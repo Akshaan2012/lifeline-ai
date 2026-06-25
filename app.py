@@ -207,9 +207,19 @@ COMMON_TRANSLATION_TEXTS = [
     "Your choice",
     "Safest care level",
     "The safest care level is",
-    "because the case details point to this risk level.",
     "Key reasons",
     "Recommended next step",
+    "How the answer was decided",
+    "Selected symptoms",
+    "Risk score",
+    "Risk score range",
+    "Likely pattern",
+    "Important measurements",
+    "Existing conditions",
+    "This score falls in the range for",
+    "That is why the safest answer is",
+    "No important measurements were provided.",
+    "No existing conditions were provided.",
 ]
 
 
@@ -1169,7 +1179,34 @@ def fast_analyze_patient(data: dict[str, Any]) -> Any:
         return analyze_patient(data)
 
 
-def render_challenge_feedback(choice: str, result: Any) -> None:
+def risk_score_range(risk_level: str) -> str:
+    ranges = {
+        "Self-Care": "0-21",
+        "Doctor Visit Recommended": "22-44",
+        "Urgent Care": "45-69",
+        "Emergency": "70-100",
+    }
+    return ranges.get(risk_level, "0-100")
+
+
+def challenge_measurement_summary(data: dict[str, Any]) -> list[str]:
+    measurements: list[str] = []
+    if data.get("temperature"):
+        measurements.append(f"Temperature {data['temperature']} C")
+    if data.get("pain_level") is not None:
+        measurements.append(f"Pain {data['pain_level']}/10")
+    if data.get("oxygen"):
+        measurements.append(f"Oxygen {data['oxygen']}%")
+    if data.get("heart_rate"):
+        measurements.append(f"Pulse {data['heart_rate']}/min")
+    if data.get("systolic_bp") and data.get("diastolic_bp"):
+        measurements.append(f"BP {data['systolic_bp']}/{data['diastolic_bp']}")
+    if data.get("duration_days") is not None:
+        measurements.append(f"Duration {data['duration_days']} day(s)")
+    return measurements
+
+
+def render_challenge_feedback(choice: str, result: Any, scenario_data: dict[str, Any]) -> None:
     correct = choice == result.risk_level
     if correct:
         st.success(tr("Correct choice"))
@@ -1177,11 +1214,22 @@ def render_challenge_feedback(choice: str, result: Any) -> None:
         st.warning(tr("Needs review"))
         st.write(f"**{tr('Your choice')}:** {tr(choice)}")
     st.write(f"**{tr('Safest care level')}:** {tr(result.risk_level)}")
-    st.markdown(f"**{tr('Why this care level fits')}**")
-    st.write(
-        f"{tr('The safest care level is')} {tr(result.risk_level)} "
-        f"{tr('because the case details point to this risk level.')}"
-    )
+    st.markdown(f"**{tr('How the answer was decided')}**")
+    st.write(f"**{tr('Selected symptoms')}:** {', '.join(translate_items(list(scenario_data.get('symptoms', [])), st.session_state.language))}")
+    st.write(f"**{tr('Risk score')}:** {result.score}/100")
+    st.write(f"**{tr('Risk score range')}:** {risk_score_range(result.risk_level)}")
+    st.write(f"**{tr('Likely pattern')}:** {tr(result.possible_category)}")
+    measurements = challenge_measurement_summary(scenario_data)
+    if measurements:
+        st.write(f"**{tr('Important measurements')}:** {', '.join(translate_items(measurements, st.session_state.language))}")
+    else:
+        st.write(f"**{tr('Important measurements')}:** {tr('No important measurements were provided.')}")
+    conditions = list(scenario_data.get("conditions", []))
+    if conditions:
+        st.write(f"**{tr('Existing conditions')}:** {', '.join(translate_items(conditions, st.session_state.language))}")
+    else:
+        st.write(f"**{tr('Existing conditions')}:** {tr('No existing conditions were provided.')}")
+    st.write(f"{tr('This score falls in the range for')} {tr(result.risk_level)}. {tr('That is why the safest answer is')} {tr(result.risk_level)}.")
     st.markdown(f"**{tr('Key reasons')}**")
     for signal in translate_items(result.signals, st.session_state.language):
         st.write(f"- {signal}")
@@ -2004,7 +2052,7 @@ def render_challenge() -> None:
         result = fast_analyze_patient(scenario["data"])
         if choice == result.risk_level:
             st.session_state.score += 10
-        render_challenge_feedback(choice, result)
+        render_challenge_feedback(choice, result, scenario["data"])
     if st.button(tr("Next Scenario")):
         st.session_state.scenario_index = random.randint(0, len(SCENARIOS) - 1)
         st.rerun()
