@@ -1034,6 +1034,11 @@ def render_result_panel(result: Any, advice: dict[str, Any]) -> None:
         """,
         unsafe_allow_html=True,
     )
+    with st.expander(tr("How this score works")):
+        st.write(f"- {tr('0-21')}: {tr('Self-Care')}")
+        st.write(f"- {tr('22-44')}: {tr('Doctor Visit Recommended')}")
+        st.write(f"- {tr('45-69')}: {tr('Urgent Care')}")
+        st.write(f"- {tr('70-100')}: {tr('Emergency')}")
     st.subheader(tr(result.recommendation))
     st.info(tr(advice["risk_summary"]))
     st.write(tr(advice["simple_explanation"]))
