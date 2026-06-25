@@ -76,10 +76,23 @@ def init_db() -> None:
                 risk_level TEXT NOT NULL,
                 recommendation TEXT NOT NULL,
                 score INTEGER NOT NULL,
-                raw_data TEXT NOT NULL
+                raw_data TEXT NOT NULL,
+                review_status TEXT NOT NULL DEFAULT 'New',
+                doctor_notes TEXT NOT NULL DEFAULT ''
             )
             """
         )
+        existing_columns = {
+            row[1] for row in conn.execute("PRAGMA table_info(patient_cases)").fetchall()
+        }
+        if "review_status" not in existing_columns:
+            conn.execute(
+                "ALTER TABLE patient_cases ADD COLUMN review_status TEXT NOT NULL DEFAULT 'New'"
+            )
+        if "doctor_notes" not in existing_columns:
+            conn.execute(
+                "ALTER TABLE patient_cases ADD COLUMN doctor_notes TEXT NOT NULL DEFAULT ''"
+            )
 
 
 def save_case(patient_data: dict[str, Any], triage_result: Any) -> None:
@@ -94,9 +107,19 @@ def save_case(patient_data: dict[str, Any], triage_result: Any) -> None:
         "recommendation": triage_result.recommendation,
         "score": int(triage_result.score),
         "raw_data": patient_data,
+        "review_status": "New",
+        "doctor_notes": "",
     }
     if supabase:
-        supabase.table("patient_cases").insert(row).execute()
+        try:
+            supabase.table("patient_cases").insert(row).execute()
+        except Exception:
+            legacy_row = {
+                key: value
+                for key, value in row.items()
+                if key not in {"review_status", "doctor_notes"}
+            }
+            supabase.table("patient_cases").insert(legacy_row).execute()
         return
 
     init_db()
@@ -105,9 +128,9 @@ def save_case(patient_data: dict[str, Any], triage_result: Any) -> None:
             """
             INSERT INTO patient_cases (
                 created_at, patient_name, age, symptoms, category, risk_level,
-                recommendation, score, raw_data
+                recommendation, score, raw_data, review_status, doctor_notes
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 row["created_at"],
@@ -119,6 +142,8 @@ def save_case(patient_data: dict[str, Any], triage_result: Any) -> None:
                 row["recommendation"],
                 row["score"],
                 json.dumps(row["raw_data"]),
+                row["review_status"],
+                row["doctor_notes"],
             ),
         )
 
@@ -153,3 +178,27 @@ def clear_cases() -> None:
     init_db()
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("DELETE FROM patient_cases")
+
+
+def update_case_review(case_id: int | str, review_status: str, doctor_notes: str) -> bool:
+    supabase = _supabase_client()
+    if supabase:
+        try:
+            supabase.table("patient_cases").update(
+                {"review_status": review_status, "doctor_notes": doctor_notes}
+            ).eq("id", case_id).execute()
+            return True
+        except Exception:
+            return False
+
+    init_db()
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute(
+            """
+            UPDATE patient_cases
+            SET review_status = ?, doctor_notes = ?
+            WHERE id = ?
+            """,
+            (review_status, doctor_notes, case_id),
+        )
+    return True

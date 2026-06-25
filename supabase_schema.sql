@@ -8,8 +8,16 @@ create table if not exists public.patient_cases (
   risk_level text not null,
   recommendation text not null,
   score integer not null,
-  raw_data jsonb not null
+  raw_data jsonb not null,
+  review_status text not null default 'New',
+  doctor_notes text not null default ''
 );
+
+alter table public.patient_cases
+add column if not exists review_status text not null default 'New';
+
+alter table public.patient_cases
+add column if not exists doctor_notes text not null default '';
 
 alter table public.patient_cases enable row level security;
 
@@ -30,6 +38,13 @@ on public.patient_cases
 for delete
 to anon
 using (true);
+
+create policy "Allow app review updates for patient cases"
+on public.patient_cases
+for update
+to anon
+using (true)
+with check (true);
 
 create index if not exists patient_cases_score_idx
 on public.patient_cases (score desc);

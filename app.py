@@ -9,7 +9,7 @@ import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 
-from backend.database import clear_cases, database_backend, list_cases, save_case
+from backend.database import clear_cases, database_backend, list_cases, save_case, update_case_review
 from backend.disease_qa import answer_question
 from backend.doctor_summary import build_doctor_summary
 from backend.followup import evaluate_follow_up
@@ -69,6 +69,53 @@ CONDITION_OPTIONS = [
     "High blood pressure",
     "Pregnancy",
     "Weak immune system",
+]
+
+REVIEW_STATUSES = ["New", "Reviewed", "Referred", "Resolved"]
+
+FOLLOW_UP_RULES = [
+    {
+        "triggers": {"chest pain", "palpitations", "sweating"},
+        "question": "Is the pain spreading to the arm, jaw, back, or happening with heavy sweating?",
+        "signal": "sweating",
+        "reason": "Chest pain with spreading pain or sweating can be a serious heart warning.",
+    },
+    {
+        "triggers": {"chest pain", "dizziness", "shortness of breath"},
+        "question": "Has the patient fainted, nearly fainted, or become unusually weak?",
+        "signal": "fainting",
+        "reason": "Fainting with these symptoms needs faster medical attention.",
+    },
+    {
+        "triggers": {"shortness of breath", "severe breathing difficulty", "wheezing"},
+        "question": "Are the lips or face turning blue, or is speaking full sentences difficult?",
+        "signal": "blue lips",
+        "reason": "Blue lips or trouble speaking can mean low oxygen.",
+    },
+    {
+        "triggers": {"headache", "severe headache", "dizziness", "confusion"},
+        "question": "Is there face drooping, arm weakness, speech trouble, seizure, or sudden confusion?",
+        "signal": "stroke signs",
+        "reason": "Sudden nerve or speech changes can be emergency warning signs.",
+    },
+    {
+        "triggers": {"rash", "itching", "swelling"},
+        "question": "Did swelling of the lips/face or breathing trouble start after food, medicine, or a bite?",
+        "signal": "severe allergic reaction",
+        "reason": "Swelling with breathing trouble can be a severe allergic reaction.",
+    },
+    {
+        "triggers": {"diarrhea", "persistent vomiting", "nausea", "high fever"},
+        "question": "Is the patient unable to keep fluids down, very thirsty, or passing very little urine?",
+        "signal": "dehydration",
+        "reason": "Dehydration can become serious, especially with vomiting, diarrhea, or fever.",
+    },
+    {
+        "triggers": {"frequent urination", "excessive thirst", "blurred vision", "fatigue"},
+        "question": "Is there extreme thirst, frequent urination, vomiting, or unusual sleepiness together?",
+        "signal": "very high sugar symptoms",
+        "reason": "These symptoms together can suggest a high blood sugar warning pattern.",
+    },
 ]
 
 PAGES = [
@@ -174,6 +221,54 @@ def unique_items(items: list[str]) -> list[str]:
     return clean_items
 
 
+def key_fragment(text: str) -> str:
+    cleaned = "".join(char if char.isalnum() else "_" for char in text.lower())
+    return "_".join(part for part in cleaned.split("_") if part)
+
+
+def adaptive_followup_rules(symptoms: list[str]) -> list[dict[str, Any]]:
+    selected = {symptom.strip().lower() for symptom in symptoms}
+    return [
+        rule
+        for rule in FOLLOW_UP_RULES
+        if selected.intersection(rule["triggers"])
+        and str(rule["signal"]).lower() not in selected
+    ]
+
+
+def render_adaptive_followups(symptoms: list[str]) -> tuple[list[dict[str, str]], list[str]]:
+    answers: list[dict[str, str]] = []
+    safety_signals: list[str] = []
+    rules = adaptive_followup_rules(symptoms)
+    if not rules:
+        return answers, safety_signals
+
+    st.markdown(f"**{tr('Smart follow-up questions')}**")
+    st.caption(tr("These questions appear based on the symptoms selected above. They help catch red flags earlier."))
+    for index, rule in enumerate(rules):
+        answer = st.radio(
+            tr(rule["question"]),
+            ["No", "Yes", "Not sure"],
+            horizontal=True,
+            key=f"adaptive_followup_{index}_{key_fragment(rule['signal'])}",
+            format_func=tr,
+        )
+        answer_record = {
+            "question": str(rule["question"]),
+            "answer": str(answer),
+            "reason": str(rule["reason"]),
+            "signal": str(rule["signal"]),
+        }
+        answers.append(answer_record)
+        if answer == "Yes":
+            safety_signals.append(str(rule["signal"]).title())
+            st.warning(tr(rule["reason"]))
+        elif answer == "Not sure":
+            st.info(tr("If you are unsure and symptoms feel serious, choose faster medical care."))
+
+    return answers, safety_signals
+
+
 def parse_case_raw_data(raw_data: Any) -> dict[str, Any]:
     if isinstance(raw_data, dict):
         return raw_data
@@ -227,6 +322,9 @@ def clear_profile_form() -> None:
         "followup_result",
     ]:
         st.session_state.pop(key, None)
+    for key in list(st.session_state.keys()):
+        if str(key).startswith("adaptive_followup_"):
+            st.session_state.pop(key, None)
 
 
 SCENARIOS = [
@@ -871,6 +969,29 @@ def snapshot_card(label: str, value: str) -> None:
     )
 
 
+def build_timeline_trend_frame(cases: list[dict[str, Any]]) -> pd.DataFrame:
+    rows: list[dict[str, Any]] = []
+    for index, case in enumerate(cases, start=1):
+        raw = parse_case_raw_data(case.get("raw_data"))
+        rows.append(
+            {
+                "Check": index,
+                "Created": pd.to_datetime(case.get("created_at"), errors="coerce"),
+                "Risk score": int(case.get("score") or 0),
+                "Pain level": pd.to_numeric(raw.get("pain_level"), errors="coerce"),
+                "Temperature": pd.to_numeric(raw.get("temperature"), errors="coerce"),
+                "Oxygen": pd.to_numeric(raw.get("oxygen"), errors="coerce"),
+                "Pulse": pd.to_numeric(raw.get("heart_rate"), errors="coerce"),
+                "Systolic BP": pd.to_numeric(raw.get("systolic_bp"), errors="coerce"),
+                "Diastolic BP": pd.to_numeric(raw.get("diastolic_bp"), errors="coerce"),
+            }
+        )
+    frame = pd.DataFrame(rows)
+    if frame.empty:
+        return frame
+    return frame.set_index("Check")
+
+
 def fast_analyze_patient(data: dict[str, Any]) -> Any:
     try:
         return analyze_patient(data, use_ml=False)
@@ -1007,6 +1128,8 @@ def patient_form() -> dict[str, Any]:
         key="patient_custom_symptoms_input",
     )
     symptoms = unique_items(selected_symptoms + split_free_text_items(typed_symptoms))
+    followup_answers, followup_signals = render_adaptive_followups(symptoms)
+    symptoms = unique_items(symptoms + followup_signals)
     s1, s2 = st.columns(2)
     with s1:
         duration_days = st.number_input(
@@ -1110,10 +1233,11 @@ def patient_form() -> dict[str, Any]:
         "oxygen": oxygen,
         "conditions": conditions,
         "medications": medications,
+        "followup_answers": followup_answers,
     }
 
 
-def render_result_panel(result: Any, advice: dict[str, Any]) -> None:
+def render_result_panel(result: Any, advice: dict[str, Any], patient_data: dict[str, Any] | None = None) -> None:
     danger = danger_status(result.risk_level)
     st.markdown(
         f"""
@@ -1146,6 +1270,12 @@ def render_result_panel(result: Any, advice: dict[str, Any]) -> None:
     st.write(tr(advice["simple_explanation"]))
     if result.model_prediction:
         st.caption(tr(f"ML model prediction: {result.model_prediction} | Confidence: {result.model_confidence}"))
+    followup_answers = list((patient_data or {}).get("followup_answers", []))
+    positive_followups = [item for item in followup_answers if item.get("answer") in {"Yes", "Not sure"}]
+    if positive_followups:
+        st.markdown(f"**{tr('Smart follow-up answers')}**")
+        for item in positive_followups:
+            st.write(f"- {tr(item['question'])}: {tr(item['answer'])}")
     st.markdown(f"**{tr('Likely health pattern')}**")
     st.write(tr(advice["likely_pattern"]))
 
@@ -1284,8 +1414,8 @@ def render_checker() -> None:
         if stored:
             if stored.get("saved"):
                 st.success(tr("Case saved to Doctor Dashboard."))
-            render_result_panel(stored["result"], stored["advice"])
             patient_data = st.session_state.get("checker_patient_data") or {}
+            render_result_panel(stored["result"], stored["advice"], patient_data)
             pdf_bytes = generate_health_report_pdf(patient_data, stored["result"], stored["advice"])
             st.download_button(
                 tr("Download Health Report PDF"),
@@ -1350,6 +1480,24 @@ def render_timeline() -> None:
     st.write(raw_latest.get("medications") or tr("Not provided"))
 
     st.write("")
+    st.markdown(f'<div class="section-label">{h("Trend charts")}</div>', unsafe_allow_html=True)
+    trend_df = build_timeline_trend_frame(patient_cases)
+    if len(trend_df) > 1:
+        trend_col1, trend_col2 = st.columns(2)
+        with trend_col1:
+            st.markdown(f"**{tr('Risk and pain over time')}**")
+            st.line_chart(trend_df[["Risk score", "Pain level"]])
+        vitals = trend_df[["Temperature", "Oxygen", "Pulse", "Systolic BP", "Diastolic BP"]].dropna(how="all")
+        with trend_col2:
+            st.markdown(f"**{tr('Measurements over time')}**")
+            if not vitals.empty:
+                st.line_chart(vitals)
+            else:
+                st.info(tr("No optional measurements were saved for trend charts yet."))
+    else:
+        st.info(tr("Save at least two checks for this patient to see trend charts."))
+
+    st.write("")
     st.markdown(f'<div class="section-label">{h("Timeline")}</div>', unsafe_allow_html=True)
     for index, case in enumerate(patient_cases, start=1):
         raw = parse_case_raw_data(case.get("raw_data"))
@@ -1372,6 +1520,11 @@ def render_timeline() -> None:
             st.write(f"**{tr('Measurements')}:** {', '.join(vitals) if vitals else tr('Not provided')}")
             st.write(f"**{tr('Likely pattern')}:** {tr(str(case.get('category', 'General Health')))}")
             st.write(f"**{tr('Recommendation')}:** {tr(str(case.get('recommendation', '')))}")
+            followup_answers = list(raw.get("followup_answers", []))
+            if followup_answers:
+                st.write(f"**{tr('Smart follow-up answers')}:**")
+                for item in followup_answers:
+                    st.write(f"- {tr(str(item.get('question', '')))}: {tr(str(item.get('answer', '')))}")
 
     st.write("")
     if st.button(tr("Use latest profile in Health Checker"), width="stretch"):
@@ -1539,9 +1692,20 @@ def render_dashboard() -> None:
         return
 
     df = pd.DataFrame(cases)
-    selected = st.selectbox(tr("Filter by risk"), ["All", "Self-Care", "Doctor Visit Recommended", "Urgent Care", "Emergency"], format_func=tr)
+    if "review_status" not in df.columns:
+        df["review_status"] = "New"
+    if "doctor_notes" not in df.columns:
+        df["doctor_notes"] = ""
+    df["review_status"] = df["review_status"].fillna("New").replace("", "New")
+    df["doctor_notes"] = df["doctor_notes"].fillna("")
+
+    filter_col1, filter_col2 = st.columns(2)
+    selected = filter_col1.selectbox(tr("Filter by risk"), ["All", "Self-Care", "Doctor Visit Recommended", "Urgent Care", "Emergency"], format_func=tr)
+    status_filter = filter_col2.selectbox(tr("Filter by review status"), ["All", *REVIEW_STATUSES], format_func=tr)
     if selected != "All":
         df = df[df["risk_level"] == selected]
+    if status_filter != "All":
+        df = df[df["review_status"] == status_filter]
     df["urgency_rank"] = df["risk_level"].map(RISK_ORDER)
     df = df.sort_values(["urgency_rank", "score"], ascending=[False, False])
 
@@ -1554,10 +1718,54 @@ def render_dashboard() -> None:
 
     st.markdown(f'<div class="section-label">{h("Patient cases")}</div>', unsafe_allow_html=True)
     st.dataframe(
-        df[["created_at", "patient_name", "age", "symptoms", "category", "risk_level", "recommendation", "score"]],
+        df[["created_at", "patient_name", "age", "symptoms", "category", "risk_level", "review_status", "recommendation", "score"]],
         width="stretch",
         hide_index=True,
     )
+    st.write("")
+    st.markdown(f'<div class="section-label">{h("Review selected case")}</div>', unsafe_allow_html=True)
+    if df.empty:
+        st.info(tr("No cases match the selected filters."))
+        return
+
+    review_cases = df.to_dict("records")
+    selected_case_id = st.selectbox(
+        tr("Choose case to review"),
+        [case["id"] for case in review_cases],
+        format_func=lambda case_id: next(
+            (
+                f"{case.get('created_at', '')} - {case.get('patient_name', 'Anonymous')} - {case.get('risk_level', '')}"
+                for case in review_cases
+                if case.get("id") == case_id
+            ),
+            str(case_id),
+        ),
+    )
+    selected_case = next(case for case in review_cases if case.get("id") == selected_case_id)
+    status_value = str(selected_case.get("review_status") or "New")
+    if status_value not in REVIEW_STATUSES:
+        status_value = "New"
+    with st.form(f"case_review_form_{selected_case_id}"):
+        new_status = st.selectbox(
+            tr("Case status"),
+            REVIEW_STATUSES,
+            index=REVIEW_STATUSES.index(status_value),
+            format_func=tr,
+        )
+        new_notes = st.text_area(
+            tr("Doctor case notes"),
+            value=str(selected_case.get("doctor_notes") or ""),
+            placeholder=tr("Example: Called patient, advised clinic visit, reviewed allergy history."),
+            height=140,
+        )
+        if st.form_submit_button(tr("Save review"), width="stretch"):
+            saved = update_case_review(selected_case_id, new_status, new_notes)
+            if saved:
+                st.success(tr("Case review saved."))
+                st.rerun()
+            else:
+                st.error(tr("Case review could not be saved. Apply the updated Supabase schema first."))
+
     chart_col1, chart_col2 = st.columns(2)
     with chart_col1:
         st.markdown(f'<div class="section-label">{h("Risk levels")}</div>', unsafe_allow_html=True)
