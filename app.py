@@ -260,7 +260,7 @@ COMMON_TRANSLATION_TEXTS = [
     "No urgent queue pressure right now.",
     "Review emergency and urgent cases first.",
     "Review new cases before resolved cases.",
-    "Supabase is configured but could not be reached or is missing the patient_cases table. The app is using local fallback storage for now. Run supabase_schema.sql in Supabase SQL Editor, then reboot the app.",
+    "Using local fallback storage. To use Supabase, run supabase_schema.sql in Supabase SQL Editor and reboot.",
 ]
 
 
@@ -2187,7 +2187,6 @@ def render_dashboard() -> None:
         "Review saved patient cases, sorted by urgency so serious cases are easier to notice first.",
         "Clinical queue",
     )
-    st.caption(f"{tr('Database')}: {database_backend()}")
     reset_col, _ = st.columns([0.35, 0.65])
     with reset_col:
         confirm_reset = st.checkbox(tr("I understand this will remove saved patient cases"))
@@ -2199,13 +2198,10 @@ def render_dashboard() -> None:
             st.rerun()
     cases = list_cases()
     db_error = database_error_message()
+    db_label = "SQLite local fallback" if db_error else database_backend()
+    st.caption(f"{tr('Database')}: {db_label}")
     if db_error:
-        st.warning(
-            tr(
-                "Supabase is configured but could not be reached or is missing the patient_cases table. "
-                "The app is using local fallback storage for now. Run supabase_schema.sql in Supabase SQL Editor, then reboot the app."
-            )
-        )
+        st.caption(tr("Using local fallback storage. To use Supabase, run supabase_schema.sql in Supabase SQL Editor and reboot."))
     if not cases:
         st.info(tr("No saved patient cases yet. Use the Health Checker and save a case."))
         return
