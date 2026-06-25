@@ -192,6 +192,15 @@ COMMON_TRANSLATION_TEXTS = [
     "Safety Videos",
     "Language",
     "Offline mode",
+    "Check",
+    "Track",
+    "Share",
+    "Symptoms and red flags",
+    "Risk and vitals over time",
+    "Doctor-ready summaries",
+    "Start Health Check",
+    "View Timeline",
+    "Open Doctor Dashboard",
 ]
 
 
@@ -352,30 +361,36 @@ def inject_css() -> None:
         """
         <style>
         :root {
-            --bg: #dfeff2;
+            --bg: #edf5f3;
             --surface: #ffffff;
-            --surface-2: #e8f5f7;
+            --surface-2: #f4faf8;
             --panel: #ffffff;
-            --line: #b7d3d7;
-            --line-soft: rgba(24, 65, 72, .12);
-            --text: #10252c;
-            --muted: #526b72;
-            --mint: #00a991;
-            --mint-dim: rgba(15, 159, 143, .1);
-            --blue: #1f5f8f;
-            --amber: #d1922b;
-            --red: #c93b4a;
-            --ink: #062632;
+            --line: #bfd8d3;
+            --line-soft: rgba(20, 55, 58, .12);
+            --text: #132a2d;
+            --muted: #5d7272;
+            --mint: #0aa894;
+            --mint-dim: rgba(10, 168, 148, .12);
+            --blue: #245d7a;
+            --leaf: #5b7f45;
+            --amber: #bd842f;
+            --copper: #b56d4a;
+            --red: #c74659;
+            --ink: #082631;
+            --shadow: 0 18px 46px rgba(20, 55, 58, .13);
+            --shadow-soft: 0 10px 28px rgba(20, 55, 58, .09);
         }
         .stApp {
             background:
-                linear-gradient(135deg, rgba(6, 38, 50, .14) 0%, transparent 34%),
-                linear-gradient(180deg, #eaf6f8 0%, #dcecef 48%, #d6e8ec 100%);
-            background-size: auto;
+                linear-gradient(90deg, rgba(10, 168, 148, .055) 1px, transparent 1px),
+                linear-gradient(0deg, rgba(10, 168, 148, .045) 1px, transparent 1px),
+                radial-gradient(circle at 15% 8%, rgba(181, 109, 74, .16), transparent 24rem),
+                linear-gradient(180deg, #f8fcfb 0%, #edf5f3 52%, #e5f0ee 100%);
+            background-size: 34px 34px, 34px 34px, auto, auto;
             color: var(--text);
             font-family: "Noto Sans Devanagari", "Mangal", "Nirmala UI", "Segoe UI", Arial, sans-serif;
         }
-        header[data-testid="stHeader"] { background: rgba(245, 250, 249, .82); backdrop-filter: blur(10px); }
+        header[data-testid="stHeader"] { background: rgba(248, 252, 251, .86); backdrop-filter: blur(12px); }
         #MainMenu, footer { visibility: hidden; }
         [data-testid="stToolbar"],
         [data-testid="stDecoration"],
@@ -410,20 +425,22 @@ def inject_css() -> None:
         }
         [data-testid="stSidebar"] {
             background:
-                linear-gradient(180deg, #082d3b 0%, #061821 100%);
+                linear-gradient(180deg, #0b2c36 0%, #071b22 58%, #051419 100%);
             border-right: 1px solid rgba(255,255,255,.1);
+            box-shadow: 18px 0 42px rgba(8, 38, 49, .14);
         }
         [data-testid="stSidebar"] * { color: #efffff; }
         [data-testid="stSidebar"] h2 {
             font-size: 1.35rem;
             margin: 0 0 1rem 0;
+            letter-spacing: .01em;
         }
         [data-testid="stSidebar"] [role="radiogroup"] label {
-            border: 1px solid transparent;
+            border: 1px solid rgba(255, 255, 255, .08);
             border-radius: 8px;
-            padding: 9px 10px;
+            padding: 10px 11px;
             margin: 5px 0;
-            background: rgba(255, 255, 255, .055);
+            background: rgba(255, 255, 255, .06);
             transition: border-color .16s ease, background .16s ease, transform .16s ease;
         }
         [data-testid="stSidebar"] [role="radiogroup"] label:hover {
@@ -431,10 +448,10 @@ def inject_css() -> None:
             background: rgba(98, 224, 204, .14);
             transform: translateX(2px);
         }
-        .block-container { padding-top: .65rem; padding-bottom: 2.5rem; max-width: 1220px; }
+        .block-container { padding-top: .8rem; padding-bottom: 2.75rem; max-width: 1240px; }
         h1, h2, h3 { letter-spacing: 0; color: var(--text); }
-        h1 { font-size: 2.6rem; line-height: 1.05; margin-bottom: .55rem; font-weight: 850; }
-        h2 { font-size: 1.35rem; }
+        h1 { font-size: 2.55rem; line-height: 1.04; margin-bottom: .55rem; font-weight: 850; }
+        h2 { font-size: 1.38rem; }
         h3 { font-size: 1.05rem; }
         p, li, label, .stMarkdown { color: var(--text); }
         .stCaptionContainer, [data-testid="stCaptionContainer"] { color: var(--muted); }
@@ -456,13 +473,16 @@ def inject_css() -> None:
             margin-right: 8px;
         }
         .page-head {
-            border: 1px solid rgba(255,255,255,.22);
+            border: 1px solid rgba(255,255,255,.28);
             background:
-                linear-gradient(135deg, #0b3443 0%, #0d5962 58%, #126d6b 100%);
+                linear-gradient(90deg, rgba(255,255,255,.055) 1px, transparent 1px),
+                linear-gradient(0deg, rgba(255,255,255,.045) 1px, transparent 1px),
+                linear-gradient(135deg, #092631 0%, #10525c 58%, #257162 100%);
+            background-size: 30px 30px, 30px 30px, auto;
             border-radius: 8px;
-            padding: 24px 26px;
-            margin-bottom: 18px;
-            box-shadow: 0 24px 60px rgba(8, 45, 59, .24);
+            padding: 25px 28px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
             position: relative;
             overflow: hidden;
         }
@@ -487,25 +507,76 @@ def inject_css() -> None:
         .clinical-rail span:nth-child(4) { height: 24px; background: linear-gradient(180deg, var(--amber), rgba(244, 189, 95, .14)); }
         .clinical-rail span:nth-child(5) { height: 9px; }
         .clinical-rail span:nth-child(6) { height: 18px; }
-        .hero {
-            border: 1px solid rgba(255,255,255,.22);
+        .pulse-line {
+            width: min(360px, 65%);
+            height: 24px;
+            margin: 13px 0 0;
+            border-bottom: 1px solid rgba(255,255,255,.26);
+            position: relative;
+        }
+        .pulse-line:before {
+            content: "";
+            position: absolute;
+            inset: 8px auto auto 0;
+            width: 100%;
+            height: 2px;
             background:
-                linear-gradient(135deg, #0b3443 0%, #0d5962 58%, #126d6b 100%);
+                linear-gradient(90deg,
+                    rgba(255,255,255,.22) 0 18%,
+                    var(--mint) 18% 24%,
+                    rgba(255,255,255,.22) 24% 34%,
+                    var(--amber) 34% 39%,
+                    rgba(255,255,255,.22) 39% 58%,
+                    var(--copper) 58% 63%,
+                    rgba(255,255,255,.22) 63% 100%);
+            border-radius: 999px;
+        }
+        .hero {
+            border: 1px solid rgba(255,255,255,.28);
+            background:
+                linear-gradient(90deg, rgba(255,255,255,.06) 1px, transparent 1px),
+                linear-gradient(0deg, rgba(255,255,255,.045) 1px, transparent 1px),
+                linear-gradient(135deg, #092631 0%, #10525c 58%, #257162 100%);
+            background-size: 32px 32px, 32px 32px, auto;
             border-radius: 8px;
-            padding: 30px;
-            box-shadow: 0 24px 60px rgba(8, 45, 59, .24);
+            padding: 32px;
+            box-shadow: var(--shadow);
             position: relative;
             overflow: hidden;
         }
         .hero h1 { color: #ffffff; }
         .hero .muted { color: rgba(239,255,252,.84); }
+        .hero h1, .page-head h1 {
+            text-wrap: balance;
+        }
+        .hero-stats {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            margin-top: 22px;
+            max-width: 720px;
+        }
+        .hero-stat {
+            border: 1px solid rgba(255,255,255,.2);
+            background: rgba(255,255,255,.1);
+            border-radius: 8px;
+            padding: 10px 12px;
+            color: rgba(239,255,252,.9);
+            min-height: 66px;
+        }
+        .hero-stat b {
+            color: #ffffff;
+            display: block;
+            font-size: 1.08rem;
+            margin-bottom: 4px;
+        }
         .hero:after, .page-head:after {
             content: "";
             position: absolute;
             inset: auto 22px 18px auto;
-            width: 148px;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(15, 159, 143, .7), transparent);
+            width: 168px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,.55), var(--mint), transparent);
         }
         .panel {
             border: 1px solid var(--line);
@@ -513,20 +584,31 @@ def inject_css() -> None:
             border-radius: 8px;
             padding: 20px;
             min-height: 100%;
-            box-shadow: 0 12px 32px rgba(26, 74, 84, .08);
+            box-shadow: var(--shadow-soft);
         }
         .metric-card {
             border: 1px solid var(--line);
-            background: linear-gradient(180deg, #ffffff 0%, #eef8fa 100%);
+            background:
+                linear-gradient(180deg, rgba(255,255,255,.92) 0%, rgba(244,250,248,.96) 100%);
             border-radius: 8px;
             padding: 16px 16px 15px;
             min-height: 104px;
-            box-shadow: 0 16px 34px rgba(26, 74, 84, .12);
-            transition: border-color .16s ease, transform .16s ease;
+            box-shadow: var(--shadow-soft);
+            position: relative;
+            overflow: hidden;
+            transition: border-color .16s ease, transform .16s ease, box-shadow .16s ease;
+        }
+        .metric-card:before {
+            content: "";
+            position: absolute;
+            inset: 0 auto 0 0;
+            width: 4px;
+            background: linear-gradient(180deg, var(--mint), var(--copper));
         }
         .metric-card:hover {
             border-color: rgba(69, 224, 199, .38);
             transform: translateY(-2px);
+            box-shadow: 0 20px 40px rgba(20, 55, 58, .14);
         }
         .metric-card b {
             display: block;
@@ -550,9 +632,10 @@ def inject_css() -> None:
         }
         .danger-banner {
             border-radius: 8px;
-            padding: 16px;
+            padding: 17px 18px;
             margin: 0 0 16px 0;
             border: 1px solid var(--line);
+            box-shadow: var(--shadow-soft);
         }
         .danger-banner h2 {
             margin: 0 0 4px 0;
@@ -560,15 +643,15 @@ def inject_css() -> None:
         }
         .danger-banner p { margin: 0; color: rgba(255,255,255,.82); }
         .danger-low {
-            background: linear-gradient(135deg, #e8fbf2, #ffffff);
+            background: linear-gradient(135deg, #e8f8ef, #ffffff);
             border-color: #8bdfb9;
         }
         .danger-moderate {
-            background: linear-gradient(135deg, #fff5df, #ffffff);
+            background: linear-gradient(135deg, #fff3dc, #ffffff);
             border-color: #e9bd69;
         }
         .danger-high {
-            background: linear-gradient(135deg, #ffe8eb, #ffffff);
+            background: linear-gradient(135deg, #ffe7eb, #ffffff);
             border-color: #e7909a;
         }
         .danger-banner h2, .danger-banner p { color: var(--text); }
@@ -579,10 +662,11 @@ def inject_css() -> None:
             margin-bottom: 14px;
         }
         .summary-item {
-            background: #f8fbfb;
+            background: #fbfefe;
             border: 1px solid var(--line-soft);
             border-radius: 8px;
-            padding: 10px;
+            padding: 11px 12px;
+            box-shadow: 0 6px 18px rgba(20, 55, 58, .05);
         }
         .summary-item span {
             display: block;
@@ -594,7 +678,11 @@ def inject_css() -> None:
         }
         .empty-result {
             border: 1px dashed #b9cfcc;
-            background: #f8fbfb;
+            background:
+                linear-gradient(90deg, rgba(10,168,148,.045) 1px, transparent 1px),
+                linear-gradient(0deg, rgba(10,168,148,.04) 1px, transparent 1px),
+                #fbfefe;
+            background-size: 26px 26px;
             border-radius: 8px;
             padding: 22px;
             color: var(--muted);
@@ -602,15 +690,15 @@ def inject_css() -> None:
         [data-testid="stExpander"] {
             border: 1px solid var(--line) !important;
             border-radius: 8px !important;
-            background: rgba(255, 255, 255, .45) !important;
+            background: rgba(255, 255, 255, .72) !important;
             overflow: hidden;
-            box-shadow: 0 10px 26px rgba(26, 74, 84, .07);
+            box-shadow: var(--shadow-soft);
         }
         [data-testid="stExpander"] details {
             border: 0 !important;
         }
         [data-testid="stExpander"] summary {
-            background: linear-gradient(180deg, #ffffff 0%, #eef8fa 100%) !important;
+            background: linear-gradient(180deg, #ffffff 0%, #f2faf7 100%) !important;
             border-bottom: 1px solid var(--line-soft) !important;
         }
         [data-testid="stExpander"] summary,
@@ -633,14 +721,15 @@ def inject_css() -> None:
             font-size: .82rem;
             font-weight: 700;
             margin-right: 8px;
+            margin-bottom: 8px;
         }
         .sam-box {
-            border: 1px solid rgba(69, 224, 199, .45);
+            border: 1px solid rgba(10, 168, 148, .46);
             background:
-                linear-gradient(180deg, rgba(16, 33, 34, .98), rgba(12, 23, 25, .98));
+                linear-gradient(180deg, rgba(10, 36, 42, .98), rgba(8, 24, 29, .98));
             border-radius: 8px;
             padding: 16px;
-            box-shadow: 0 0 0 1px rgba(70, 214, 191, .06), 0 20px 60px rgba(0,0,0,.2);
+            box-shadow: 0 0 0 1px rgba(70, 214, 191, .06), 0 20px 60px rgba(0,0,0,.22);
             position: sticky;
             top: 18px;
         }
@@ -703,7 +792,7 @@ def inject_css() -> None:
             color: var(--mint);
             text-transform: uppercase;
             font-size: .78rem;
-            letter-spacing: .08em;
+            letter-spacing: .09em;
             font-weight: 800;
         }
         .section-label {
@@ -711,17 +800,27 @@ def inject_css() -> None:
             font-size: .78rem;
             font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: .08em;
-            margin: 6px 0 8px;
+            letter-spacing: .09em;
+            margin: 8px 0 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-label:after {
+            content: "";
+            width: 42px;
+            height: 1px;
+            background: linear-gradient(90deg, var(--mint), transparent);
         }
         .stButton>button,
         [data-testid="stDownloadButton"] button {
             border-radius: 6px;
-            border: 1px solid #0d8f81;
-            background: linear-gradient(180deg, #14aa98, #08786d);
+            border: 1px solid #0a897b;
+            background: linear-gradient(180deg, #13aa98, #08796d);
             color: #ffffff;
             font-weight: 700;
             min-height: 2.45rem;
+            box-shadow: 0 8px 18px rgba(8, 121, 109, .18);
         }
         [data-testid="stDownloadButton"] button *,
         [data-testid="stDownloadButton"] button p {
@@ -732,20 +831,21 @@ def inject_css() -> None:
             border-color: var(--mint);
             color: #ffffff;
             background: #086f66;
+            box-shadow: 0 12px 24px rgba(8, 121, 109, .22);
         }
         .stButton>button:focus, [data-testid="stDownloadButton"] button:focus, .stTextInput input:focus, .stNumberInput input:focus, .stTextArea textarea:focus {
-            outline: 2px solid rgba(126, 183, 255, .55) !important;
+            outline: 2px solid rgba(181, 109, 74, .5) !important;
             outline-offset: 2px;
         }
         .stTextInput input, .stNumberInput input, .stTextArea textarea {
-            background: #ffffff;
+            background: rgba(255,255,255,.96);
             color: var(--text);
             border: 1px solid var(--line);
             border-radius: 7px;
-            box-shadow: 0 1px 0 rgba(10, 25, 32, .03);
+            box-shadow: 0 1px 0 rgba(10, 25, 32, .03), inset 0 1px 0 rgba(255,255,255,.7);
         }
         div[data-baseweb="select"] > div {
-            background: #ffffff;
+            background: rgba(255,255,255,.96);
             border-color: var(--line);
             border-radius: 7px;
             color: var(--text);
@@ -785,7 +885,8 @@ def inject_css() -> None:
         }
         .snapshot-card {
             border: 1px solid var(--line);
-            background: var(--surface);
+            background:
+                linear-gradient(180deg, rgba(255,255,255,.96), rgba(246,251,249,.96));
             border-radius: 8px;
             padding: 16px 18px;
             min-height: 118px;
@@ -793,6 +894,7 @@ def inject_css() -> None:
             flex-direction: column;
             justify-content: center;
             gap: 10px;
+            box-shadow: var(--shadow-soft);
         }
         .snapshot-label {
             color: var(--muted);
@@ -811,9 +913,11 @@ def inject_css() -> None:
             border: 1px solid var(--line);
             border-radius: 8px;
             overflow: hidden;
+            box-shadow: var(--shadow-soft);
         }
         .stAlert {
             border-radius: 8px;
+            border: 1px solid var(--line-soft);
         }
         code {
             color: #075e57;
@@ -826,6 +930,8 @@ def inject_css() -> None:
         @media (max-width: 720px) {
             h1 { font-size: 2.35rem; }
             .hero, .page-head, .panel { padding: 18px; }
+            .hero-stats { grid-template-columns: 1fr; }
+            .pulse-line { width: 100%; }
             .command-bar { align-items: flex-start; flex-direction: column; }
             .summary-grid { grid-template-columns: 1fr; }
             div[data-testid="stPopover"] {
@@ -1024,6 +1130,7 @@ def page_header(title: str, subtitle: str, badge: str) -> None:
             <div class="small-title">{badge}</div>
             <h1>{title}</h1>
             <p>{subtitle}</p>
+            <div class="pulse-line"></div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -1065,6 +1172,12 @@ def render_home() -> None:
             <div class="small-title">{h("AI health guidance")}</div>
             <h1>LifeLine AI</h1>
             <p class="muted">{hero_subtitle}</p>
+            <div class="pulse-line"></div>
+            <div class="hero-stats">
+                <div class="hero-stat"><b>{h("Check")}</b>{h("Symptoms and red flags")}</div>
+                <div class="hero-stat"><b>{h("Track")}</b>{h("Risk and vitals over time")}</div>
+                <div class="hero-stat"><b>{h("Share")}</b>{h("Doctor-ready summaries")}</div>
+            </div>
             <br>
             <span class="soft-badge">{h("Prediction")}</span>
             <span class="soft-badge">{h("Recommendations")}</span>
@@ -1082,6 +1195,14 @@ def render_home() -> None:
         st.markdown(f'<div class="metric-card"><span class="token">02</span><b>{h("Advanced Advice")}</b><span class="muted">{h("Care steps, prevention, avoid-list, and red flags.")}</span></div>', unsafe_allow_html=True)
     with c3:
         st.markdown(f'<div class="metric-card"><span class="token">03</span><b>{h("Sam Assistant")}</b><span class="muted">{h("Click the bottom-right bubble to ask for help.")}</span></div>', unsafe_allow_html=True)
+    st.write("")
+    action1, action2, action3 = st.columns(3)
+    if action1.button(tr("Start Health Check"), type="primary", width="stretch"):
+        switch_page("Patient Health Checker")
+    if action2.button(tr("View Timeline"), width="stretch"):
+        switch_page("Health Timeline")
+    if action3.button(tr("Open Doctor Dashboard"), width="stretch"):
+        switch_page("Doctor Dashboard")
 
 
 def patient_form() -> dict[str, Any]:
