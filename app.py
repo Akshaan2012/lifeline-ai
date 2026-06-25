@@ -1567,8 +1567,21 @@ def render_safety_videos() -> None:
         if st.session_state.offline_mode:
             st.info(tr("Offline mode is on, so online videos are hidden. Use the safety checklist on this page."))
         else:
-            components.iframe("https://www.youtube.com/embed/-dmJSLNgjxo", height=420, scrolling=False)
-            st.caption(tr("CDC video: Introduction to Public Health. It explains disease prevention, tracking, public-health programs, and how safety measures protect people."))
+            components.html(
+                """
+                <iframe
+                    width="100%"
+                    height="420"
+                    src="https://www.youtube.com/embed/Y6DPDC_Mf90"
+                    title="What is Public Health? - Let's Learn Public Health"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowfullscreen>
+                </iframe>
+                """,
+                height=420,
+            )
+            st.caption(tr("Video: What is Public Health? It explains public health, prevention, and how health systems protect communities."))
     with guide_col:
         st.markdown(f'<div class="section-label">{h("Core safety rules")}</div>', unsafe_allow_html=True)
         safety_sections = [
