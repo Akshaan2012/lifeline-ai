@@ -220,6 +220,46 @@ COMMON_TRANSLATION_TEXTS = [
     "That is why the safest answer is",
     "No important measurements were provided.",
     "No existing conditions were provided.",
+    "Home command center",
+    "Saved cases",
+    "High-priority cases",
+    "New reviews",
+    "Resolved",
+    "Ready for the next check",
+    "Start with a symptom check, review saved cases, or practice care-level decisions.",
+    "Care action plan",
+    "Immediate safety steps",
+    "Emergency action plan",
+    "This result includes emergency warning signs. Treat it as time-sensitive.",
+    "Call local emergency services or go to emergency care now.",
+    "Do not drive yourself if there is chest pain, fainting, severe breathing difficulty, confusion, or stroke signs.",
+    "Keep the patient sitting or lying down and monitor breathing.",
+    "Have medicines, allergies, symptoms, and recent measurements ready for clinicians.",
+    "Same-day care plan",
+    "This result needs fast medical review, especially if symptoms continue or worsen.",
+    "Arrange clinic or hospital care as soon as possible today.",
+    "Recheck breathing, fever, pain, oxygen, pulse, or blood pressure if available.",
+    "Avoid heavy activity until a clinician has reviewed the situation.",
+    "Use the doctor summary when speaking with the care team.",
+    "Doctor visit prep plan",
+    "This result is not usually an emergency, but it should be checked by a doctor.",
+    "Book a doctor visit and bring the saved health summary.",
+    "Track whether symptoms improve, stay the same, or get worse.",
+    "Write down current medicines, allergies, and questions before the visit.",
+    "Seek faster care if any red flag appears.",
+    "Home monitoring plan",
+    "This result looks lower risk right now, but symptoms should still be watched.",
+    "Rest, drink fluids if appropriate, and follow basic home care steps.",
+    "Check symptoms again if the condition changes or lasts longer than expected.",
+    "Avoid mixing medicines without asking a doctor or pharmacist.",
+    "Move to faster care if red flags appear.",
+    "Queue insights",
+    "Cases needing attention",
+    "Most common pattern",
+    "Review priority",
+    "No urgent queue pressure right now.",
+    "Review emergency and urgent cases first.",
+    "Review new cases before resolved cases.",
 ]
 
 
@@ -666,6 +706,81 @@ def inject_css() -> None:
             font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
             font-size: .82rem;
         }
+        .command-center {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+            margin: 10px 0 16px;
+        }
+        .command-card {
+            border: 1px solid var(--line);
+            background: linear-gradient(180deg, rgba(255,255,255,.97), rgba(244,250,248,.96));
+            border-radius: 8px;
+            padding: 15px 16px;
+            min-height: 104px;
+            box-shadow: var(--shadow-soft);
+            position: relative;
+            overflow: hidden;
+        }
+        .command-card:before {
+            content: "";
+            position: absolute;
+            inset: 0 0 auto;
+            height: 3px;
+            background: linear-gradient(90deg, var(--mint), var(--copper));
+        }
+        .command-card span {
+            color: var(--muted);
+            display: block;
+            font-size: .8rem;
+            font-weight: 750;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            margin-bottom: 8px;
+        }
+        .command-card b {
+            display: block;
+            color: var(--text);
+            font-size: clamp(1.5rem, 2.4vw, 2.3rem);
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+        .command-card small {
+            color: var(--muted);
+            font-size: .9rem;
+        }
+        .care-plan {
+            border: 1px solid var(--line);
+            background:
+                linear-gradient(90deg, rgba(10,168,148,.045) 1px, transparent 1px),
+                linear-gradient(0deg, rgba(10,168,148,.035) 1px, transparent 1px),
+                #fbfefe;
+            background-size: 24px 24px;
+            border-radius: 8px;
+            padding: 16px 17px;
+            margin: 14px 0 16px;
+            box-shadow: var(--shadow-soft);
+            border-left-width: 5px;
+        }
+        .care-plan h3 {
+            margin: 4px 0 6px;
+            font-size: 1.15rem;
+        }
+        .care-plan p {
+            margin: 0 0 10px;
+            color: var(--muted);
+        }
+        .care-plan ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .care-plan li {
+            margin: 6px 0;
+        }
+        .care-emergency { border-left-color: var(--red); }
+        .care-urgent { border-left-color: var(--amber); }
+        .care-doctor { border-left-color: var(--blue); }
+        .care-home { border-left-color: var(--leaf); }
         .risk {
             display: inline-block;
             border: 1px solid rgba(69, 224, 199, .45);
@@ -1005,6 +1120,7 @@ def inject_css() -> None:
             h1 { font-size: 2.35rem; }
             .hero, .page-head, .panel { padding: 18px; }
             .hero-stats { grid-template-columns: 1fr; }
+            .command-center { grid-template-columns: 1fr; }
             .pulse-line { width: 100%; }
             .command-bar { align-items: flex-start; flex-direction: column; }
             .summary-grid { grid-template-columns: 1fr; }
@@ -1172,6 +1288,147 @@ def build_timeline_trend_frame(cases: list[dict[str, Any]]) -> pd.DataFrame:
     return frame.set_index("Check")
 
 
+def case_queue_summary(cases: list[dict[str, Any]]) -> dict[str, Any]:
+    high_priority = [
+        case
+        for case in cases
+        if str(case.get("risk_level")) in {"Emergency", "Urgent Care"}
+    ]
+    new_reviews = [
+        case
+        for case in cases
+        if str(case.get("review_status") or "New") == "New"
+    ]
+    resolved = [
+        case
+        for case in cases
+        if str(case.get("review_status") or "") == "Resolved"
+    ]
+    categories = [str(case.get("category") or "General Health") for case in cases]
+    most_common = "N/A"
+    if categories:
+        most_common = pd.Series(categories).value_counts().index[0]
+    return {
+        "total": len(cases),
+        "high_priority": len(high_priority),
+        "new_reviews": len(new_reviews),
+        "resolved": len(resolved),
+        "most_common": most_common,
+    }
+
+
+def action_plan_for_result(result: Any) -> dict[str, Any]:
+    if result.risk_level == "Emergency":
+        return {
+            "class": "care-emergency",
+            "badge": "Immediate safety steps",
+            "title": "Emergency action plan",
+            "summary": "This result includes emergency warning signs. Treat it as time-sensitive.",
+            "steps": [
+                "Call local emergency services or go to emergency care now.",
+                "Do not drive yourself if there is chest pain, fainting, severe breathing difficulty, confusion, or stroke signs.",
+                "Keep the patient sitting or lying down and monitor breathing.",
+                "Have medicines, allergies, symptoms, and recent measurements ready for clinicians.",
+            ],
+        }
+    if result.risk_level == "Urgent Care":
+        return {
+            "class": "care-urgent",
+            "badge": "Care action plan",
+            "title": "Same-day care plan",
+            "summary": "This result needs fast medical review, especially if symptoms continue or worsen.",
+            "steps": [
+                "Arrange clinic or hospital care as soon as possible today.",
+                "Recheck breathing, fever, pain, oxygen, pulse, or blood pressure if available.",
+                "Avoid heavy activity until a clinician has reviewed the situation.",
+                "Use the doctor summary when speaking with the care team.",
+            ],
+        }
+    if result.risk_level == "Doctor Visit Recommended":
+        return {
+            "class": "care-doctor",
+            "badge": "Care action plan",
+            "title": "Doctor visit prep plan",
+            "summary": "This result is not usually an emergency, but it should be checked by a doctor.",
+            "steps": [
+                "Book a doctor visit and bring the saved health summary.",
+                "Track whether symptoms improve, stay the same, or get worse.",
+                "Write down current medicines, allergies, and questions before the visit.",
+                "Seek faster care if any red flag appears.",
+            ],
+        }
+    return {
+        "class": "care-home",
+        "badge": "Care action plan",
+        "title": "Home monitoring plan",
+        "summary": "This result looks lower risk right now, but symptoms should still be watched.",
+        "steps": [
+            "Rest, drink fluids if appropriate, and follow basic home care steps.",
+            "Check symptoms again if the condition changes or lasts longer than expected.",
+            "Avoid mixing medicines without asking a doctor or pharmacist.",
+            "Move to faster care if red flags appear.",
+        ],
+    }
+
+
+def render_command_center_cards(items: list[tuple[str, str, str]]) -> None:
+    cards = "\n".join(
+        f"""
+        <div class="command-card">
+            <span>{h(label)}</span>
+            <b>{h(value)}</b>
+            <small>{h(detail)}</small>
+        </div>
+        """
+        for label, value, detail in items
+    )
+    st.markdown(f'<div class="command-center">{cards}</div>', unsafe_allow_html=True)
+
+
+def render_home_command_center() -> None:
+    cases = list_cases()
+    summary = case_queue_summary(cases)
+    render_command_center_cards(
+        [
+            ("Saved cases", str(summary["total"]), "Ready for the next check"),
+            ("High-priority cases", str(summary["high_priority"]), "Cases needing attention"),
+            ("New reviews", str(summary["new_reviews"]), "Review priority"),
+            ("Resolved", str(summary["resolved"]), "Doctor Dashboard"),
+        ]
+    )
+
+
+def render_care_action_plan(result: Any) -> None:
+    plan = action_plan_for_result(result)
+    steps = "\n".join(f"<li>{h(step)}</li>" for step in plan["steps"])
+    st.markdown(
+        f"""
+        <div class="care-plan {plan['class']}">
+            <div class="small-title">{h(plan['badge'])}</div>
+            <h3>{h(plan['title'])}</h3>
+            <p>{h(plan['summary'])}</p>
+            <ul>{steps}</ul>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_queue_insights(cases: list[dict[str, Any]]) -> None:
+    summary = case_queue_summary(cases)
+    priority = "Review emergency and urgent cases first." if summary["high_priority"] else "No urgent queue pressure right now."
+    if summary["new_reviews"] and not summary["high_priority"]:
+        priority = "Review new cases before resolved cases."
+    render_command_center_cards(
+        [
+            ("Cases needing attention", str(summary["high_priority"]), priority),
+            ("New reviews", str(summary["new_reviews"]), "Review priority"),
+            ("Most common pattern", str(summary["most_common"]), "Likely pattern"),
+            ("Resolved", str(summary["resolved"]), "Doctor Dashboard"),
+        ]
+    )
+
+
 def fast_analyze_patient(data: dict[str, Any]) -> Any:
     try:
         return analyze_patient(data, use_ml=False)
@@ -1319,6 +1576,10 @@ def render_home() -> None:
         """,
         unsafe_allow_html=True,
     )
+    st.write("")
+    st.markdown(f'<div class="section-label">{h("Home command center")}</div>', unsafe_allow_html=True)
+    render_home_command_center()
+    st.caption(tr("Start with a symptom check, review saved cases, or practice care-level decisions."))
     st.write("")
     c1, c2, c3 = st.columns(3)
     with c1:
@@ -1522,6 +1783,7 @@ def render_result_panel(result: Any, advice: dict[str, Any], patient_data: dict[
     st.subheader(tr(result.recommendation))
     st.info(tr(advice["risk_summary"]))
     st.write(tr(advice["simple_explanation"]))
+    render_care_action_plan(result)
     if result.model_prediction:
         st.caption(tr(f"ML model prediction: {result.model_prediction} | Confidence: {result.model_confidence}"))
     followup_answers = list((patient_data or {}).get("followup_answers", []))
@@ -1969,6 +2231,8 @@ def render_dashboard() -> None:
     c2.metric(tr("Emergency"), int((df["risk_level"] == "Emergency").sum()))
     c3.metric(tr("Urgent"), int((df["risk_level"] == "Urgent Care").sum()))
     c4.metric(tr("Doctor visits"), int((df["risk_level"] == "Doctor Visit Recommended").sum()))
+    st.markdown(f'<div class="section-label">{h("Queue insights")}</div>', unsafe_allow_html=True)
+    render_queue_insights(df.to_dict("records"))
 
     st.markdown(f'<div class="section-label">{h("Patient cases")}</div>', unsafe_allow_html=True)
     st.dataframe(

@@ -5,10 +5,14 @@ LifeLine AI is a patient-friendly health decision-support app built with Streaml
 ## Features
 
 - Patient Health Checker with risk levels and red flags
+- Smart follow-up questions based on selected symptoms
+- Risk-based care action plans for emergency, urgent, doctor-visit, and home-care cases
 - Downloadable Health Report PDF
+- Health Timeline with trend charts for risk score, pain, and optional measurements
 - Health & Medicine Q&A in simple language
 - Medication Safety Checker for common cautions and pharmacist questions
-- Doctor Dashboard for saved cases
+- Home command center with saved-case and priority-case status
+- Doctor Dashboard for saved cases, queue insights, review status, and doctor notes
 - Scenario Challenge for practice
 - Sam assistant bubble for navigation help
 - Multi-language dropdown support
