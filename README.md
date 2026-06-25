@@ -15,7 +15,7 @@ LifeLine AI is a patient-friendly health decision-support app built with Streaml
 - Doctor Dashboard for saved cases, queue insights, review status, and doctor notes
 - Scenario Challenge for practice
 - Sam assistant bubble for navigation help
-- Download App page with a cross-platform ZIP bundle for Windows, macOS, and Linux
+- Home page cross-platform ZIP bundle for Windows, macOS, and Linux
 - Multi-language dropdown support
 - Offline mode for local rules, local SQLite storage, and no cloud calls
 
@@ -38,7 +38,7 @@ http://127.0.0.1:8501
 
 ## Downloadable App Bundle
 
-Open the **Download App** page in LifeLine AI to download a ZIP bundle. It includes:
+Use the **Download the app** section on the Home page to download a ZIP bundle. It includes:
 
 - `run_lifeline_ai_windows.bat` for Windows
 - `run_lifeline_ai_mac_linux.sh` for macOS and Linux

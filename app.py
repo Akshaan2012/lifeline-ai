@@ -130,7 +130,6 @@ PAGES = [
     "Doctor Dashboard",
     "Scenario Challenge",
     "Safety Videos",
-    "Download App",
 ]
 
 LANGUAGE_OPTIONS = [
@@ -1697,6 +1696,8 @@ def render_home() -> None:
             switch_page("Health Timeline")
         if action3.button(tr("Open Doctor Dashboard"), width="stretch"):
             switch_page("Doctor Dashboard")
+    st.write("")
+    render_download_panel()
 
 
 def patient_form() -> dict[str, Any]:
@@ -2466,13 +2467,7 @@ def render_safety_videos() -> None:
         st.warning(tr("Videos and tips are for education only. They do not replace medical care."))
 
 
-def render_download_app() -> None:
-    render_command_bar()
-    page_header(
-        "Download App",
-        "Download a portable local copy of LifeLine AI with launch scripts for Windows, macOS, and Linux.",
-        "Desktop bundle",
-    )
+def render_download_panel() -> None:
     st.markdown(f'<div class="section-label">{h("Download the app")}</div>', unsafe_allow_html=True)
     st.write(tr("Get a portable ZIP with Windows, macOS, and Linux launch scripts."))
     render_command_center_cards(
@@ -2516,8 +2511,6 @@ def main() -> None:
         render_challenge()
     elif st.session_state.page == "Safety Videos":
         render_safety_videos()
-    elif st.session_state.page == "Download App":
-        render_download_app()
     render_sam()
 
 
