@@ -1663,12 +1663,12 @@ def render_timeline() -> None:
         trend_col1, trend_col2 = st.columns(2)
         with trend_col1:
             st.markdown(f"**{tr('Risk and pain over time')}**")
-            st.line_chart(trend_df[["Risk score", "Pain level"]])
+            st.line_chart(trend_df[["Risk score", "Pain level"]], y_min=0)
         vitals = trend_df[["Temperature", "Oxygen", "Pulse", "Systolic BP", "Diastolic BP"]].dropna(how="all")
         with trend_col2:
             st.markdown(f"**{tr('Measurements over time')}**")
             if not vitals.empty:
-                st.line_chart(vitals)
+                st.line_chart(vitals, y_min=0)
             else:
                 st.info(tr("No optional measurements were saved for trend charts yet."))
     else:
