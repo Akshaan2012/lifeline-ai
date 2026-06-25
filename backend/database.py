@@ -68,7 +68,7 @@ def _supabase_client() -> Any | None:
 def database_backend() -> str:
     if _offline_mode():
         return "SQLite offline mode"
-    return "Supabase" if _supabase_client() else "SQLite local fallback"
+    return "Supabase primary + SQLite fallback" if _supabase_client() else "SQLite local fallback"
 
 
 def init_db() -> None:

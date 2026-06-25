@@ -421,32 +421,34 @@ def inject_css() -> None:
         """
         <style>
         :root {
-            --bg: #edf5f3;
-            --surface: #ffffff;
-            --surface-2: #f4faf8;
+            --bg: #eef6f4;
+            --surface: #fbfffd;
+            --surface-2: #e7f0ee;
             --panel: #ffffff;
-            --line: #bfd8d3;
-            --line-soft: rgba(20, 55, 58, .12);
-            --text: #132a2d;
-            --muted: #5d7272;
-            --mint: #0aa894;
-            --mint-dim: rgba(10, 168, 148, .12);
-            --blue: #245d7a;
-            --leaf: #5b7f45;
-            --amber: #bd842f;
-            --copper: #b56d4a;
-            --red: #c74659;
-            --ink: #082631;
-            --shadow: 0 18px 46px rgba(20, 55, 58, .13);
-            --shadow-soft: 0 10px 28px rgba(20, 55, 58, .09);
+            --line: #c2d8d3;
+            --line-strong: #8fb4ae;
+            --line-soft: rgba(14, 43, 48, .12);
+            --text: #102528;
+            --muted: #627777;
+            --mint: #10b8a6;
+            --mint-dim: rgba(16, 184, 166, .13);
+            --blue: #2b6f93;
+            --leaf: #4f7d54;
+            --amber: #c98723;
+            --copper: #b86247;
+            --red: #cb3f54;
+            --violet: #6d587f;
+            --ink: #061e27;
+            --shadow: 0 24px 70px rgba(8, 36, 43, .16);
+            --shadow-soft: 0 12px 30px rgba(8, 36, 43, .10);
+            --shadow-tight: 0 8px 16px rgba(8, 36, 43, .08);
         }
         .stApp {
             background:
-                linear-gradient(90deg, rgba(10, 168, 148, .055) 1px, transparent 1px),
-                linear-gradient(0deg, rgba(10, 168, 148, .045) 1px, transparent 1px),
-                radial-gradient(circle at 15% 8%, rgba(181, 109, 74, .16), transparent 24rem),
-                linear-gradient(180deg, #f8fcfb 0%, #edf5f3 52%, #e5f0ee 100%);
-            background-size: 34px 34px, 34px 34px, auto, auto;
+                linear-gradient(90deg, rgba(43, 111, 147, .055) 1px, transparent 1px),
+                linear-gradient(0deg, rgba(16, 184, 166, .05) 1px, transparent 1px),
+                linear-gradient(180deg, #f9fdfb 0%, #eef6f4 48%, #e4efec 100%);
+            background-size: 36px 36px, 36px 36px, auto;
             color: var(--text);
             font-family: "Noto Sans Devanagari", "Mangal", "Nirmala UI", "Segoe UI", Arial, sans-serif;
         }
@@ -485,11 +487,51 @@ def inject_css() -> None:
         }
         [data-testid="stSidebar"] {
             background:
-                linear-gradient(180deg, #0b2c36 0%, #071b22 58%, #051419 100%);
+                linear-gradient(180deg, #092d37 0%, #071d25 56%, #041318 100%);
             border-right: 1px solid rgba(255,255,255,.1);
             box-shadow: 18px 0 42px rgba(8, 38, 49, .14);
         }
         [data-testid="stSidebar"] * { color: #efffff; }
+        .sidebar-brand {
+            border: 1px solid rgba(255, 255, 255, .14);
+            background:
+                linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px),
+                linear-gradient(0deg, rgba(255,255,255,.04) 1px, transparent 1px),
+                rgba(255, 255, 255, .06);
+            background-size: 22px 22px;
+            border-radius: 8px;
+            padding: 14px 14px 13px;
+            margin-bottom: 18px;
+        }
+        .brand-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .brand-mark {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            display: grid;
+            place-items: center;
+            color: #042029 !important;
+            font-weight: 950;
+            background: linear-gradient(135deg, #f4fff9, #22dfc9);
+            box-shadow: 0 0 0 4px rgba(34, 223, 201, .16);
+        }
+        .brand-name {
+            display: block;
+            color: #ffffff;
+            font-size: 1.16rem;
+            font-weight: 900;
+            line-height: 1;
+        }
+        .brand-sub {
+            display: block;
+            color: rgba(232, 255, 251, .68);
+            font-size: .78rem;
+            margin-top: 5px;
+        }
         [data-testid="stSidebar"] h2 {
             font-size: 1.35rem;
             margin: 0 0 1rem 0;
@@ -508,16 +550,26 @@ def inject_css() -> None:
             background: rgba(98, 224, 204, .14);
             transform: translateX(2px);
         }
-        .block-container { padding-top: .8rem; padding-bottom: 2.75rem; max-width: 1240px; }
+        .block-container { padding-top: 1rem; padding-bottom: 3rem; max-width: 1260px; }
         h1, h2, h3 { letter-spacing: 0; color: var(--text); }
-        h1 { font-size: 2.55rem; line-height: 1.04; margin-bottom: .55rem; font-weight: 850; }
+        h1 { font-size: clamp(2.25rem, 4vw, 4.25rem); line-height: .98; margin-bottom: .6rem; font-weight: 900; }
         h2 { font-size: 1.38rem; }
         h3 { font-size: 1.05rem; }
         p, li, label, .stMarkdown { color: var(--text); }
         .stCaptionContainer, [data-testid="stCaptionContainer"] { color: var(--muted); }
         .muted { color: var(--muted); }
         .command-bar {
-            display: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            border: 1px solid var(--line);
+            background: rgba(251, 255, 253, .82);
+            backdrop-filter: blur(14px);
+            border-radius: 8px;
+            padding: 10px 13px;
+            margin: 0 0 14px;
+            box-shadow: var(--shadow-tight);
         }
         .command-text {
             color: var(--muted);
@@ -537,7 +589,7 @@ def inject_css() -> None:
             background:
                 linear-gradient(90deg, rgba(255,255,255,.055) 1px, transparent 1px),
                 linear-gradient(0deg, rgba(255,255,255,.045) 1px, transparent 1px),
-                linear-gradient(135deg, #092631 0%, #10525c 58%, #257162 100%);
+                linear-gradient(135deg, #082631 0%, #145765 58%, #276e61 100%);
             background-size: 30px 30px, 30px 30px, auto;
             border-radius: 8px;
             padding: 25px 28px;
@@ -548,6 +600,30 @@ def inject_css() -> None:
         }
         .page-head h1 { color: #ffffff; }
         .page-head p { margin-bottom: 0; color: rgba(239, 255, 252, .82); max-width: 860px; }
+        .page-head-inner {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 220px;
+            gap: 24px;
+            align-items: end;
+        }
+        .page-vitals {
+            border: 1px solid rgba(255,255,255,.2);
+            background: rgba(255,255,255,.09);
+            border-radius: 8px;
+            padding: 14px;
+            min-height: 132px;
+        }
+        .page-vitals span {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 7px 0;
+            border-bottom: 1px solid rgba(255,255,255,.12);
+            color: rgba(239,255,252,.75);
+            font-size: .82rem;
+        }
+        .page-vitals span:last-child { border-bottom: 0; }
+        .page-vitals b { color: #ffffff; font-weight: 850; }
         .clinical-rail {
             height: 24px;
             display: flex;
@@ -596,16 +672,27 @@ def inject_css() -> None:
             background:
                 linear-gradient(90deg, rgba(255,255,255,.06) 1px, transparent 1px),
                 linear-gradient(0deg, rgba(255,255,255,.045) 1px, transparent 1px),
-                linear-gradient(135deg, #092631 0%, #10525c 58%, #257162 100%);
+                linear-gradient(135deg, #082631 0%, #145765 56%, #276e61 100%);
             background-size: 32px 32px, 32px 32px, auto;
             border-radius: 8px;
-            padding: 32px;
+            padding: 34px;
             box-shadow: var(--shadow);
             position: relative;
             overflow: hidden;
         }
+        .hero-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+            gap: 28px;
+            align-items: end;
+        }
         .hero h1 { color: #ffffff; }
         .hero .muted { color: rgba(239,255,252,.84); }
+        .hero-copy .muted {
+            max-width: 780px;
+            font-size: 1.08rem;
+            line-height: 1.65;
+        }
         .hero h1, .page-head h1 {
             text-wrap: balance;
         }
@@ -623,6 +710,77 @@ def inject_css() -> None:
             padding: 10px 12px;
             color: rgba(239,255,252,.9);
             min-height: 66px;
+        }
+        .monitor-card {
+            border: 1px solid rgba(255,255,255,.22);
+            background:
+                linear-gradient(90deg, rgba(255,255,255,.055) 1px, transparent 1px),
+                linear-gradient(0deg, rgba(255,255,255,.045) 1px, transparent 1px),
+                rgba(3, 22, 28, .36);
+            background-size: 18px 18px;
+            border-radius: 8px;
+            padding: 18px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 18px 42px rgba(0,0,0,.18);
+        }
+        .monitor-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            color: rgba(239,255,252,.72);
+            font-size: .78rem;
+            text-transform: uppercase;
+            font-weight: 800;
+            letter-spacing: .08em;
+            margin-bottom: 20px;
+        }
+        .monitor-wave {
+            height: 72px;
+            border-top: 1px solid rgba(255,255,255,.12);
+            border-bottom: 1px solid rgba(255,255,255,.12);
+            position: relative;
+            margin-bottom: 18px;
+        }
+        .monitor-wave:before {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 34px;
+            height: 3px;
+            background:
+                linear-gradient(90deg,
+                    rgba(255,255,255,.20) 0 9%,
+                    var(--mint) 9% 16%,
+                    rgba(255,255,255,.20) 16% 25%,
+                    var(--amber) 25% 29%,
+                    rgba(255,255,255,.20) 29% 44%,
+                    var(--red) 44% 49%,
+                    rgba(255,255,255,.20) 49% 68%,
+                    #7eb8ff 68% 74%,
+                    rgba(255,255,255,.20) 74% 100%);
+            border-radius: 999px;
+            box-shadow: 0 0 24px rgba(16,184,166,.3);
+        }
+        .monitor-readouts {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+        }
+        .monitor-readouts div {
+            border: 1px solid rgba(255,255,255,.14);
+            border-radius: 7px;
+            padding: 9px;
+            background: rgba(255,255,255,.07);
+        }
+        .monitor-readouts span {
+            display: block;
+            color: rgba(239,255,252,.62);
+            font-size: .72rem;
+            margin-bottom: 3px;
+        }
+        .monitor-readouts b {
+            color: #ffffff;
+            font-size: 1.12rem;
         }
         .hero-stat b {
             color: #ffffff;
@@ -703,9 +861,10 @@ def inject_css() -> None:
             color: var(--text);
         }
         .metric-card .token {
-            color: var(--mint);
+            color: var(--blue);
             font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
             font-size: .82rem;
+            font-weight: 850;
         }
         .command-center {
             display: grid;
@@ -1063,9 +1222,10 @@ def inject_css() -> None:
         }
         [data-testid="stMetric"] {
             border: 1px solid var(--line);
-            background: var(--surface);
+            background: linear-gradient(180deg, #ffffff, #f4faf8);
             border-radius: 8px;
             padding: 14px;
+            box-shadow: var(--shadow-tight);
         }
         [data-testid="stMetricValue"] {
             font-size: clamp(1.6rem, 3vw, 2.45rem);
@@ -1109,6 +1269,10 @@ def inject_css() -> None:
             border-radius: 8px;
             border: 1px solid var(--line-soft);
         }
+        .element-container:has(.section-label) + div [data-testid="stVerticalBlock"],
+        [data-testid="stForm"] {
+            border-radius: 8px;
+        }
         code {
             color: #075e57;
             background: #edf8f6;
@@ -1120,7 +1284,9 @@ def inject_css() -> None:
         @media (max-width: 720px) {
             h1 { font-size: 2.35rem; }
             .hero, .page-head, .panel { padding: 18px; }
+            .hero-layout, .page-head-inner { grid-template-columns: 1fr; }
             .hero-stats { grid-template-columns: 1fr; }
+            .monitor-card { display: none; }
             .command-center { grid-template-columns: 1fr; }
             .pulse-line { width: 100%; }
             .command-bar { align-items: flex-start; flex-direction: column; }
@@ -1163,12 +1329,24 @@ def init_state() -> None:
 
 
 def sidebar() -> None:
-    st.sidebar.markdown("## LifeLine AI")
+    st.sidebar.markdown(
+        """
+        <div class="sidebar-brand">
+            <div class="brand-row">
+                <div class="brand-mark">L</div>
+                <div>
+                    <span class="brand-name">LifeLine AI</span>
+                    <span class="brand-sub">Triage workspace</span>
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     selected_language = st.sidebar.selectbox(
         "Language",
         LANGUAGE_OPTIONS,
         key="language_picker",
-        help="Search or select a language.",
     )
     language_changed = selected_language != st.session_state.language
     if language_changed:
@@ -1180,7 +1358,6 @@ def sidebar() -> None:
     offline_mode = st.sidebar.checkbox(
         "Offline mode",
         value=bool(st.session_state.offline_mode),
-        help="Use local rules and SQLite only. This disables OpenAI, Supabase, Google Translate, and online videos.",
     )
     if offline_mode != st.session_state.offline_mode:
         st.session_state.offline_mode = offline_mode
@@ -1424,6 +1601,59 @@ def render_queue_insights(cases: list[dict[str, Any]]) -> None:
     )
 
 
+def render_count_bar_chart(counts: pd.Series, label: str) -> None:
+    if counts.empty:
+        st.info(tr("No matching data to chart."))
+        return
+
+    chart_df = counts.rename_axis(label).reset_index(name="Cases")
+    chart_df[label] = chart_df[label].fillna("Unknown").astype(str)
+    signed_axis = {
+        "title": tr("Cases"),
+        "labelExpr": "datum.value < 0 ? '-' + abs(datum.value) : '' + datum.value",
+        "labelPadding": 10,
+        "grid": True,
+    }
+    spec = {
+        "height": 250,
+        "mark": {
+            "type": "bar",
+            "color": "#7cc8f4",
+            "cornerRadiusTopLeft": 4,
+            "cornerRadiusTopRight": 4,
+        },
+        "encoding": {
+            "x": {
+                "field": label,
+                "type": "nominal",
+                "sort": "-y",
+                "axis": {"title": None, "labelAngle": -65, "labelLimit": 150},
+            },
+            "y": {
+                "field": "Cases",
+                "type": "quantitative",
+                "scale": {"zero": True},
+                "axis": signed_axis,
+            },
+            "tooltip": [
+                {"field": label, "type": "nominal", "title": tr(label)},
+                {"field": "Cases", "type": "quantitative", "title": tr("Cases")},
+            ],
+        },
+        "config": {
+            "view": {"stroke": None},
+            "axis": {
+                "domainColor": "#343c46",
+                "gridColor": "#28313b",
+                "labelColor": "#eaf6f6",
+                "titleColor": "#eaf6f6",
+                "tickColor": "#343c46",
+            },
+        },
+    }
+    st.vega_lite_chart(chart_df, spec, use_container_width=True)
+
+
 def fast_analyze_patient(data: dict[str, Any]) -> Any:
     try:
         return analyze_patient(data, use_ml=False)
@@ -1510,11 +1740,20 @@ def page_header(title: str, subtitle: str, badge: str) -> None:
     st.markdown(
         f"""
         <div class="page-head">
-            <div class="clinical-rail"><span></span><span></span><span></span><span></span><span></span><span></span></div>
-            <div class="small-title">{badge}</div>
-            <h1>{title}</h1>
-            <p>{subtitle}</p>
-            <div class="pulse-line"></div>
+            <div class="page-head-inner">
+                <div>
+                    <div class="clinical-rail"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+                    <div class="small-title">{badge}</div>
+                    <h1>{title}</h1>
+                    <p>{subtitle}</p>
+                    <div class="pulse-line"></div>
+                </div>
+                <div class="page-vitals">
+                    <span>Mode <b>Guidance</b></span>
+                    <span>Priority <b>Red flags</b></span>
+                    <span>Output <b>Next step</b></span>
+                </div>
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -1552,21 +1791,34 @@ def render_home() -> None:
     st.markdown(
         f"""
         <div class="hero">
-            <div class="clinical-rail"><span></span><span></span><span></span><span></span><span></span><span></span></div>
-            <div class="small-title">{h("AI health guidance")}</div>
-            <h1>LifeLine AI</h1>
-            <p class="muted">{hero_subtitle}</p>
-            <div class="pulse-line"></div>
-            <div class="hero-stats">
-                <div class="hero-stat"><b>{h("Check")}</b>{h("Symptoms and red flags")}</div>
-                <div class="hero-stat"><b>{h("Track")}</b>{h("Risk and vitals over time")}</div>
-                <div class="hero-stat"><b>{h("Share")}</b>{h("Doctor-ready summaries")}</div>
+            <div class="hero-layout">
+                <div class="hero-copy">
+                    <div class="clinical-rail"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+                    <div class="small-title">{h("AI health guidance")}</div>
+                    <h1>LifeLine AI</h1>
+                    <p class="muted">{hero_subtitle}</p>
+                    <div class="pulse-line"></div>
+                    <div class="hero-stats">
+                        <div class="hero-stat"><b>{h("Check")}</b>{h("Symptoms and red flags")}</div>
+                        <div class="hero-stat"><b>{h("Track")}</b>{h("Risk and vitals over time")}</div>
+                        <div class="hero-stat"><b>{h("Share")}</b>{h("Doctor-ready summaries")}</div>
+                    </div>
+                    <br>
+                    <span class="soft-badge">{h("Prediction")}</span>
+                    <span class="soft-badge">{h("Recommendations")}</span>
+                    <span class="soft-badge">{h("Simple language")}</span>
+                    <span class="soft-badge">{h("Sam bubble assistant")}</span>
+                </div>
+                <div class="monitor-card">
+                    <div class="monitor-top"><span>Triage signal</span><span>Live desk</span></div>
+                    <div class="monitor-wave"></div>
+                    <div class="monitor-readouts">
+                        <div><span>Risk</span><b>0-100</b></div>
+                        <div><span>Care</span><b>4 levels</b></div>
+                        <div><span>Summary</span><b>PDF</b></div>
+                    </div>
+                </div>
             </div>
-            <br>
-            <span class="soft-badge">{h("Prediction")}</span>
-            <span class="soft-badge">{h("Recommendations")}</span>
-            <span class="soft-badge">{h("Simple language")}</span>
-            <span class="soft-badge">{h("Sam bubble assistant")}</span>
         </div>
         """,
         unsafe_allow_html=True,
@@ -1634,7 +1886,6 @@ def patient_form() -> dict[str, Any]:
     typed_symptoms = st.text_area(
         tr("Write any other symptoms"),
         placeholder=tr("Example: ear pain, burning urination, neck stiffness"),
-        help=tr("Use commas if adding more than one symptom."),
         key="patient_custom_symptoms_input",
     )
     symptoms = unique_items(selected_symptoms + split_free_text_items(typed_symptoms))
@@ -1670,7 +1921,6 @@ def patient_form() -> dict[str, Any]:
                 min_value=0,
                 max_value=240,
                 value=80,
-                help=tr("You can count your pulse for 60 seconds, or use a smartwatch/pulse oximeter if available."),
                 key="patient_heart_rate_input",
             )
         know_bp = st.checkbox(tr("I know my blood pressure numbers"), value=False, key="patient_know_bp_input")
@@ -1682,7 +1932,6 @@ def patient_form() -> dict[str, Any]:
                 min_value=0,
                 max_value=260,
                 value=120,
-                help=tr("This is called systolic BP. It is the first/top number, like 120 in 120/80."),
                 key="patient_systolic_input",
             )
             diastolic_bp = st.number_input(
@@ -1690,7 +1939,6 @@ def patient_form() -> dict[str, Any]:
                 min_value=0,
                 max_value=180,
                 value=80,
-                help=tr("This is called diastolic BP. It is the second/bottom number, like 80 in 120/80."),
                 key="patient_diastolic_input",
             )
             st.caption(tr("If your BP machine shows 120/80, enter 120 as top number and 80 as bottom number."))
@@ -1702,7 +1950,6 @@ def patient_form() -> dict[str, Any]:
                 min_value=0,
                 max_value=100,
                 value=98,
-                help=tr("This is SpO2. It usually needs a pulse oximeter finger device. If you do not have one, leave this unchecked."),
                 key="patient_oxygen_input",
             )
             st.caption(tr("Most people at home will only know this if they have a pulse oximeter."))
@@ -1719,7 +1966,6 @@ def patient_form() -> dict[str, Any]:
         tr("Write any other existing conditions"),
         value=", ".join(custom_conditions),
         placeholder=tr("Example: thyroid problem, anemia, migraine"),
-        help=tr("Use commas if adding more than one condition."),
         key="patient_custom_conditions_input",
     )
     conditions = unique_items(selected_conditions + split_free_text_items(typed_conditions))
@@ -2198,7 +2444,7 @@ def render_dashboard() -> None:
             st.rerun()
     cases = list_cases()
     db_error = database_error_message()
-    db_label = "SQLite local fallback" if db_error else database_backend()
+    db_label = "SQLite fallback (Supabase unavailable)" if db_error else database_backend()
     st.caption(f"{tr('Database')}: {db_label}")
     if db_error:
         st.caption(tr("Using local fallback storage. To use Supabase, run supabase_schema.sql in Supabase SQL Editor and reboot."))
@@ -2286,10 +2532,10 @@ def render_dashboard() -> None:
     chart_col1, chart_col2 = st.columns(2)
     with chart_col1:
         st.markdown(f'<div class="section-label">{h("Risk levels")}</div>', unsafe_allow_html=True)
-        st.bar_chart(df["risk_level"].value_counts())
+        render_count_bar_chart(df["risk_level"].value_counts(), "Risk level")
     with chart_col2:
         st.markdown(f'<div class="section-label">{h("Categories")}</div>', unsafe_allow_html=True)
-        st.bar_chart(df["category"].value_counts())
+        render_count_bar_chart(df["category"].value_counts(), "Category")
 
 
 def render_challenge() -> None:
