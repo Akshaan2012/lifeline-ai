@@ -201,6 +201,15 @@ COMMON_TRANSLATION_TEXTS = [
     "Start Health Check",
     "View Timeline",
     "Open Doctor Dashboard",
+    "Correct choice",
+    "Needs review",
+    "Why this care level fits",
+    "Your choice",
+    "Safest care level",
+    "The safest care level is",
+    "because the case details point to this risk level.",
+    "Key reasons",
+    "Recommended next step",
 ]
 
 
@@ -1160,6 +1169,26 @@ def fast_analyze_patient(data: dict[str, Any]) -> Any:
         return analyze_patient(data)
 
 
+def render_challenge_feedback(choice: str, result: Any) -> None:
+    correct = choice == result.risk_level
+    if correct:
+        st.success(tr("Correct choice"))
+    else:
+        st.warning(tr("Needs review"))
+        st.write(f"**{tr('Your choice')}:** {tr(choice)}")
+    st.write(f"**{tr('Safest care level')}:** {tr(result.risk_level)}")
+    st.markdown(f"**{tr('Why this care level fits')}**")
+    st.write(
+        f"{tr('The safest care level is')} {tr(result.risk_level)} "
+        f"{tr('because the case details point to this risk level.')}"
+    )
+    st.markdown(f"**{tr('Key reasons')}**")
+    for signal in translate_items(result.signals, st.session_state.language):
+        st.write(f"- {signal}")
+    st.markdown(f"**{tr('Recommended next step')}**")
+    st.write(tr(result.recommendation))
+
+
 def render_command_bar() -> None:
     ready = h("LifeLine AI workspace is ready")
     move = h("Use Sam or the sidebar to move between tools")
@@ -1975,12 +2004,7 @@ def render_challenge() -> None:
         result = fast_analyze_patient(scenario["data"])
         if choice == result.risk_level:
             st.session_state.score += 10
-            st.success(tr(f"Correct. LifeLine AI also chose: {result.risk_level}"))
-        else:
-            st.warning(tr(f"LifeLine AI chose: {result.risk_level}"))
-        st.write(tr(result.explanation))
-        for signal in translate_items(result.signals, st.session_state.language):
-            st.write(f"- {signal}")
+        render_challenge_feedback(choice, result)
     if st.button(tr("Next Scenario")):
         st.session_state.scenario_index = random.randint(0, len(SCENARIOS) - 1)
         st.rerun()
