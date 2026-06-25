@@ -570,6 +570,33 @@ def inject_css() -> None:
             font-size: 1.08rem;
             margin-bottom: 4px;
         }
+        .st-key-home_actions {
+            margin-top: 6px;
+        }
+        .st-key-home_actions .stButton>button {
+            background:
+                linear-gradient(180deg, rgba(255,255,255,.98), rgba(244,250,248,.98)) !important;
+            border: 1px solid var(--line) !important;
+            border-left: 4px solid var(--mint) !important;
+            color: var(--text) !important;
+            min-height: 3.25rem;
+            border-radius: 8px;
+            box-shadow: var(--shadow-soft);
+            font-weight: 750;
+        }
+        .st-key-home_actions .stButton>button p,
+        .st-key-home_actions .stButton>button span {
+            color: var(--text) !important;
+        }
+        .st-key-home_actions .stButton>button:hover {
+            background:
+                linear-gradient(180deg, #ffffff, #eef8f4) !important;
+            border-color: rgba(10, 168, 148, .42) !important;
+            border-left-color: var(--copper) !important;
+            color: var(--text) !important;
+            transform: translateY(-2px);
+            box-shadow: 0 16px 32px rgba(20, 55, 58, .13);
+        }
         .hero:after, .page-head:after {
             content: "";
             position: absolute;
@@ -1196,13 +1223,14 @@ def render_home() -> None:
     with c3:
         st.markdown(f'<div class="metric-card"><span class="token">03</span><b>{h("Sam Assistant")}</b><span class="muted">{h("Click the bottom-right bubble to ask for help.")}</span></div>', unsafe_allow_html=True)
     st.write("")
-    action1, action2, action3 = st.columns(3)
-    if action1.button(tr("Start Health Check"), type="primary", width="stretch"):
-        switch_page("Patient Health Checker")
-    if action2.button(tr("View Timeline"), width="stretch"):
-        switch_page("Health Timeline")
-    if action3.button(tr("Open Doctor Dashboard"), width="stretch"):
-        switch_page("Doctor Dashboard")
+    with st.container(key="home_actions"):
+        action1, action2, action3 = st.columns(3)
+        if action1.button(tr("Start Health Check"), width="stretch"):
+            switch_page("Patient Health Checker")
+        if action2.button(tr("View Timeline"), width="stretch"):
+            switch_page("Health Timeline")
+        if action3.button(tr("Open Doctor Dashboard"), width="stretch"):
+            switch_page("Doctor Dashboard")
 
 
 def patient_form() -> dict[str, Any]:
