@@ -9,7 +9,7 @@ import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 
-from backend.database import clear_cases, database_backend, list_cases, save_case, update_case_review
+from backend.database import clear_cases, database_backend, database_error_message, list_cases, save_case, update_case_review
 from backend.disease_qa import answer_question
 from backend.doctor_summary import build_doctor_summary
 from backend.followup import evaluate_follow_up
@@ -260,6 +260,7 @@ COMMON_TRANSLATION_TEXTS = [
     "No urgent queue pressure right now.",
     "Review emergency and urgent cases first.",
     "Review new cases before resolved cases.",
+    "Supabase is configured but could not be reached or is missing the patient_cases table. The app is using local fallback storage for now. Run supabase_schema.sql in Supabase SQL Editor, then reboot the app.",
 ]
 
 
@@ -2197,6 +2198,14 @@ def render_dashboard() -> None:
             st.success(tr("Saved patient cases were removed."))
             st.rerun()
     cases = list_cases()
+    db_error = database_error_message()
+    if db_error:
+        st.warning(
+            tr(
+                "Supabase is configured but could not be reached or is missing the patient_cases table. "
+                "The app is using local fallback storage for now. Run supabase_schema.sql in Supabase SQL Editor, then reboot the app."
+            )
+        )
     if not cases:
         st.info(tr("No saved patient cases yet. Use the Health Checker and save a case."))
         return

@@ -9,6 +9,16 @@ from typing import Any
 
 
 DB_PATH = Path("data/lifeline_cases.db")
+LAST_DATABASE_ERROR = ""
+
+
+def _set_database_error(message: str) -> None:
+    global LAST_DATABASE_ERROR
+    LAST_DATABASE_ERROR = message
+
+
+def database_error_message() -> str:
+    return LAST_DATABASE_ERROR
 
 
 def _setting(name: str) -> str:
@@ -113,14 +123,20 @@ def save_case(patient_data: dict[str, Any], triage_result: Any) -> None:
     if supabase:
         try:
             supabase.table("patient_cases").insert(row).execute()
+            _set_database_error("")
+            return
         except Exception:
             legacy_row = {
                 key: value
                 for key, value in row.items()
                 if key not in {"review_status", "doctor_notes"}
             }
-            supabase.table("patient_cases").insert(legacy_row).execute()
-        return
+            try:
+                supabase.table("patient_cases").insert(legacy_row).execute()
+                _set_database_error("")
+                return
+            except Exception as exc:
+                _set_database_error(str(exc))
 
     init_db()
     with sqlite3.connect(DB_PATH) as conn:
@@ -151,14 +167,18 @@ def save_case(patient_data: dict[str, Any], triage_result: Any) -> None:
 def list_cases() -> list[dict[str, Any]]:
     supabase = _supabase_client()
     if supabase:
-        response = (
-            supabase.table("patient_cases")
-            .select("*")
-            .order("score", desc=True)
-            .order("created_at", desc=True)
-            .execute()
-        )
-        return list(response.data or [])
+        try:
+            response = (
+                supabase.table("patient_cases")
+                .select("*")
+                .order("score", desc=True)
+                .order("created_at", desc=True)
+                .execute()
+            )
+            _set_database_error("")
+            return list(response.data or [])
+        except Exception as exc:
+            _set_database_error(str(exc))
 
     init_db()
     with sqlite3.connect(DB_PATH) as conn:
@@ -172,8 +192,12 @@ def list_cases() -> list[dict[str, Any]]:
 def clear_cases() -> None:
     supabase = _supabase_client()
     if supabase:
-        supabase.table("patient_cases").delete().neq("id", 0).execute()
-        return
+        try:
+            supabase.table("patient_cases").delete().neq("id", 0).execute()
+            _set_database_error("")
+            return
+        except Exception as exc:
+            _set_database_error(str(exc))
 
     init_db()
     with sqlite3.connect(DB_PATH) as conn:
