@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
+import os
 from typing import Any
 
 
@@ -88,6 +89,23 @@ HINDI_FALLBACKS = {
 }
 
 
+def _truthy(value: str) -> bool:
+    return str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _offline_mode() -> bool:
+    if _truthy(os.getenv("LIFELINE_OFFLINE_MODE", "")):
+        return True
+    try:
+        import streamlit as st
+
+        return bool(st.session_state.get("offline_mode")) or _truthy(
+            str(st.secrets.get("LIFELINE_OFFLINE_MODE", ""))
+        )
+    except Exception:
+        return False
+
+
 def language_name(selected: str) -> str:
     return selected.split(" ", 1)[1] if " " in selected else selected
 
@@ -100,6 +118,8 @@ def translate_text(text: str, selected_language: str) -> str:
         return text
     if target == "hi" and text in HINDI_FALLBACKS:
         return HINDI_FALLBACKS[text]
+    if _offline_mode():
+        return HINDI_FALLBACKS.get(text, text) if target == "hi" else text
     try:
         from deep_translator import GoogleTranslator
 

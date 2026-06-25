@@ -662,6 +662,7 @@ def init_state() -> None:
     st.session_state.setdefault("language_picker", st.session_state.language)
     if st.session_state.language_picker not in LANGUAGE_OPTIONS:
         st.session_state.language_picker = st.session_state.language
+    st.session_state.setdefault("offline_mode", False)
 
 
 def sidebar() -> None:
@@ -675,6 +676,16 @@ def sidebar() -> None:
     language_changed = selected_language != st.session_state.language
     if language_changed:
         st.session_state.language = selected_language
+    offline_mode = st.sidebar.checkbox(
+        "Offline mode",
+        value=bool(st.session_state.offline_mode),
+        help="Use local rules and SQLite only. This disables OpenAI, Supabase, Google Translate, and online videos.",
+    )
+    if offline_mode != st.session_state.offline_mode:
+        st.session_state.offline_mode = offline_mode
+        st.rerun()
+    if st.session_state.offline_mode:
+        st.sidebar.caption("Offline mode: local rules only.")
     st.sidebar.caption(tr("Smart inside. Simple outside."))
     selected_page = st.sidebar.radio(
         tr("Navigation"),
@@ -1452,8 +1463,11 @@ def render_safety_videos() -> None:
     video_col, guide_col = st.columns([1.2, .8], gap="large")
     with video_col:
         st.markdown(f'<div class="section-label">{h("Featured video")}</div>', unsafe_allow_html=True)
-        components.iframe("https://www.youtube.com/embed/-dmJSLNgjxo", height=420, scrolling=False)
-        st.caption(tr("CDC video: Introduction to Public Health. It explains disease prevention, tracking, public-health programs, and how safety measures protect people."))
+        if st.session_state.offline_mode:
+            st.info(tr("Offline mode is on, so online videos are hidden. Use the safety checklist on this page."))
+        else:
+            components.iframe("https://www.youtube.com/embed/-dmJSLNgjxo", height=420, scrolling=False)
+            st.caption(tr("CDC video: Introduction to Public Health. It explains disease prevention, tracking, public-health programs, and how safety measures protect people."))
     with guide_col:
         st.markdown(f'<div class="section-label">{h("Core safety rules")}</div>', unsafe_allow_html=True)
         safety_sections = [

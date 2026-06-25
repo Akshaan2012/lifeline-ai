@@ -12,6 +12,7 @@ LifeLine AI is a patient-friendly health decision-support app built with Streaml
 - Scenario Challenge for practice
 - Sam assistant bubble for navigation help
 - Multi-language dropdown support
+- Offline mode for local rules, local SQLite storage, and no cloud calls
 
 ## Safety
 
@@ -62,3 +63,13 @@ In Supabase:
 3. Paste and run the SQL from `supabase_schema.sql`.
 
 If Supabase secrets are missing, the app uses a local SQLite fallback for testing.
+
+## Offline Mode
+
+Turn on **Offline mode** in the sidebar, or set:
+
+```toml
+LIFELINE_OFFLINE_MODE = "true"
+```
+
+Offline mode disables OpenAI, Supabase, Google Translate, and YouTube embeds. The app still runs with local triage rules, local Q&A fallbacks, PDF generation, and SQLite storage.

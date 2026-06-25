@@ -23,7 +23,26 @@ def _setting(name: str) -> str:
         return ""
 
 
+def _truthy(value: str) -> bool:
+    return str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _offline_mode() -> bool:
+    if _truthy(os.getenv("LIFELINE_OFFLINE_MODE", "")):
+        return True
+    try:
+        import streamlit as st
+
+        return bool(st.session_state.get("offline_mode")) or _truthy(
+            str(st.secrets.get("LIFELINE_OFFLINE_MODE", ""))
+        )
+    except Exception:
+        return False
+
+
 def _supabase_client() -> Any | None:
+    if _offline_mode():
+        return None
     url = _setting("SUPABASE_URL")
     key = _setting("SUPABASE_ANON_KEY")
     if not url or not key:
@@ -37,6 +56,8 @@ def _supabase_client() -> Any | None:
 
 
 def database_backend() -> str:
+    if _offline_mode():
+        return "SQLite offline mode"
     return "Supabase" if _supabase_client() else "SQLite local fallback"
 
 

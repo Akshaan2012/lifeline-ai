@@ -139,7 +139,26 @@ def _setting(name: str, default: str = "") -> str:
         return default
 
 
+def _truthy(value: str) -> bool:
+    return str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _offline_mode() -> bool:
+    if _truthy(os.getenv("LIFELINE_OFFLINE_MODE", "")):
+        return True
+    try:
+        import streamlit as st
+
+        return bool(st.session_state.get("offline_mode")) or _truthy(
+            str(st.secrets.get("LIFELINE_OFFLINE_MODE", ""))
+        )
+    except Exception:
+        return False
+
+
 def _ai_reply(message: str) -> str | None:
+    if _offline_mode():
+        return None
     api_key = _setting("OPENAI_API_KEY")
     if not api_key:
         return None
