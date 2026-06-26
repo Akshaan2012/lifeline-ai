@@ -20,9 +20,12 @@ Or download manually:
 ## Windows
 
 1. Install Python 3.10 or newer from https://www.python.org/downloads/.
-2. Download the repo ZIP from GitHub and unzip it.
-3. Double-click `run_lifeline_ai_windows.bat`.
-4. Wait for dependencies to install. The app opens at `http://localhost:8501`.
+2. Download the repo ZIP from GitHub.
+3. Right-click the ZIP and choose **Extract All...**.
+4. Open the extracted `lifeline-ai-main` folder.
+5. Double-click `run_lifeline_ai_windows.bat`.
+6. Do not run the `.bat` file directly from inside the ZIP window. Windows will extract only that one file and the app will not find `requirements.txt`.
+7. Wait for dependencies to install. The app opens at `http://localhost:8501`.
 
 ## macOS / Linux
 

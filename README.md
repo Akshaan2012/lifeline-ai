@@ -59,11 +59,13 @@ After downloading and unzipping the repo:
 
 ### Windows
 
-Double-click:
+Right-click the downloaded ZIP, choose **Extract All...**, open the extracted `lifeline-ai-main` folder, then double-click:
 
 ```text
 run_lifeline_ai_windows.bat
 ```
+
+Do not run the `.bat` file directly from inside the ZIP preview window. Windows will extract only the launcher, so the app will not find `requirements.txt`.
 
 ### macOS
 
