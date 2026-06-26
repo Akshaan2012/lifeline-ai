@@ -69,7 +69,7 @@ Do not run the `.bat` file directly from inside the ZIP preview window. Windows 
 
 ### macOS
 
-Open Terminal in the unzipped folder, then run:
+Unzip the download first, open Terminal in the extracted `lifeline-ai-main` folder, then run:
 
 ```bash
 chmod +x run_lifeline_ai_mac_linux.sh
@@ -78,11 +78,17 @@ chmod +x run_lifeline_ai_mac_linux.sh
 
 ### Linux
 
-Open Terminal in the unzipped folder, then run:
+Unzip the download first, open Terminal in the extracted `lifeline-ai-main` folder, then run:
 
 ```bash
 chmod +x run_lifeline_ai_mac_linux.sh
 ./run_lifeline_ai_mac_linux.sh
+```
+
+On Ubuntu/Debian, install venv support first if the launcher says it cannot create a virtual environment:
+
+```bash
+sudo apt install python3-venv
 ```
 
 ## Tech Stack

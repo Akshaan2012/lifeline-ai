@@ -30,16 +30,23 @@ Or download manually:
 ## macOS / Linux
 
 1. Install Python 3.10 or newer.
-2. Download the repo ZIP from GitHub and unzip it.
-3. Open Terminal in the repository folder.
-4. Run:
+2. Download the repo ZIP from GitHub.
+3. Unzip the downloaded folder.
+4. Open Terminal in the extracted `lifeline-ai-main` folder.
+5. On Ubuntu/Debian Linux, install venv support if needed:
+
+```bash
+sudo apt install python3-venv
+```
+
+6. Run:
 
 ```bash
 chmod +x run_lifeline_ai_mac_linux.sh
 ./run_lifeline_ai_mac_linux.sh
 ```
 
-5. Wait for dependencies to install. The app opens at `http://localhost:8501`.
+7. Wait for dependencies to install. The app opens at `http://localhost:8501`.
 
 ## Git Clone Option
 
