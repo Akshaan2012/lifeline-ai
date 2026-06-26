@@ -2,7 +2,6 @@
 
 import random
 import json
-import threading
 from html import escape
 from typing import Any
 
@@ -17,7 +16,7 @@ from backend.medication_safety import analyze_medication_safety
 from backend.recommender import build_recommendations
 from backend.report import generate_health_report_pdf
 from backend.sam import answer_message
-from backend.translator import preload_translations, translate_answer, translate_items_cached, translate_text, translate_text_cached
+from backend.translator import preload_translations, translate_answer, translate_items, translate_text
 from backend.triage_engine import RISK_ORDER, analyze_patient
 
 
@@ -264,25 +263,19 @@ COMMON_TRANSLATION_TEXTS = [
 ]
 
 
-TRANSLATION_WARMUPS: set[str] = set()
-
-
 def tr(text: str) -> str:
-    return translate_text_cached(text, st.session_state.language)
+    return translate_text(text, st.session_state.language)
 
 
-def warm_language_cache(selected_language: str) -> None:
+def prepare_language(selected_language: str) -> None:
     if selected_language == "🇺🇸 English" or st.session_state.get("offline_mode"):
         return
-    if selected_language in TRANSLATION_WARMUPS:
+    prepared_languages = st.session_state.setdefault("prepared_languages", [])
+    if selected_language in prepared_languages:
         return
-    TRANSLATION_WARMUPS.add(selected_language)
-    worker = threading.Thread(
-        target=preload_translations,
-        args=(COMMON_TRANSLATION_TEXTS, selected_language),
-        daemon=True,
-    )
-    worker.start()
+    with st.spinner("Translating interface..."):
+        preload_translations(COMMON_TRANSLATION_TEXTS, selected_language)
+    prepared_languages.append(selected_language)
 
 
 def h(text: str) -> str:
@@ -1319,6 +1312,7 @@ def init_state() -> None:
         st.session_state.language_picker = st.session_state.language
     st.session_state.setdefault("offline_mode", False)
     st.session_state.setdefault("preloaded_languages", [])
+    st.session_state.setdefault("prepared_languages", [])
 
 
 def sidebar() -> None:
@@ -1344,7 +1338,7 @@ def sidebar() -> None:
     language_changed = selected_language != st.session_state.language
     if language_changed:
         st.session_state.language = selected_language
-    warm_language_cache(st.session_state.language)
+        prepare_language(st.session_state.language)
     offline_mode = st.sidebar.checkbox(
         "Offline mode",
         value=bool(st.session_state.offline_mode),
@@ -1687,23 +1681,23 @@ def render_challenge_feedback(choice: str, result: Any, scenario_data: dict[str,
         st.write(f"**{tr('Your choice')}:** {tr(choice)}")
     st.write(f"**{tr('Safest care level')}:** {tr(result.risk_level)}")
     st.markdown(f"**{tr('How the answer was decided')}**")
-    st.write(f"**{tr('Selected symptoms')}:** {', '.join(translate_items_cached(list(scenario_data.get('symptoms', [])), st.session_state.language))}")
+    st.write(f"**{tr('Selected symptoms')}:** {', '.join(translate_items(list(scenario_data.get('symptoms', [])), st.session_state.language))}")
     st.write(f"**{tr('Risk score')}:** {result.score}/100")
     st.write(f"**{tr('Risk score range')}:** {risk_score_range(result.risk_level)}")
     st.write(f"**{tr('Likely pattern')}:** {tr(result.possible_category)}")
     measurements = challenge_measurement_summary(scenario_data)
     if measurements:
-        st.write(f"**{tr('Important measurements')}:** {', '.join(translate_items_cached(measurements, st.session_state.language))}")
+        st.write(f"**{tr('Important measurements')}:** {', '.join(translate_items(measurements, st.session_state.language))}")
     else:
         st.write(f"**{tr('Important measurements')}:** {tr('No important measurements were provided.')}")
     conditions = list(scenario_data.get("conditions", []))
     if conditions:
-        st.write(f"**{tr('Existing conditions')}:** {', '.join(translate_items_cached(conditions, st.session_state.language))}")
+        st.write(f"**{tr('Existing conditions')}:** {', '.join(translate_items(conditions, st.session_state.language))}")
     else:
         st.write(f"**{tr('Existing conditions')}:** {tr('No existing conditions were provided.')}")
     st.write(f"{tr('This score falls in the range for')} {tr(result.risk_level)}. {tr('That is why the safest answer is')} {tr(result.risk_level)}.")
     st.markdown(f"**{tr('Key reasons')}**")
-    for signal in translate_items_cached(result.signals, st.session_state.language):
+    for signal in translate_items(result.signals, st.session_state.language):
         st.write(f"- {signal}")
     st.markdown(f"**{tr('Recommended next step')}**")
     st.write(tr(result.recommendation))
@@ -1765,6 +1759,45 @@ def render_sam() -> None:
 
 
 def render_home() -> None:
+    hero_subtitle = h(
+        "A simple health risk and doctor-visit advisor. It helps users check symptoms, learn about diseases, get precautions, and understand when medical help is needed."
+    )
+    st.markdown(
+        f"""
+        <div class="hero">
+            <div class="hero-layout">
+                <div class="hero-copy">
+                    <div class="clinical-rail"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+                    <div class="small-title">{h("AI health guidance")}</div>
+                    <h1>LifeLine AI</h1>
+                    <p class="muted">{hero_subtitle}</p>
+                    <div class="pulse-line"></div>
+                    <div class="hero-stats">
+                        <div class="hero-stat"><b>{h("Check")}</b>{h("Symptoms and red flags")}</div>
+                        <div class="hero-stat"><b>{h("Track")}</b>{h("Risk and vitals over time")}</div>
+                        <div class="hero-stat"><b>{h("Share")}</b>{h("Doctor-ready summaries")}</div>
+                    </div>
+                    <br>
+                    <span class="soft-badge">{h("Prediction")}</span>
+                    <span class="soft-badge">{h("Recommendations")}</span>
+                    <span class="soft-badge">{h("Simple language")}</span>
+                    <span class="soft-badge">{h("Sam bubble assistant")}</span>
+                </div>
+                <div class="monitor-card">
+                    <div class="monitor-top"><span>Triage signal</span><span>Live desk</span></div>
+                    <div class="monitor-wave"></div>
+                    <div class="monitor-readouts">
+                        <div><span>Risk</span><b>0-100</b></div>
+                        <div><span>Care</span><b>4 levels</b></div>
+                        <div><span>Summary</span><b>PDF</b></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.write("")
     st.markdown(f'<div class="section-label">{h("Home command center")}</div>', unsafe_allow_html=True)
     render_home_command_center()
     st.caption(tr("Start with a symptom check, review saved cases, or practice care-level decisions."))
@@ -1980,29 +2013,29 @@ def render_result_panel(result: Any, advice: dict[str, Any], patient_data: dict[
     col1, col2 = st.columns(2)
     with col1:
         st.markdown(f"**{tr('Why the app thinks this')}**")
-        for signal in translate_items_cached(result.signals, st.session_state.language):
+        for signal in translate_items(result.signals, st.session_state.language):
             st.write(f"- {signal}")
         st.markdown(f"**{tr('What to do now')}**")
-        for step in translate_items_cached(advice["care_steps"], st.session_state.language):
+        for step in translate_items(advice["care_steps"], st.session_state.language):
             st.write(f"- {step}")
         st.markdown(f"**{tr('Home care support')}**")
-        for step in translate_items_cached(advice["home_care"], st.session_state.language):
+        for step in translate_items(advice["home_care"], st.session_state.language):
             st.write(f"- {step}")
     with col2:
         st.markdown(f"**{tr('Precautions')}**")
-        for item in translate_items_cached(advice["precautions"], st.session_state.language):
+        for item in translate_items(advice["precautions"], st.session_state.language):
             st.write(f"- {item}")
         st.markdown(f"**{tr('What to avoid')}**")
-        for item in translate_items_cached(advice["avoid"], st.session_state.language):
+        for item in translate_items(advice["avoid"], st.session_state.language):
             st.write(f"- {item}")
         st.markdown(f"**{tr('Prevention tips')}**")
-        for item in translate_items_cached(advice["prevention"], st.session_state.language):
+        for item in translate_items(advice["prevention"], st.session_state.language):
             st.write(f"- {item}")
         st.markdown(f"**{tr('Red Flags')}**")
-        for item in translate_items_cached(advice["red_flags"], st.session_state.language):
+        for item in translate_items(advice["red_flags"], st.session_state.language):
             st.write(f"- {item}")
     st.markdown(f"**{tr('Questions to ask a doctor')}**")
-    for item in translate_items_cached(advice["doctor_questions"], st.session_state.language):
+    for item in translate_items(advice["doctor_questions"], st.session_state.language):
         st.write(f"- {item}")
     st.warning(tr(advice["disclaimer"]))
 
@@ -2040,7 +2073,7 @@ def render_followup_and_summary(patient_data: dict[str, Any], result: Any, advic
         if followup:
             st.info(tr(followup["level"]))
             st.write(tr(followup["message"]))
-            for step in translate_items_cached(followup["next_steps"], st.session_state.language):
+            for step in translate_items(followup["next_steps"], st.session_state.language):
                 st.write(f"- {step}")
             st.caption(tr(followup["safety_note"]))
     with summary_col:
@@ -2064,7 +2097,6 @@ def render_followup_and_summary(patient_data: dict[str, Any], result: Any, advic
 
 
 def render_checker() -> None:
-    render_command_bar()
     page_header(
         "Patient Health Checker",
         "Enter symptoms and the details you know. Heart rate, blood pressure, and oxygen are optional for home users.",
@@ -2141,7 +2173,6 @@ def render_checker() -> None:
 
 
 def render_timeline() -> None:
-    render_command_bar()
     page_header(
         "Health Timeline",
         "See how a patient's symptoms, risk level, and recommendations changed across saved checks.",
@@ -2255,7 +2286,6 @@ def render_timeline() -> None:
 
 
 def render_qa() -> None:
-    render_command_bar()
     page_header(
         "Health & Medicine Q&A",
         "Ask about a disease, symptom, or medicine in simple words. Answers stay patient-friendly and include precautions, safe-use tips, and warning signs.",
@@ -2322,7 +2352,6 @@ def render_qa() -> None:
 
 
 def render_medication_safety() -> None:
-    render_command_bar()
     page_header(
         "Medication Safety Checker",
         "Enter a medicine and basic safety details. The app gives simple warnings, what to avoid, and questions to ask a pharmacist or doctor.",
@@ -2368,7 +2397,7 @@ def render_medication_safety() -> None:
                 ]
                 for title, items in sections:
                     st.markdown(f"**{tr(title)}**")
-                    for item in translate_items_cached(items, st.session_state.language):
+                    for item in translate_items(items, st.session_state.language):
                         st.write(f"- {item}")
                 st.warning(tr("This tool does not prescribe medicine or dosage. Ask a doctor or pharmacist before changing medicines."))
         else:
@@ -2384,7 +2413,6 @@ def render_medication_safety() -> None:
 
 
 def render_dashboard() -> None:
-    render_command_bar()
     page_header(
         "Doctor / Hospital Dashboard",
         "Review saved patient cases, sorted by urgency so serious cases are easier to notice first.",
@@ -2496,7 +2524,6 @@ def render_dashboard() -> None:
 
 
 def render_challenge() -> None:
-    render_command_bar()
     page_header(
         "Scenario Challenge",
         "Practice choosing the safest care level for fictional patient cases and compare your choice with LifeLine AI.",
@@ -2526,7 +2553,6 @@ def render_challenge() -> None:
 
 
 def render_safety_videos() -> None:
-    render_command_bar()
     page_header(
         "Safety Videos",
         "Quick patient-friendly learning about prevention, precautions, medicine safety, and disease safety.",
@@ -2550,7 +2576,7 @@ def render_safety_videos() -> None:
         ]
         for title, items in safety_sections:
             st.markdown(f"**{tr(title)}**")
-            for item in translate_items_cached(items, st.session_state.language):
+            for item in translate_items(items, st.session_state.language):
                 st.write(f"- {item}")
         st.warning(tr("Videos and tips are for education only. They do not replace medical care."))
 
