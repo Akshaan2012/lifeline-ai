@@ -1374,7 +1374,6 @@ def sidebar() -> None:
 def switch_page(page: str) -> None:
     if page in PAGES:
         st.session_state.page = page
-        st.session_state.page_picker = page
         st.session_state.pending_page = page
         st.rerun()
 
