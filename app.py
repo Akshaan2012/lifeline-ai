@@ -365,6 +365,13 @@ def parse_case_raw_data(raw_data: Any) -> dict[str, Any]:
     return {}
 
 
+def safe_number(value: Any) -> float | None:
+    number = pd.to_numeric(value, errors="coerce")
+    if pd.isna(number):
+        return None
+    return float(number)
+
+
 def split_known_conditions(conditions: list[str]) -> tuple[list[str], list[str]]:
     known = [item for item in conditions if item in CONDITION_OPTIONS]
     custom = [item for item in conditions if item not in CONDITION_OPTIONS]
@@ -1446,18 +1453,20 @@ def build_timeline_trend_frame(cases: list[dict[str, Any]]) -> pd.DataFrame:
             {
                 "Check": index,
                 "Created": pd.to_datetime(case.get("created_at"), errors="coerce"),
-                "Risk score": int(case.get("score") or 0),
-                "Pain level": pd.to_numeric(raw.get("pain_level"), errors="coerce"),
-                "Temperature": pd.to_numeric(raw.get("temperature"), errors="coerce"),
-                "Oxygen": pd.to_numeric(raw.get("oxygen"), errors="coerce"),
-                "Pulse": pd.to_numeric(raw.get("heart_rate"), errors="coerce"),
-                "Systolic BP": pd.to_numeric(raw.get("systolic_bp"), errors="coerce"),
-                "Diastolic BP": pd.to_numeric(raw.get("diastolic_bp"), errors="coerce"),
+                "Risk score": safe_number(case.get("score")) or 0,
+                "Pain level": safe_number(raw.get("pain_level")),
+                "Temperature": safe_number(raw.get("temperature")),
+                "Oxygen": safe_number(raw.get("oxygen")),
+                "Pulse": safe_number(raw.get("heart_rate")),
+                "Systolic BP": safe_number(raw.get("systolic_bp")),
+                "Diastolic BP": safe_number(raw.get("diastolic_bp")),
             }
         )
     frame = pd.DataFrame(rows)
     if frame.empty:
         return frame
+    chart_columns = ["Risk score", "Pain level", "Temperature", "Oxygen", "Pulse", "Systolic BP", "Diastolic BP"]
+    frame[chart_columns] = frame[chart_columns].apply(pd.to_numeric, errors="coerce")
     return frame.set_index("Check")
 
 
@@ -2308,11 +2317,15 @@ def render_timeline() -> None:
         trend_col1, trend_col2 = st.columns(2)
         with trend_col1:
             st.markdown(f"**{tr('Risk and pain over time')}**")
-            st.line_chart(trend_df[["Risk score", "Pain level"]], y_min=0)
-        vitals = trend_df[["Temperature", "Oxygen", "Pulse", "Systolic BP", "Diastolic BP"]].dropna(how="all")
+            risk_pain = trend_df[["Risk score", "Pain level"]].dropna(axis=1, how="all")
+            if not risk_pain.empty and risk_pain.shape[1]:
+                st.line_chart(risk_pain, y_min=0)
+            else:
+                st.info(tr("No risk or pain values were saved for trend charts yet."))
+        vitals = trend_df[["Temperature", "Oxygen", "Pulse", "Systolic BP", "Diastolic BP"]].dropna(axis=1, how="all")
         with trend_col2:
             st.markdown(f"**{tr('Measurements over time')}**")
-            if not vitals.empty:
+            if not vitals.empty and vitals.shape[1]:
                 st.line_chart(vitals, y_min=0)
             else:
                 st.info(tr("No optional measurements were saved for trend charts yet."))
