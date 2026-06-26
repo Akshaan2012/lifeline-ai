@@ -152,7 +152,7 @@ COMMON_TRANSLATION_TEXTS = [
     "Use Sam or the sidebar to move between tools",
     "Smart inside. Simple outside.",
     "Navigation",
-    "Decision-support prototype. Not a replacement for doctors.",
+    "Decision support. Not a replacement for doctors.",
     "AI health guidance",
     "A simple health risk and doctor-visit advisor. It helps users check symptoms, learn about diseases, get precautions, and understand when medical help is needed.",
     "Prediction",
@@ -1581,7 +1581,7 @@ def sidebar() -> None:
     if page_changed:
         st.session_state.page = selected_page
     st.sidebar.divider()
-    st.sidebar.caption(tr("Decision-support prototype. Not a replacement for doctors."))
+    st.sidebar.caption(tr("Decision support. Not a replacement for doctors."))
 
 
 def switch_page(page: str) -> None:
