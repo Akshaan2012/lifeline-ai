@@ -14,5 +14,6 @@ if not exist ".venv\Scripts\python.exe" (
 
 ".venv\Scripts\python.exe" -m pip install --upgrade pip
 ".venv\Scripts\python.exe" -m pip install -r requirements.txt
+echo Opening LifeLine AI at http://localhost:8501
 ".venv\Scripts\python.exe" -m streamlit run app.py
 pause

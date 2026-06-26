@@ -38,9 +38,11 @@ http://127.0.0.1:8501
 
 ## Download From GitHub
 
-Anyone can download the app from the GitHub repository:
+Anyone can download the app from your GitHub repository:
 
-1. Open the LifeLine AI GitHub repo.
+[Download LifeLine AI ZIP](https://github.com/Akshaan2012/lifeline-ai/archive/refs/heads/main.zip)
+
+1. Open the LifeLine AI GitHub repo: `https://github.com/Akshaan2012/lifeline-ai`
 2. Click the green **Code** button.
 3. Click **Download ZIP**.
 4. Unzip the folder on your computer.
@@ -50,6 +52,36 @@ Anyone can download the app from the GitHub repository:
 - `run_lifeline_ai_mac_linux.sh` for macOS and Linux
 
 Python 3.10 or newer is required. See `INSTALL.md` for step-by-step setup notes.
+
+## One-Click Local Launchers
+
+After downloading and unzipping the repo:
+
+### Windows
+
+Double-click:
+
+```text
+run_lifeline_ai_windows.bat
+```
+
+### macOS
+
+Open Terminal in the unzipped folder, then run:
+
+```bash
+chmod +x run_lifeline_ai_mac_linux.sh
+./run_lifeline_ai_mac_linux.sh
+```
+
+### Linux
+
+Open Terminal in the unzipped folder, then run:
+
+```bash
+chmod +x run_lifeline_ai_mac_linux.sh
+./run_lifeline_ai_mac_linux.sh
+```
 
 ## Tech Stack
 
