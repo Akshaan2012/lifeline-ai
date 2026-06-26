@@ -2746,6 +2746,9 @@ def render_qa() -> None:
     main, helper = st.columns([1.7, .8], gap="large")
     with main:
         st.markdown(f'<div class="section-label">{h("Ask a health question")}</div>', unsafe_allow_html=True)
+        pending_question = st.session_state.pop("pending_qa_question", None)
+        if pending_question:
+            st.session_state.qa_question = pending_question
         st.session_state.setdefault("qa_question", "")
         question = st.text_input(
             tr("Ask in simple words"),
@@ -2761,7 +2764,7 @@ def render_qa() -> None:
         ]
         for idx, example in enumerate(example_questions):
             if examples[idx].button(tr(example), key=f"qa_example_{idx}"):
-                st.session_state.qa_question = example
+                st.session_state.pending_qa_question = example
                 st.rerun()
         if question:
             answer = translate_answer(answer_question(question), st.session_state.language)
