@@ -2204,7 +2204,7 @@ def render_checker() -> None:
                 st.error(tr("Please choose at least one symptom."))
             else:
                 result = analyze_patient(data, use_ml=False)
-                advice = build_recommendations(result)
+                advice = build_recommendations(result, enhance=False)
                 st.session_state.checker_result = {
                     "result": result,
                     "advice": advice,

@@ -130,7 +130,7 @@ def _risk_summary(risk_level: str) -> str:
     return summaries[risk_level]
 
 
-def build_recommendations(triage_result: Any) -> dict[str, Any]:
+def build_recommendations(triage_result: Any, enhance: bool = True) -> dict[str, Any]:
     base = BASE_ADVICE[triage_result.risk_level]
     category = CATEGORY_GUIDANCE.get(triage_result.possible_category, CATEGORY_GUIDANCE["General Health"])
 
@@ -149,6 +149,8 @@ def build_recommendations(triage_result: Any) -> dict[str, Any]:
         "simple_explanation": triage_result.explanation,
         "disclaimer": "This is general guidance only. It does not replace a doctor, diagnosis, prescription, or emergency service.",
     }
+    if not enhance:
+        return advice
     return _ai_enhanced_recommendations(triage_result, advice)
 
 
