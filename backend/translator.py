@@ -254,8 +254,26 @@ def translate_text(text: str, selected_language: str) -> str:
         return text
 
 
+def translate_text_cached(text: str, selected_language: str) -> str:
+    target = _target_code(selected_language)
+    if target == "en" or not text.strip() or _should_skip_translation(text, target):
+        return text
+    memory = _memory().get(selected_language, {})
+    if text in memory:
+        return memory[text]
+    if target == "hi" and text in HINDI_FALLBACKS:
+        return HINDI_FALLBACKS[text]
+    if _offline_mode():
+        return HINDI_FALLBACKS.get(text, text) if target == "hi" else text
+    return text
+
+
 def translate_items(items: list[str], selected_language: str) -> list[str]:
     return list(_translate_batch_cached(tuple(items), selected_language))
+
+
+def translate_items_cached(items: list[str], selected_language: str) -> list[str]:
+    return [translate_text_cached(item, selected_language) for item in items]
 
 
 def preload_translations(items: list[str], selected_language: str) -> None:
