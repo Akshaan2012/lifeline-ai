@@ -1581,8 +1581,6 @@ def sidebar() -> None:
     if page_changed:
         st.session_state.page = selected_page
     st.sidebar.divider()
-    st.sidebar.markdown(f'<span class="soft-badge">{h("V1 prototype")}</span>', unsafe_allow_html=True)
-    st.sidebar.write("")
     st.sidebar.caption(tr("Decision-support prototype. Not a replacement for doctors."))
 
 
