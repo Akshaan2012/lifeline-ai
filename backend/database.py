@@ -10,6 +10,9 @@ from typing import Any
 
 DB_PATH = Path("data/lifeline_cases.db")
 LAST_DATABASE_ERROR = ""
+_SUPABASE_CLIENT: Any | None = None
+_SUPABASE_CLIENT_READY = False
+_DOTENV_LOADED = False
 
 
 def _set_database_error(message: str) -> None:
@@ -21,7 +24,30 @@ def database_error_message() -> str:
     return LAST_DATABASE_ERROR
 
 
+def _load_dotenv() -> None:
+    global _DOTENV_LOADED
+    if _DOTENV_LOADED:
+        return
+    _DOTENV_LOADED = True
+    env_path = Path(".env")
+    if not env_path.exists():
+        return
+    try:
+        for line in env_path.read_text(encoding="utf-8").splitlines():
+            clean = line.strip()
+            if not clean or clean.startswith("#") or "=" not in clean:
+                continue
+            key, value = clean.split("=", 1)
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            if key and key not in os.environ:
+                os.environ[key] = value
+    except Exception as exc:
+        _set_database_error(f"Could not read .env: {exc}")
+
+
 def _setting(name: str) -> str:
+    _load_dotenv()
     value = os.getenv(name, "").strip()
     if value:
         return value
@@ -51,24 +77,37 @@ def _offline_mode() -> bool:
 
 
 def _supabase_client() -> Any | None:
+    global _SUPABASE_CLIENT, _SUPABASE_CLIENT_READY
     if _offline_mode():
         return None
+    if _SUPABASE_CLIENT_READY:
+        return _SUPABASE_CLIENT
     url = _setting("SUPABASE_URL")
     key = _setting("SUPABASE_ANON_KEY")
     if not url or not key:
+        _set_database_error("Supabase is not configured. Add SUPABASE_URL and SUPABASE_ANON_KEY to Streamlit secrets or a local .env file.")
+        _SUPABASE_CLIENT_READY = True
         return None
     try:
         from supabase import create_client
 
-        return create_client(url, key)
-    except Exception:
+        _SUPABASE_CLIENT = create_client(url, key)
+        _SUPABASE_CLIENT_READY = True
+        return _SUPABASE_CLIENT
+    except Exception as exc:
+        _set_database_error(f"Could not connect to Supabase: {exc}")
+        _SUPABASE_CLIENT_READY = True
         return None
+
+
+def _supabase_configured() -> bool:
+    return bool(_setting("SUPABASE_URL") and _setting("SUPABASE_ANON_KEY"))
 
 
 def database_backend() -> str:
     if _offline_mode():
         return "SQLite offline mode"
-    return "Supabase primary + SQLite fallback" if _supabase_client() else "SQLite local fallback"
+    return "Supabase" if _supabase_client() else "SQLite local fallback"
 
 
 def init_db() -> None:
@@ -137,6 +176,8 @@ def save_case(patient_data: dict[str, Any], triage_result: Any) -> None:
                 return
             except Exception as exc:
                 _set_database_error(str(exc))
+                if _supabase_configured():
+                    return
 
     init_db()
     with sqlite3.connect(DB_PATH) as conn:
@@ -179,6 +220,8 @@ def list_cases() -> list[dict[str, Any]]:
             return list(response.data or [])
         except Exception as exc:
             _set_database_error(str(exc))
+            if _supabase_configured():
+                return []
 
     init_db()
     with sqlite3.connect(DB_PATH) as conn:
@@ -198,6 +241,8 @@ def clear_cases() -> None:
             return
         except Exception as exc:
             _set_database_error(str(exc))
+            if _supabase_configured():
+                return
 
     init_db()
     with sqlite3.connect(DB_PATH) as conn:
@@ -214,6 +259,8 @@ def delete_patient_cases(patient_name: str) -> None:
             return
         except Exception as exc:
             _set_database_error(str(exc))
+            if _supabase_configured():
+                return
 
     init_db()
     with sqlite3.connect(DB_PATH) as conn:
@@ -229,6 +276,9 @@ def update_case_review(case_id: int | str, review_status: str, doctor_notes: str
             ).eq("id", case_id).execute()
             return True
         except Exception:
+            if _supabase_configured():
+                _set_database_error("Supabase case review update failed. Check the patient_cases table schema and RLS policies.")
+                return False
             return False
 
     init_db()

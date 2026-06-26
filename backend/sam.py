@@ -19,7 +19,28 @@ class SamCommand:
 
 def route_message(message: str) -> SamCommand:
     text = message.lower().strip()
+    navigation_words = ["open", "go to", "take me", "show me", "switch", "page"]
 
+    if (
+        text in {"home"}
+        or any(phrase in text for phrase in ["home page", "main page", "start page"])
+        or ("home" in text and any(word in text for word in navigation_words))
+    ):
+        return SamCommand(
+            intent="navigate",
+            target_page="Home",
+            confidence=0.96,
+            reason="The user asked to go to the home page.",
+            message="Open Home to return to the main LifeLine AI workspace.",
+        )
+    if any(word in text for word in ["health checker", "patient health checker", "symptom checker", "check symptoms"]):
+        return SamCommand(
+            intent="navigate",
+            target_page="Patient Health Checker",
+            confidence=0.96,
+            reason="The user asked for the symptom or patient health checker page.",
+            message="Open Patient Health Checker to enter symptoms and get care-level guidance.",
+        )
     if any(word in text for word in ["timeline", "history", "past checks", "patient profile"]):
         return SamCommand(
             intent="navigate",
@@ -44,7 +65,7 @@ def route_message(message: str) -> SamCommand:
             reason="The user asked for safety videos or prevention education.",
             message="Open Safety Videos to learn about prevention, precautions, medicine safety, and disease safety.",
         )
-    if any(word in text for word in ["medicine safety", "safe to take", "mix", "interaction", "allergy", "allergic", "dose", "dosage"]):
+    if any(word in text for word in ["medicine safety", "medication safety", "safe to take", "mix", "interaction", "allergy", "allergic", "dose", "dosage"]):
         return SamCommand(
             intent="navigate",
             target_page="Medication Safety Checker",

@@ -1658,18 +1658,68 @@ def risk_score_range(risk_level: str) -> str:
 def challenge_measurement_summary(data: dict[str, Any]) -> list[str]:
     measurements: list[str] = []
     if data.get("temperature"):
-        measurements.append(f"Temperature {data['temperature']} C")
+        temperature = float(data["temperature"])
+        if temperature >= 39.4:
+            note = "very high fever"
+        elif temperature >= 38:
+            note = "fever"
+        else:
+            note = "normal temperature"
+        measurements.append(f"Temperature {temperature:g} C ({note})")
     if data.get("pain_level") is not None:
-        measurements.append(f"Pain {data['pain_level']}/10")
+        pain = int(data["pain_level"])
+        if pain >= 8:
+            note = "severe pain"
+        elif pain >= 5:
+            note = "moderate pain"
+        else:
+            note = "mild pain"
+        measurements.append(f"Pain {pain}/10 ({note})")
     if data.get("oxygen"):
-        measurements.append(f"Oxygen {data['oxygen']}%")
+        oxygen = int(data["oxygen"])
+        if oxygen < 90:
+            note = "dangerously low"
+        elif oxygen < 94:
+            note = "lower than expected"
+        else:
+            note = "normal"
+        measurements.append(f"Oxygen {oxygen}% ({note})")
     if data.get("heart_rate"):
-        measurements.append(f"Pulse {data['heart_rate']}/min")
+        heart_rate = int(data["heart_rate"])
+        note = "outside usual resting range" if heart_rate < 50 or heart_rate > 120 else "usual resting range"
+        measurements.append(f"Pulse {heart_rate}/min ({note})")
     if data.get("systolic_bp") and data.get("diastolic_bp"):
-        measurements.append(f"BP {data['systolic_bp']}/{data['diastolic_bp']}")
+        systolic = int(data["systolic_bp"])
+        diastolic = int(data["diastolic_bp"])
+        if systolic >= 180 or diastolic >= 120:
+            note = "danger range"
+        elif systolic >= 140 or diastolic >= 90:
+            note = "high"
+        else:
+            note = "not high"
+        measurements.append(f"Blood pressure {systolic}/{diastolic} ({note})")
     if data.get("duration_days") is not None:
-        measurements.append(f"Duration {data['duration_days']} day(s)")
+        days = int(data["duration_days"])
+        note = "needs checking if not improving" if days >= 3 else "short duration"
+        measurements.append(f"Duration {days} day(s) ({note})")
     return measurements
+
+
+def care_level_explanation(level: str) -> str:
+    explanations = {
+        "Self-Care": "Self-Care means symptoms look lower-risk right now, but the patient should still watch for changes.",
+        "Doctor Visit Recommended": "Doctor Visit Recommended means it is not usually an emergency, but a clinician should check it.",
+        "Urgent Care": "Urgent Care means the patient should be seen quickly, usually the same day.",
+        "Emergency": "Emergency means there may be danger signs, so it is safest to get medical help immediately.",
+    }
+    return explanations.get(level, level)
+
+
+def symptom_clue_summary(result: Any) -> list[str]:
+    clues = [str(signal) for signal in result.signals if str(signal).strip()]
+    if not clues:
+        return ["The app did not find major danger signs from the symptoms shown."]
+    return clues
 
 
 def render_challenge_feedback(choice: str, result: Any, scenario_data: dict[str, Any]) -> None:
@@ -1679,15 +1729,27 @@ def render_challenge_feedback(choice: str, result: Any, scenario_data: dict[str,
     else:
         st.warning(tr("Needs review"))
         st.write(f"**{tr('Your choice')}:** {tr(choice)}")
+        if RISK_ORDER.get(choice, 0) < RISK_ORDER.get(result.risk_level, 0):
+            st.write(tr("Your answer was too low for the warning signs in this case."))
+        else:
+            st.write(tr("Your answer was more urgent than the case needs based on the details shown."))
+        st.write(tr(care_level_explanation(choice)))
     st.write(f"**{tr('Safest care level')}:** {tr(result.risk_level)}")
+    st.write(tr(care_level_explanation(result.risk_level)))
     st.markdown(f"**{tr('How the answer was decided')}**")
     st.write(f"**{tr('Selected symptoms')}:** {', '.join(translate_items(list(scenario_data.get('symptoms', [])), st.session_state.language))}")
+    st.markdown(f"**{tr('Clues anyone can notice')}**")
+    for clue in translate_items(symptom_clue_summary(result), st.session_state.language):
+        st.write(f"- {clue}")
     st.write(f"**{tr('Risk score')}:** {result.score}/100")
     st.write(f"**{tr('Risk score range')}:** {risk_score_range(result.risk_level)}")
     st.write(f"**{tr('Likely pattern')}:** {tr(result.possible_category)}")
     measurements = challenge_measurement_summary(scenario_data)
     if measurements:
-        st.write(f"**{tr('Important measurements')}:** {', '.join(translate_items(measurements, st.session_state.language))}")
+        st.markdown(f"**{tr('Optional measurements')}**")
+        st.caption(tr("These are extra clues if available. A normal user does not need these devices to choose a safer care level."))
+        for measurement in translate_items(measurements, st.session_state.language):
+            st.write(f"- {measurement}")
     else:
         st.write(f"**{tr('Important measurements')}:** {tr('No important measurements were provided.')}")
     conditions = list(scenario_data.get("conditions", []))
@@ -2429,10 +2491,11 @@ def render_dashboard() -> None:
             st.rerun()
     cases = list_cases()
     db_error = database_error_message()
-    db_label = "SQLite fallback (Supabase unavailable)" if db_error else database_backend()
+    db_label = database_backend()
     st.caption(f"{tr('Database')}: {db_label}")
     if db_error:
-        st.caption(tr("Using local fallback storage. To use Supabase, run supabase_schema.sql in Supabase SQL Editor and reboot."))
+        st.caption(tr(db_error))
+        st.caption(tr("To use Supabase, add SUPABASE_URL and SUPABASE_ANON_KEY, run supabase_schema.sql in Supabase SQL Editor, and reboot."))
     if not cases:
         st.info(tr("No saved patient cases yet. Use the Health Checker and save a case."))
         return
@@ -2536,11 +2599,21 @@ def render_challenge() -> None:
         st.session_state.scenario_index = 0
     index = scenario_index % len(SCENARIOS)
     scenario = SCENARIOS[index]
+    option_key = f"challenge_options_{index}"
+    if option_key not in st.session_state:
+        options = ["Self-Care", "Doctor Visit Recommended", "Urgent Care", "Emergency"]
+        random.Random(index + 17).shuffle(options)
+        st.session_state[option_key] = options
 
     st.markdown(f'<div class="section-label">{h("Current case")}</div>', unsafe_allow_html=True)
     st.subheader(tr("Patient Case"))
     st.write(tr(scenario["case"]))
-    choice = st.radio(tr("What should this patient do?"), ["Self-Care", "Doctor Visit Recommended", "Urgent Care", "Emergency"], format_func=tr)
+    choice = st.radio(
+        tr("What should this patient do?"),
+        st.session_state[option_key],
+        format_func=tr,
+        key=f"challenge_choice_{index}",
+    )
     if st.button(tr("Check My Answer")):
         result = fast_analyze_patient(scenario["data"])
         if choice == result.risk_level:
