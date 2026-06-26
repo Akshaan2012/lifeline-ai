@@ -1,14 +1,19 @@
 from __future__ import annotations
 
+from concurrent.futures import Future, ThreadPoolExecutor
 from functools import lru_cache
 import json
 import os
 from pathlib import Path
+from threading import RLock
 from typing import Any
 
 
 TRANSLATION_CACHE_PATH = Path("data/translation_cache.json")
 _TRANSLATION_MEMORY: dict[str, dict[str, str]] | None = None
+_MEMORY_LOCK = RLock()
+_PRELOAD_EXECUTOR = ThreadPoolExecutor(max_workers=2, thread_name_prefix="translation-preload")
+_PRELOAD_TASKS: dict[str, Future[None]] = {}
 
 
 LANGUAGE_CODES = {
@@ -104,6 +109,10 @@ def _offline_mode() -> bool:
         return True
     try:
         import streamlit as st
+        from streamlit.runtime.scriptrunner import get_script_run_ctx
+
+        if get_script_run_ctx(suppress_warning=True) is None:
+            return False
 
         return bool(st.session_state.get("offline_mode")) or _truthy(
             str(st.secrets.get("LIFELINE_OFFLINE_MODE", ""))
@@ -118,30 +127,33 @@ def language_name(selected: str) -> str:
 
 def _memory() -> dict[str, dict[str, str]]:
     global _TRANSLATION_MEMORY
-    if _TRANSLATION_MEMORY is None:
-        try:
-            _TRANSLATION_MEMORY = json.loads(TRANSLATION_CACHE_PATH.read_text(encoding="utf-8"))
-        except Exception:
-            _TRANSLATION_MEMORY = {}
-    return _TRANSLATION_MEMORY
+    with _MEMORY_LOCK:
+        if _TRANSLATION_MEMORY is None:
+            try:
+                _TRANSLATION_MEMORY = json.loads(TRANSLATION_CACHE_PATH.read_text(encoding="utf-8"))
+            except Exception:
+                _TRANSLATION_MEMORY = {}
+        return _TRANSLATION_MEMORY
 
 
 def _save_memory() -> None:
     if _TRANSLATION_MEMORY is None:
         return
-    try:
-        TRANSLATION_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
-        TRANSLATION_CACHE_PATH.write_text(
-            json.dumps(_TRANSLATION_MEMORY, ensure_ascii=False),
-            encoding="utf-8",
-        )
-    except Exception:
-        pass
+    with _MEMORY_LOCK:
+        try:
+            TRANSLATION_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+            TRANSLATION_CACHE_PATH.write_text(
+                json.dumps(_TRANSLATION_MEMORY, ensure_ascii=False),
+                encoding="utf-8",
+            )
+        except Exception:
+            pass
 
 
 def _remember(selected_language: str, original: str, translated: str) -> None:
     if translated and translated != original:
-        _memory().setdefault(selected_language, {})[original] = translated
+        with _MEMORY_LOCK:
+            _memory().setdefault(selected_language, {})[original] = translated
 
 
 def _target_code(selected_language: str) -> str:
@@ -280,6 +292,22 @@ def preload_translations(items: list[str], selected_language: str) -> None:
     unique_items = list(dict.fromkeys(items))
     for index in range(0, len(unique_items), 25):
         translate_items(unique_items[index : index + 25], selected_language)
+
+
+def preload_translations_async(items: list[str], selected_language: str) -> None:
+    target = _target_code(selected_language)
+    if target == "en" or _offline_mode():
+        return
+
+    task_key = f"{selected_language}:{len(items)}"
+    existing = _PRELOAD_TASKS.get(task_key)
+    if existing and not existing.done():
+        return
+
+    def run_preload() -> None:
+        preload_translations(items, selected_language)
+
+    _PRELOAD_TASKS[task_key] = _PRELOAD_EXECUTOR.submit(run_preload)
 
 
 def translate_answer(answer: dict[str, Any], selected_language: str) -> dict[str, Any]:

@@ -16,7 +16,13 @@ from backend.medication_safety import analyze_medication_safety
 from backend.recommender import build_recommendations
 from backend.report import generate_health_report_pdf
 from backend.sam import answer_message
-from backend.translator import preload_translations, translate_answer, translate_items, translate_text
+from backend.translator import (
+    preload_translations_async,
+    translate_answer,
+    translate_items,
+    translate_text,
+    translate_text_cached,
+)
 from backend.triage_engine import RISK_ORDER, analyze_patient
 
 
@@ -264,7 +270,7 @@ COMMON_TRANSLATION_TEXTS = [
 
 
 def tr(text: str) -> str:
-    return translate_text(text, st.session_state.language)
+    return translate_text_cached(text, st.session_state.language)
 
 
 def prepare_language(selected_language: str) -> None:
@@ -273,8 +279,7 @@ def prepare_language(selected_language: str) -> None:
     prepared_languages = st.session_state.setdefault("prepared_languages", [])
     if selected_language in prepared_languages:
         return
-    with st.spinner("Translating interface..."):
-        preload_translations(COMMON_TRANSLATION_TEXTS, selected_language)
+    preload_translations_async(COMMON_TRANSLATION_TEXTS, selected_language)
     prepared_languages.append(selected_language)
 
 
@@ -1339,6 +1344,7 @@ def sidebar() -> None:
     if language_changed:
         st.session_state.language = selected_language
         prepare_language(st.session_state.language)
+        st.rerun()
     offline_mode = st.sidebar.checkbox(
         "Offline mode",
         value=bool(st.session_state.offline_mode),
