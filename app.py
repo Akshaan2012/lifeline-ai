@@ -1433,6 +1433,89 @@ def compact_risk_label(risk_level: str) -> str:
     return risk_level
 
 
+def patient_case_name(case: dict[str, Any]) -> str:
+    return str(case.get("patient_name") or "Anonymous")
+
+
+def patient_data_name(patient_data: dict[str, Any]) -> str:
+    return str(patient_data.get("patient_name") or "Anonymous")
+
+
+def latest_previous_case(patient_data: dict[str, Any]) -> dict[str, Any] | None:
+    patient_name = patient_data_name(patient_data)
+    matching_cases = [
+        case
+        for case in list_cases()
+        if patient_case_name(case) == patient_name
+    ]
+    if not matching_cases:
+        return None
+    matching_cases.sort(key=lambda case: str(case.get("created_at", "")))
+    return matching_cases[-1]
+
+
+def describe_number_change(label: str, previous: float | None, current: float | None, unit: str = "") -> str | None:
+    if previous is None or current is None:
+        return None
+    delta = current - previous
+    if abs(delta) < 0.01:
+        return f"{label} stayed the same at {current:g}{unit}."
+    direction = "increased" if delta > 0 else "decreased"
+    return f"{label} {direction} from {previous:g}{unit} to {current:g}{unit}."
+
+
+def build_previous_check_comparison(
+    patient_data: dict[str, Any],
+    result: Any,
+    previous_case: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    if not previous_case:
+        return None
+
+    previous_raw = parse_case_raw_data(previous_case.get("raw_data"))
+    previous_symptoms = {str(item).strip().lower() for item in previous_raw.get("symptoms", []) if str(item).strip()}
+    current_symptoms = {str(item).strip().lower() for item in patient_data.get("symptoms", []) if str(item).strip()}
+    new_symptoms = sorted(current_symptoms - previous_symptoms)
+    resolved_symptoms = sorted(previous_symptoms - current_symptoms)
+
+    previous_risk = str(previous_case.get("risk_level") or "Unknown")
+    current_risk = str(result.risk_level)
+    previous_score = safe_number(previous_case.get("score")) or 0
+    current_score = safe_number(result.score) or 0
+    previous_pain = safe_number(previous_raw.get("pain_level"))
+    current_pain = safe_number(patient_data.get("pain_level"))
+    previous_rank = RISK_ORDER.get(previous_risk, 0)
+    current_rank = RISK_ORDER.get(current_risk, 0)
+
+    highlights: list[str] = []
+    if current_rank > previous_rank:
+        highlights.append(f"Care level increased from {compact_risk_label(previous_risk)} to {compact_risk_label(current_risk)}.")
+    elif current_rank < previous_rank:
+        highlights.append(f"Care level decreased from {compact_risk_label(previous_risk)} to {compact_risk_label(current_risk)}.")
+    else:
+        highlights.append(f"Care level stayed at {compact_risk_label(current_risk)}.")
+
+    for note in [
+        describe_number_change("Risk score", previous_score, current_score),
+        describe_number_change("Pain level", previous_pain, current_pain, "/10"),
+    ]:
+        if note:
+            highlights.append(note)
+    if new_symptoms:
+        highlights.append(f"New symptoms: {', '.join(item.title() for item in new_symptoms[:6])}.")
+    if resolved_symptoms:
+        highlights.append(f"No longer listed: {', '.join(item.title() for item in resolved_symptoms[:6])}.")
+
+    return {
+        "previous_created_at": previous_case.get("created_at", ""),
+        "previous_risk": previous_risk,
+        "current_risk": current_risk,
+        "previous_score": previous_score,
+        "current_score": current_score,
+        "highlights": highlights,
+    }
+
+
 def snapshot_card(label: str, value: str) -> None:
     st.markdown(
         f"""
@@ -2053,7 +2136,29 @@ def patient_form() -> dict[str, Any]:
     }
 
 
-def render_result_panel(result: Any, advice: dict[str, Any], patient_data: dict[str, Any] | None = None) -> None:
+def render_previous_check_comparison(comparison: dict[str, Any] | None) -> None:
+    if not comparison:
+        st.info(tr("No previous saved check found for this patient yet. This result will become the baseline for next time."))
+        return
+
+    st.markdown(f"**{tr('Compared with previous check')}**")
+    previous_date = str(comparison.get("previous_created_at") or "earlier check")
+    st.caption(tr(f"Previous saved check: {previous_date}"))
+    c1, c2 = st.columns(2)
+    with c1:
+        snapshot_card("Previous", f"{compact_risk_label(str(comparison['previous_risk']))} - {comparison['previous_score']:g}/100")
+    with c2:
+        snapshot_card("Current", f"{compact_risk_label(str(comparison['current_risk']))} - {comparison['current_score']:g}/100")
+    for item in comparison.get("highlights", []):
+        st.write(f"- {tr(str(item))}")
+
+
+def render_result_panel(
+    result: Any,
+    advice: dict[str, Any],
+    patient_data: dict[str, Any] | None = None,
+    comparison: dict[str, Any] | None = None,
+) -> None:
     danger = danger_status(result.risk_level)
     st.markdown(
         f"""
@@ -2085,6 +2190,7 @@ def render_result_panel(result: Any, advice: dict[str, Any], patient_data: dict[
     st.info(tr(advice["risk_summary"]))
     st.write(tr(advice["simple_explanation"]))
     render_care_action_plan(result)
+    render_previous_check_comparison(comparison)
     if result.model_prediction:
         st.caption(tr(f"ML model prediction: {result.model_prediction} | Confidence: {result.model_confidence}"))
     followup_answers = list((patient_data or {}).get("followup_answers", []))
@@ -2214,10 +2320,12 @@ def render_checker() -> None:
             else:
                 result = analyze_patient(data, use_ml=False)
                 advice = build_recommendations(result, enhance=False)
+                previous_case = latest_previous_case(data)
                 st.session_state.checker_result = {
                     "result": result,
                     "advice": advice,
                     "saved": bool(save_to_dashboard),
+                    "comparison": build_previous_check_comparison(data, result, previous_case),
                 }
                 st.session_state.checker_patient_data = data
                 st.session_state.pop("followup_result", None)
@@ -2231,7 +2339,7 @@ def render_checker() -> None:
             if stored.get("saved"):
                 st.success(tr("Case saved to Doctor Dashboard."))
             patient_data = st.session_state.get("checker_patient_data") or {}
-            render_result_panel(stored["result"], stored["advice"], patient_data)
+            render_result_panel(stored["result"], stored["advice"], patient_data, stored.get("comparison"))
             pdf_bytes = generate_health_report_pdf(patient_data, stored["result"], stored["advice"])
             st.download_button(
                 tr("Download Health Report PDF"),
