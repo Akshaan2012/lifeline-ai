@@ -1927,6 +1927,8 @@ def patient_form() -> dict[str, Any]:
     selected_symptoms = st.multiselect(
         tr("Choose symptoms from list"),
         SYMPTOM_OPTIONS,
+        placeholder=tr("Choose or type symptoms"),
+        accept_new_options=True,
         format_func=tr,
         key="patient_symptoms_input",
     )
@@ -2006,6 +2008,8 @@ def patient_form() -> dict[str, Any]:
         tr("Choose existing conditions from list"),
         CONDITION_OPTIONS,
         default=known_conditions,
+        placeholder=tr("Choose or type existing conditions"),
+        accept_new_options=True,
         format_func=tr,
         key="patient_conditions_input",
     )
