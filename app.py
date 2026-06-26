@@ -5,6 +5,7 @@ import json
 from html import escape
 from typing import Any
 
+import altair as alt
 import pandas as pd
 import streamlit as st
 
@@ -1402,6 +1403,14 @@ def inject_css() -> None:
             font-weight: 850;
             box-shadow: 0 12px 24px rgba(8, 121, 109, .18);
         }
+        .home-live-form [data-testid="stVerticalBlock"] {
+            gap: .75rem;
+        }
+        .home-live-form .stButton>button {
+            min-height: 4.15rem;
+            font-size: 1.15rem;
+            border-radius: 8px;
+        }
         .result-preview {
             border-left: 5px solid var(--amber);
         }
@@ -1750,6 +1759,30 @@ def build_timeline_trend_frame(cases: list[dict[str, Any]]) -> pd.DataFrame:
     chart_columns = ["Risk score", "Pain level", "Temperature", "Oxygen", "Pulse", "Systolic BP", "Diastolic BP"]
     frame[chart_columns] = frame[chart_columns].apply(pd.to_numeric, errors="coerce")
     return frame.set_index("Check")
+
+
+def render_zero_based_line_chart(frame: pd.DataFrame) -> None:
+    chart_data = (
+        frame.reset_index()
+        .melt(id_vars="Check", var_name="Metric", value_name="Value")
+        .dropna(subset=["Value"])
+    )
+    chart = (
+        alt.Chart(chart_data)
+        .mark_line(point=True)
+        .encode(
+            x=alt.X("Check:O", title="Check"),
+            y=alt.Y("Value:Q", title=None, scale=alt.Scale(zero=True)),
+            color=alt.Color("Metric:N", title=None),
+            tooltip=[
+                alt.Tooltip("Check:O", title="Check"),
+                alt.Tooltip("Metric:N", title="Metric"),
+                alt.Tooltip("Value:Q", title="Value"),
+            ],
+        )
+        .properties(height=280)
+    )
+    st.altair_chart(chart, use_container_width=True)
 
 
 def case_queue_summary(cases: list[dict[str, Any]]) -> dict[str, Any]:
@@ -2166,45 +2199,118 @@ def render_home() -> None:
             ("Last check", "Stable" if not summary["high_priority"] else "Needs attention", "Queue signal"),
         ]
     )
-    st.markdown(
-        f"""
-        <div class="home-workspace">
-            <div class="workspace-panel">
+    st.markdown('<div class="home-workspace">', unsafe_allow_html=True)
+    home_form_col, home_result_col = st.columns([1.14, .86], gap="large")
+    with home_form_col:
+        st.markdown(
+            f"""
+            <div class="workspace-panel home-live-form">
                 <div class="small-title">{h("Patient Health Checker")}</div>
                 <h2>{h("Patient intake")}</h2>
                 <p class="muted">{h("Enter the details you know. Vitals are optional for home users.")}</p>
-                <div class="panel-row">
-                    <div class="field-preview"><span>{h("Patient")}</span>{h("Patient 001")} · 34 · {h("Prefer not to say")}</div>
-                    <div class="field-preview"><span>{h("Duration")}</span>2 {h("day(s)")} · {h("Pain")} 6/10<div class="slider-preview"></div></div>
-                </div>
-                <div class="field-preview" style="margin-top:12px;">
-                    <span>{h("Symptoms")}</span>
-                    <div class="chip-row">
-                        <span class="clinical-chip">{h("Fever")}</span>
-                        <span class="clinical-chip">{h("Cough")}</span>
-                        <span class="clinical-chip">{h("Shortness of breath")}</span>
+            """,
+            unsafe_allow_html=True,
+        )
+        home_name = st.text_input(tr("Patient name or ID"), value="Patient 001", key="home_patient_name")
+        home_a, home_b = st.columns(2)
+        with home_a:
+            home_age = st.number_input(tr("Age"), min_value=0, max_value=120, value=34, key="home_patient_age")
+        with home_b:
+            home_duration = st.number_input(tr("Symptom duration in days"), min_value=0, max_value=90, value=2, key="home_duration")
+        home_symptoms = st.multiselect(
+            tr("Symptoms"),
+            SYMPTOM_OPTIONS,
+            default=["Fever", "Cough", "Shortness of breath"],
+            accept_new_options=True,
+            format_func=tr,
+            key="home_symptoms",
+        )
+        home_pain = st.slider(tr("Pain level"), 0, 10, 6, key="home_pain")
+        home_c, home_d, home_e = st.columns(3)
+        with home_c:
+            home_temperature = st.number_input(tr("Temperature in Celsius"), min_value=32.0, max_value=43.0, value=38.4, step=0.1, key="home_temperature")
+        with home_d:
+            home_heart_rate = st.number_input(tr("Heart rate / pulse per minute"), min_value=0, max_value=240, value=104, key="home_heart_rate")
+        with home_e:
+            home_oxygen = st.number_input(tr("Oxygen level from pulse oximeter"), min_value=0, max_value=100, value=95, key="home_oxygen")
+        home_conditions = st.multiselect(
+            tr("Existing conditions"),
+            CONDITION_OPTIONS,
+            default=["Asthma"],
+            accept_new_options=True,
+            format_func=tr,
+            key="home_conditions",
+        )
+        home_meds = st.text_area(
+            tr("Current medicines or allergies"),
+            placeholder=tr("Example: allergic to penicillin, taking asthma inhaler"),
+            key="home_meds",
+        )
+        if st.button(tr("Analyze Health"), type="primary", width="stretch", key="home_analyze"):
+            if not home_symptoms:
+                st.error(tr("Please choose at least one symptom."))
+            else:
+                home_data = {
+                    "patient_name": home_name,
+                    "age": int(home_age or 0),
+                    "gender": "Prefer not to say",
+                    "symptoms": unique_items(list(home_symptoms)),
+                    "duration_days": int(home_duration or 0),
+                    "pain_level": int(home_pain or 0),
+                    "temperature": float(home_temperature or 0),
+                    "heart_rate": int(home_heart_rate or 0),
+                    "systolic_bp": 0,
+                    "diastolic_bp": 0,
+                    "oxygen": int(home_oxygen or 0),
+                    "conditions": unique_items(list(home_conditions)),
+                    "medications": home_meds,
+                    "followup_answers": [],
+                }
+                home_result = analyze_patient(home_data, use_ml=False)
+                st.session_state.home_checker_result = {
+                    "data": home_data,
+                    "result": home_result,
+                    "advice": build_recommendations(home_result, enhance=False),
+                }
+        st.markdown("</div>", unsafe_allow_html=True)
+    with home_result_col:
+        stored_home = st.session_state.get("home_checker_result")
+        if stored_home:
+            home_result = stored_home["result"]
+            home_advice = stored_home["advice"]
+            plan = action_plan_for_result(home_result)
+            st.markdown(
+                f"""
+                <div class="workspace-panel result-preview">
+                    <div class="small-title">{h("Live result")}</div>
+                    <h2>{h(home_result.risk_level)}</h2>
+                    <span class="urgency-pill">{h(plan["title"])}</span>
+                    <div class="score-ring"><b>{home_result.score}/100</b></div>
+                    <div class="summary-grid">
+                        <div class="summary-item"><span>{h("Care Level")}</span>{h(home_result.risk_level)}</div>
+                        <div class="summary-item"><span>{h("Pattern")}</span>{h(home_result.possible_category)}</div>
+                        <div class="summary-item"><span>{h("Timeframe")}</span>{h(home_advice["timeframe"])}</div>
+                        <div class="summary-item"><span>{h("Risk Score")}</span>{home_result.score}/100</div>
                     </div>
+                    <p class="muted">{h(home_result.recommendation)}</p>
                 </div>
-                <div class="panel-row">
-                    <div class="field-preview"><span>{h("Optional measurements")}</span>O2 95% · Pulse 104 · 38.4 C</div>
-                    <div class="field-preview"><span>{h("Existing conditions")}</span>{h("Asthma")} · {h("Current medicines or allergies")}</div>
+                """,
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(
+                f"""
+                <div class="workspace-panel result-preview">
+                    <div class="small-title">{h("Live result")}</div>
+                    <h2>{h("No analysis yet.")}</h2>
+                    <p class="muted">{h("Use the real inputs on the left and click Analyze Health. The care level, score, pattern, and next step will update here.")}</p>
                 </div>
-                <div class="primary-preview">{h("Analyze Health")}</div>
-            </div>
-            <div class="workspace-panel result-preview">
-                <div class="small-title">{h("Live result")}</div>
-                <h2>{h("Urgent Care")}</h2>
-                <span class="urgency-pill">{h("Same-day care plan")}</span>
-                <div class="score-ring"><b>62/100</b></div>
-                <div class="summary-grid">
-                    <div class="summary-item"><span>{h("Care Level")}</span>{h("Urgent Care")}</div>
-                    <div class="summary-item"><span>{h("Pattern")}</span>{h("Breathing risk")}</div>
-                    <div class="summary-item"><span>{h("Timeframe")}</span>{h("Today")}</div>
-                    <div class="summary-item"><span>{h("Risk Score")}</span>62/100</div>
-                </div>
-                <p class="muted">{h("Review breathing symptoms, check red flags, and use the doctor summary when speaking with the care team.")}</p>
-            </div>
-        </div>
+                """,
+                unsafe_allow_html=True,
+            )
+    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown(
+        f"""
         <div class="doctor-strip">
             <div class="workspace-panel">
                 <div class="small-title">{h("Doctor Dashboard")}</div>
@@ -2679,14 +2785,14 @@ def render_timeline() -> None:
             st.markdown(f"**{tr('Risk and pain over time')}**")
             risk_pain = trend_df[["Risk score", "Pain level"]].dropna(axis=1, how="all")
             if not risk_pain.empty and risk_pain.shape[1]:
-                st.line_chart(risk_pain, y_min=0)
+                render_zero_based_line_chart(risk_pain)
             else:
                 st.info(tr("No risk or pain values were saved for trend charts yet."))
         vitals = trend_df[["Temperature", "Oxygen", "Pulse", "Systolic BP", "Diastolic BP"]].dropna(axis=1, how="all")
         with trend_col2:
             st.markdown(f"**{tr('Measurements over time')}**")
             if not vitals.empty and vitals.shape[1]:
-                st.line_chart(vitals, y_min=0)
+                render_zero_based_line_chart(vitals)
             else:
                 st.info(tr("No optional measurements were saved for trend charts yet."))
     else:
