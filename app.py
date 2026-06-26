@@ -1279,6 +1279,196 @@ def inject_css() -> None:
             padding: 2px 5px;
         }
         hr { border-color: var(--line-soft); }
+        .dashboard-shell {
+            display: grid;
+            gap: 18px;
+        }
+        .app-hero {
+            border: 1px solid var(--line);
+            background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(246,252,249,.94));
+            border-radius: 8px;
+            padding: 22px 24px;
+            box-shadow: var(--shadow-soft);
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 18px;
+        }
+        .app-hero h1 {
+            margin: 3px 0 8px;
+            font-size: clamp(2.2rem, 4vw, 3.8rem);
+            line-height: 1;
+            color: var(--ink);
+        }
+        .app-hero p {
+            margin: 0;
+            max-width: 720px;
+            color: var(--muted);
+            font-size: 1.02rem;
+            line-height: 1.55;
+        }
+        .safety-badge {
+            border: 1px solid #f0c7bc;
+            background: #fff4f1;
+            color: #8b3f31;
+            border-radius: 999px;
+            padding: 8px 12px;
+            font-size: .78rem;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+        .home-workspace {
+            display: grid;
+            grid-template-columns: minmax(0, 1.14fr) minmax(320px, .86fr);
+            gap: 18px;
+            align-items: stretch;
+        }
+        .workspace-panel {
+            border: 1px solid var(--line);
+            background: rgba(255,255,255,.95);
+            border-radius: 8px;
+            padding: 18px;
+            box-shadow: var(--shadow-soft);
+            min-height: 100%;
+        }
+        .workspace-panel h2 {
+            margin: 3px 0 6px;
+            font-size: 1.18rem;
+        }
+        .panel-row {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+        .field-preview {
+            border: 1px solid var(--line-soft);
+            background: #fbfffd;
+            border-radius: 8px;
+            padding: 12px;
+            min-height: 70px;
+        }
+        .field-preview span {
+            display: block;
+            color: var(--muted);
+            font-size: .75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        .chip-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .clinical-chip {
+            border: 1px solid #b8dcd6;
+            background: #eefaf7;
+            color: #0d5d58;
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: .82rem;
+            font-weight: 750;
+        }
+        .slider-preview {
+            height: 8px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #17b6a5 0 62%, #e7ecea 62% 100%);
+            margin-top: 10px;
+            position: relative;
+        }
+        .slider-preview:after {
+            content: "";
+            position: absolute;
+            left: 62%;
+            top: 50%;
+            width: 18px;
+            height: 18px;
+            border-radius: 999px;
+            background: #ffffff;
+            border: 3px solid #17b6a5;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 4px 12px rgba(13, 93, 88, .22);
+        }
+        .primary-preview {
+            margin-top: 16px;
+            border-radius: 6px;
+            background: linear-gradient(180deg, #13aa98, #08796d);
+            color: #ffffff;
+            min-height: 44px;
+            display: grid;
+            place-items: center;
+            font-weight: 850;
+            box-shadow: 0 12px 24px rgba(8, 121, 109, .18);
+        }
+        .result-preview {
+            border-left: 5px solid var(--amber);
+        }
+        .score-ring {
+            width: 132px;
+            height: 132px;
+            border-radius: 999px;
+            background:
+                radial-gradient(circle at center, #ffffff 0 58%, transparent 59%),
+                conic-gradient(var(--amber) 0 62%, #e5efec 62% 100%);
+            display: grid;
+            place-items: center;
+            margin: 14px auto 16px;
+            box-shadow: inset 0 0 0 1px var(--line-soft);
+        }
+        .score-ring b {
+            font-size: 1.65rem;
+            color: var(--ink);
+        }
+        .urgency-pill {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            background: #fff3dc;
+            border: 1px solid #e8bd69;
+            color: #7b4d0f;
+            padding: 7px 11px;
+            font-size: .82rem;
+            font-weight: 850;
+        }
+        .doctor-strip {
+            display: grid;
+            grid-template-columns: minmax(0, 1.1fr) minmax(280px, .9fr);
+            gap: 18px;
+        }
+        .mini-table {
+            width: 100%;
+            border-collapse: collapse;
+            overflow: hidden;
+            border-radius: 8px;
+            font-size: .88rem;
+        }
+        .mini-table th,
+        .mini-table td {
+            border-bottom: 1px solid var(--line-soft);
+            padding: 10px 9px;
+            text-align: left;
+        }
+        .mini-table th {
+            color: var(--muted);
+            font-size: .74rem;
+            text-transform: uppercase;
+        }
+        .trend-card {
+            border: 1px solid var(--line-soft);
+            border-radius: 8px;
+            background: #fbfffd;
+            padding: 14px;
+        }
+        .trend-line {
+            height: 120px;
+            border-left: 1px solid #d7e6e2;
+            border-bottom: 1px solid #d7e6e2;
+            background:
+                linear-gradient(180deg, transparent 24%, rgba(16,184,166,.08) 24% 25%, transparent 25% 49%, rgba(16,184,166,.08) 49% 50%, transparent 50% 74%, rgba(16,184,166,.08) 74% 75%, transparent 75%),
+                linear-gradient(135deg, transparent 0 18%, rgba(16,184,166,.18) 18% 19%, transparent 19% 38%, rgba(16,184,166,.25) 38% 39%, transparent 39% 61%, rgba(201,135,35,.28) 61% 62%, transparent 62% 82%, rgba(184,98,71,.32) 82% 83%, transparent 83%);
+        }
         @media (max-width: 720px) {
             h1 { font-size: 2.35rem; }
             .hero, .page-head, .panel { padding: 18px; }
@@ -1286,6 +1476,15 @@ def inject_css() -> None:
             .hero-stats { grid-template-columns: 1fr; }
             .monitor-card { display: none; }
             .command-center { grid-template-columns: 1fr; }
+            .app-hero,
+            .home-workspace,
+            .doctor-strip,
+            .panel-row {
+                grid-template-columns: 1fr;
+            }
+            .app-hero {
+                display: grid;
+            }
             .pulse-line { width: 100%; }
             .command-bar { align-items: flex-start; flex-direction: column; }
             .summary-grid { grid-template-columns: 1fr; }
@@ -1924,56 +2123,109 @@ def render_sam() -> None:
 
 
 def render_home() -> None:
-    hero_subtitle = h(
-        "A simple health risk and doctor-visit advisor. It helps users check symptoms, learn about diseases, get precautions, and understand when medical help is needed."
+    cases = list_cases()
+    summary = case_queue_summary(cases)
+    recent_cases = sorted(cases, key=lambda case: str(case.get("created_at", "")), reverse=True)[:4]
+    if not recent_cases:
+        recent_cases = [
+            {"patient_name": "Patient 001", "risk_level": "Urgent Care", "review_status": "New", "score": 62},
+            {"patient_name": "Patient 002", "risk_level": "Doctor Visit Recommended", "review_status": "Reviewed", "score": 38},
+            {"patient_name": "Patient 003", "risk_level": "Self-Care", "review_status": "Resolved", "score": 18},
+        ]
+    rows = "".join(
+        f"""
+        <tr>
+            <td>{h(str(case.get('patient_name') or 'Anonymous'))}</td>
+            <td><span class="clinical-chip">{h(compact_risk_label(str(case.get('risk_level', 'Unknown'))))}</span></td>
+            <td>{h(str(case.get('review_status') or 'New'))}</td>
+            <td>{h(str(case.get('score', 0)))}/100</td>
+        </tr>
+        """
+        for case in recent_cases
     )
     st.markdown(
         f"""
-        <div class="hero">
-            <div class="hero-layout">
-                <div class="hero-copy">
-                    <div class="clinical-rail"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        <div class="dashboard-shell">
+            <div class="app-hero">
+                <div>
                     <div class="small-title">{h("AI health guidance")}</div>
                     <h1>LifeLine AI</h1>
-                    <p class="muted">{hero_subtitle}</p>
-                    <div class="pulse-line"></div>
-                    <div class="hero-stats">
-                        <div class="hero-stat"><b>{h("Check")}</b>{h("Symptoms and red flags")}</div>
-                        <div class="hero-stat"><b>{h("Track")}</b>{h("Risk and vitals over time")}</div>
-                        <div class="hero-stat"><b>{h("Share")}</b>{h("Doctor-ready summaries")}</div>
-                    </div>
-                    <br>
-                    <span class="soft-badge">{h("Prediction")}</span>
-                    <span class="soft-badge">{h("Recommendations")}</span>
-                    <span class="soft-badge">{h("Simple language")}</span>
-                    <span class="soft-badge">{h("Sam bubble assistant")}</span>
+                    <p>{h("Patient-friendly risk guidance for safer next steps. Check symptoms, review saved cases, and keep doctor-ready summaries in one calm workspace.")}</p>
                 </div>
-                <div class="monitor-card">
-                    <div class="monitor-top"><span>Triage signal</span><span>Live desk</span></div>
-                    <div class="monitor-wave"></div>
-                    <div class="monitor-readouts">
-                        <div><span>Risk</span><b>0-100</b></div>
-                        <div><span>Care</span><b>4 levels</b></div>
-                        <div><span>Summary</span><b>PDF</b></div>
-                    </div>
-                </div>
+                <div class="safety-badge">{h("Decision support only")}</div>
             </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
-    st.write("")
-    st.markdown(f'<div class="section-label">{h("Home command center")}</div>', unsafe_allow_html=True)
-    render_home_command_center()
-    st.caption(tr("Start with a symptom check, review saved cases, or practice care-level decisions."))
-    st.write("")
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        st.markdown(f'<div class="metric-card"><span class="token">01</span><b>{h("Risk Prediction")}</b><span class="muted">{h("Self-care, doctor visit, urgent care, or emergency.")}</span></div>', unsafe_allow_html=True)
-    with c2:
-        st.markdown(f'<div class="metric-card"><span class="token">02</span><b>{h("Advanced Advice")}</b><span class="muted">{h("Care steps, prevention, avoid-list, and red flags.")}</span></div>', unsafe_allow_html=True)
-    with c3:
-        st.markdown(f'<div class="metric-card"><span class="token">03</span><b>{h("Sam Assistant")}</b><span class="muted">{h("Click the bottom-right bubble to ask for help.")}</span></div>', unsafe_allow_html=True)
+    render_command_center_cards(
+        [
+            ("Saved cases", str(summary["total"]), "Ready for the next check"),
+            ("Priority cases", str(summary["high_priority"]), "Emergency and urgent"),
+            ("New reviews", str(summary["new_reviews"]), "Waiting for review"),
+            ("Last check", "Stable" if not summary["high_priority"] else "Needs attention", "Queue signal"),
+        ]
+    )
+    st.markdown(
+        f"""
+        <div class="home-workspace">
+            <div class="workspace-panel">
+                <div class="small-title">{h("Patient Health Checker")}</div>
+                <h2>{h("Patient intake")}</h2>
+                <p class="muted">{h("Enter the details you know. Vitals are optional for home users.")}</p>
+                <div class="panel-row">
+                    <div class="field-preview"><span>{h("Patient")}</span>{h("Patient 001")} · 34 · {h("Prefer not to say")}</div>
+                    <div class="field-preview"><span>{h("Duration")}</span>2 {h("day(s)")} · {h("Pain")} 6/10<div class="slider-preview"></div></div>
+                </div>
+                <div class="field-preview" style="margin-top:12px;">
+                    <span>{h("Symptoms")}</span>
+                    <div class="chip-row">
+                        <span class="clinical-chip">{h("Fever")}</span>
+                        <span class="clinical-chip">{h("Cough")}</span>
+                        <span class="clinical-chip">{h("Shortness of breath")}</span>
+                    </div>
+                </div>
+                <div class="panel-row">
+                    <div class="field-preview"><span>{h("Optional measurements")}</span>O2 95% · Pulse 104 · 38.4 C</div>
+                    <div class="field-preview"><span>{h("Existing conditions")}</span>{h("Asthma")} · {h("Current medicines or allergies")}</div>
+                </div>
+                <div class="primary-preview">{h("Analyze Health")}</div>
+            </div>
+            <div class="workspace-panel result-preview">
+                <div class="small-title">{h("Live result")}</div>
+                <h2>{h("Urgent Care")}</h2>
+                <span class="urgency-pill">{h("Same-day care plan")}</span>
+                <div class="score-ring"><b>62/100</b></div>
+                <div class="summary-grid">
+                    <div class="summary-item"><span>{h("Care Level")}</span>{h("Urgent Care")}</div>
+                    <div class="summary-item"><span>{h("Pattern")}</span>{h("Breathing risk")}</div>
+                    <div class="summary-item"><span>{h("Timeframe")}</span>{h("Today")}</div>
+                    <div class="summary-item"><span>{h("Risk Score")}</span>62/100</div>
+                </div>
+                <p class="muted">{h("Review breathing symptoms, check red flags, and use the doctor summary when speaking with the care team.")}</p>
+            </div>
+        </div>
+        <div class="doctor-strip">
+            <div class="workspace-panel">
+                <div class="small-title">{h("Doctor Dashboard")}</div>
+                <h2>{h("Patient cases")}</h2>
+                <table class="mini-table">
+                    <thead><tr><th>{h("Patient")}</th><th>{h("Risk")}</th><th>{h("Status")}</th><th>{h("Score")}</th></tr></thead>
+                    <tbody>{rows}</tbody>
+                </table>
+            </div>
+            <div class="workspace-panel">
+                <div class="small-title">{h("Health Timeline")}</div>
+                <h2>{h("Risk and vitals over time")}</h2>
+                <div class="trend-card">
+                    <div class="trend-line"></div>
+                </div>
+                <p class="muted">{h("Saved checks become trend charts for risk score, pain, and optional measurements.")}</p>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     st.write("")
     with st.container(key="home_actions"):
         action1, action2, action3 = st.columns(3)
