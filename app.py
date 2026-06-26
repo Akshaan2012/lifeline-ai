@@ -1373,8 +1373,14 @@ def sidebar() -> None:
 
 def switch_page(page: str) -> None:
     if page in PAGES:
+        st.session_state.page = page
+        st.session_state.page_picker = page
         st.session_state.pending_page = page
-    st.rerun()
+        st.rerun()
+
+
+def stable_key(value: str) -> str:
+    return "".join(char.lower() if char.isalnum() else "_" for char in value).strip("_")
 
 
 def render_quick_jumps(prefix: str, exclude: str | None = None) -> None:
@@ -1389,7 +1395,7 @@ def render_quick_jumps(prefix: str, exclude: str | None = None) -> None:
     cols = st.columns(len(targets))
     for index, (label, page) in enumerate(targets):
         disabled = page == exclude
-        if cols[index].button(tr(label), key=f"{prefix}_{page}", disabled=disabled, width="stretch"):
+        if cols[index].button(tr(label), key=f"{prefix}_{stable_key(page)}", disabled=disabled, width="stretch"):
             switch_page(page)
 
 
@@ -2364,17 +2370,23 @@ def render_qa() -> None:
     main, helper = st.columns([1.7, .8], gap="large")
     with main:
         st.markdown(f'<div class="section-label">{h("Ask a health question")}</div>', unsafe_allow_html=True)
-        question = st.text_input(tr("Ask in simple words"), placeholder=tr("Example: What is ibuprofen used for?"))
+        st.session_state.setdefault("qa_question", "")
+        question = st.text_input(
+            tr("Ask in simple words"),
+            key="qa_question",
+            placeholder=tr("Example: How are antibiotics made?"),
+        )
         examples = st.columns(4)
         example_questions = [
             "What is paracetamol used for?",
             "Can I take antibiotics for fever?",
             "Side effects of ibuprofen",
-            "What is Parkinson's?",
+            "How are antibiotics made?",
         ]
         for idx, example in enumerate(example_questions):
-            if examples[idx].button(tr(example)):
-                question = example
+            if examples[idx].button(tr(example), key=f"qa_example_{idx}"):
+                st.session_state.qa_question = example
+                st.rerun()
         if question:
             answer = translate_answer(answer_question(question), st.session_state.language)
             st.subheader(answer["title"])

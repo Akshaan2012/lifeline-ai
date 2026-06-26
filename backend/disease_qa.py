@@ -6,6 +6,8 @@ from urllib.parse import quote
 
 import requests
 
+from backend.openai_helper import openai_json
+
 
 DISEASE_LIBRARY: dict[str, dict[str, Any]] = {
     "alzheimers": {
@@ -476,6 +478,7 @@ def _medicine_relationship_answer(question: str) -> dict[str, Any] | None:
 def _question_intent(question: str) -> str:
     normalized = _normalize(question)
     intent_words = {
+        "production": ["made", "make", "manufacture", "manufactured", "produce", "produced", "production"],
         "emergency": ["emergency", "hospital", "urgent", "danger", "serious", "red flag", "when to go"],
         "tests": ["test", "scan", "diagnose", "diagnosis", "blood test", "x ray", "mri", "ct"],
         "treatment": ["treat", "treatment", "cure", "manage", "relief", "what should i do"],
@@ -671,10 +674,33 @@ def _medicine_answer(question: str) -> dict[str, Any] | None:
         return None
     answer = dict(MEDICINE_LIBRARY[key])
     answer["kind"] = "medicine"
+    answer["intent"] = _question_intent(question)
     answer["source"] = answer.get("source", "LifeLine AI medicine safety guide")
     answer["safety_note"] = (
         "This is general medicine information. It cannot tell you the exact dose or confirm if this medicine is safe for you personally."
     )
+    if key == "antibiotics" and answer["intent"] == "production":
+        answer["title"] = "How antibiotics are made"
+        answer["meaning"] = (
+            "Antibiotics are made in licensed pharmaceutical labs and factories, not at home. "
+            "Many start from bacteria or fungi grown in large sterile tanks; others are made or improved with chemical synthesis."
+        )
+        answer["symptoms"] = [
+            "Microbes that naturally produce an antibiotic may be grown in controlled fermentation tanks.",
+            "The antibiotic is separated, purified, and tested for strength, safety, and contamination.",
+            "The active ingredient is then made into tablets, capsules, liquids, creams, or injections under strict quality control.",
+        ]
+        answer["precautions"] = [
+            "Do not try to make or extract antibiotics at home.",
+            "Only use antibiotics that come from a licensed pharmacy or healthcare service.",
+            "Poor-quality or wrongly used antibiotics can fail treatment, cause harm, and increase antibiotic resistance.",
+        ]
+        answer["prevention"] = [
+            "Use antibiotics only when prescribed.",
+            "Complete the course exactly as the doctor says if one is prescribed.",
+            "Prevent infections with handwashing, vaccines, safe food/water, and proper wound care.",
+        ]
+        answer["doctor"] = "Ask a doctor or pharmacist if you want to know which antibiotic is used for a specific infection or why it was prescribed."
     if any(word in _normalize(question) for word in ["dose", "dosage", "how much", "how many"]):
         answer["doctor"] = (
             "For dose, follow the medicine label or your doctor's prescription. "
@@ -795,6 +821,46 @@ def _safe_unknown_answer(question: str) -> dict[str, Any]:
     }
 
 
+def _ai_health_answer(question: str) -> dict[str, Any] | None:
+    system = (
+        "You are LifeLine AI's health education assistant. Return only valid JSON. "
+        "Give simple, cautious, patient-friendly general health education. Do not diagnose, prescribe, "
+        "calculate doses, or say a medicine is personally safe. Include emergency warning signs when relevant."
+    )
+    user = (
+        "Answer this health or medicine question as JSON with these exact keys: "
+        "title string, meaning string, symptoms array of 2-4 strings, precautions array of 2-4 strings, "
+        "prevention array of 2-4 strings, doctor string, emergency array of 2-4 strings, kind string, "
+        "intent string, source string, safety_note string. "
+        f"Question: {question}"
+    )
+    data = openai_json(system, user, max_output_tokens=520)
+    if not data:
+        return None
+
+    required = ["title", "meaning", "symptoms", "precautions", "prevention", "doctor", "emergency"]
+    if any(key not in data for key in required):
+        return None
+    answer = {
+        "title": str(data.get("title") or _title_from_question(question)),
+        "meaning": str(data.get("meaning") or ""),
+        "symptoms": [str(item) for item in data.get("symptoms", []) if str(item).strip()][:4],
+        "precautions": [str(item) for item in data.get("precautions", []) if str(item).strip()][:4],
+        "prevention": [str(item) for item in data.get("prevention", []) if str(item).strip()][:4],
+        "doctor": str(data.get("doctor") or "Ask a doctor if symptoms continue, worsen, or you are unsure what is safe."),
+        "emergency": [str(item) for item in data.get("emergency", []) if str(item).strip()][:4],
+        "kind": str(data.get("kind") or "general"),
+        "intent": str(data.get("intent") or _question_intent(question)),
+        "source": str(data.get("source") or "OpenAI general health education with LifeLine AI safety rules."),
+    }
+    safety_note = str(data.get("safety_note") or "").strip()
+    if safety_note:
+        answer["safety_note"] = safety_note
+    if not answer["symptoms"] or not answer["precautions"] or not answer["emergency"]:
+        return None
+    return answer
+
+
 def answer_question(question: str) -> dict[str, Any]:
     relationship_answer = _medicine_relationship_answer(question)
     if relationship_answer:
@@ -812,11 +878,23 @@ def answer_question(question: str) -> dict[str, Any]:
         return _finalize_answer(_adapt_known_disease_answer(answer, question), question)
 
     if _looks_like_medicine_question(question):
+        ai_answer = _ai_health_answer(question)
+        if ai_answer:
+            ai_answer["kind"] = "medicine"
+            ai_answer["safety_note"] = ai_answer.get(
+                "safety_note",
+                "This is general medicine information. It cannot tell you the exact dose or confirm if this medicine is safe for you personally.",
+            )
+            return _finalize_answer(ai_answer, question)
         return _finalize_answer(_safe_unknown_medicine_answer(question), question)
 
     internet_answer = _internet_answer(question)
     if internet_answer:
         internet_answer["kind"] = "disease"
         return _finalize_answer(internet_answer, question)
+
+    ai_answer = _ai_health_answer(question)
+    if ai_answer:
+        return _finalize_answer(ai_answer, question)
 
     return _finalize_answer(_general_health_answer(question), question)

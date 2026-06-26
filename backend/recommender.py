@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from backend.openai_helper import openai_json
+
 
 BASE_ADVICE = {
     "Self-Care": {
@@ -132,7 +134,7 @@ def build_recommendations(triage_result: Any) -> dict[str, Any]:
     base = BASE_ADVICE[triage_result.risk_level]
     category = CATEGORY_GUIDANCE.get(triage_result.possible_category, CATEGORY_GUIDANCE["General Health"])
 
-    return {
+    advice = {
         "doctor_visit": base["doctor_visit"],
         "timeframe": base["timeframe"],
         "care_steps": base["care"],
@@ -147,3 +149,41 @@ def build_recommendations(triage_result: Any) -> dict[str, Any]:
         "simple_explanation": triage_result.explanation,
         "disclaimer": "This is general guidance only. It does not replace a doctor, diagnosis, prescription, or emergency service.",
     }
+    return _ai_enhanced_recommendations(triage_result, advice)
+
+
+def _ai_enhanced_recommendations(triage_result: Any, advice: dict[str, Any]) -> dict[str, Any]:
+    system = (
+        "You are LifeLine AI's patient health checker assistant. Return only valid JSON. "
+        "Improve patient-friendly wording while preserving the risk level and safety intent. "
+        "Do not diagnose, prescribe, or replace emergency care."
+    )
+    user = (
+        "Enhance these recommendation fields as JSON with exact keys: likely_pattern string, "
+        "care_steps array, home_care array, avoid array, precautions array, prevention array, "
+        "red_flags array, doctor_questions array, simple_explanation string. "
+        "Keep arrays to 3-5 short strings. "
+        f"Risk level: {triage_result.risk_level}\nScore: {triage_result.score}\n"
+        f"Possible category: {triage_result.possible_category}\nSignals: {', '.join(triage_result.signals)}\n"
+        f"Existing advice: {advice}"
+    )
+    data = openai_json(system, user, max_output_tokens=620)
+    if not data:
+        return advice
+
+    enhanced = dict(advice)
+
+    def items(name: str) -> list[str]:
+        value = data.get(name)
+        if not isinstance(value, list):
+            return list(advice.get(name, []))
+        clean = [str(item).strip() for item in value if str(item).strip()]
+        return clean[:5] or list(advice.get(name, []))
+
+    for key in ["care_steps", "home_care", "avoid", "precautions", "prevention", "red_flags", "doctor_questions"]:
+        enhanced[key] = items(key)
+    for key in ["likely_pattern", "simple_explanation"]:
+        if str(data.get(key) or "").strip():
+            enhanced[key] = str(data[key]).strip()
+    enhanced["source"] = "OpenAI-enhanced guidance with LifeLine AI safety rules."
+    return enhanced

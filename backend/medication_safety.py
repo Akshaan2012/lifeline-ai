@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from backend.openai_helper import openai_json
+
 
 @dataclass(frozen=True)
 class MedicationSafetyResult:
@@ -112,7 +114,7 @@ def analyze_medication_safety(
     if not medicine_known or len(caution_flags) >= 4:
         level = "Ask a doctor/pharmacist first"
 
-    return MedicationSafetyResult(
+    result = MedicationSafetyResult(
         level=level,
         summary=summary,
         key_points=[
@@ -137,4 +139,57 @@ def analyze_medication_safety(
             "Can I take it with my current medicines?",
             "What side effects should make me stop and get help?",
         ],
+    )
+    return _ai_enhanced_safety_result(
+        result,
+        medicine_name=medicine_name,
+        age=age,
+        allergies=allergies,
+        conditions=conditions,
+        current_medicines=current_medicines,
+        pregnant=pregnant,
+    )
+
+
+def _ai_enhanced_safety_result(
+    result: MedicationSafetyResult,
+    *,
+    medicine_name: str,
+    age: int,
+    allergies: str,
+    conditions: list[str],
+    current_medicines: str,
+    pregnant: bool,
+) -> MedicationSafetyResult:
+    system = (
+        "You are LifeLine AI's medication safety assistant. Return only valid JSON. "
+        "Give cautious education only. Do not prescribe, calculate dosage, or confirm that a medicine is personally safe."
+    )
+    user = (
+        "Improve this medicine safety result as JSON with exact keys: summary string, key_points array, "
+        "caution_flags array, what_to_do array, emergency_signs array, questions array. "
+        "Keep each array to 3-5 short strings. Be conservative and mention pharmacist/doctor review for interactions. "
+        f"Medicine: {medicine_name}\nAge: {age}\nPregnant: {pregnant}\nConditions: {', '.join(conditions) or 'none'}\n"
+        f"Allergies: {allergies or 'none'}\nCurrent medicines: {current_medicines or 'none'}\n"
+        f"Existing result: {result}"
+    )
+    data = openai_json(system, user, max_output_tokens=520)
+    if not data:
+        return result
+
+    def items(name: str, fallback: list[str]) -> list[str]:
+        value = data.get(name)
+        if not isinstance(value, list):
+            return fallback
+        clean = [str(item).strip() for item in value if str(item).strip()]
+        return clean[:5] or fallback
+
+    return MedicationSafetyResult(
+        level=result.level,
+        summary=str(data.get("summary") or result.summary),
+        key_points=items("key_points", result.key_points),
+        caution_flags=items("caution_flags", result.caution_flags),
+        what_to_do=items("what_to_do", result.what_to_do),
+        emergency_signs=items("emergency_signs", result.emergency_signs),
+        questions=items("questions", result.questions),
     )

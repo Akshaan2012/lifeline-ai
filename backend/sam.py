@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, asdict
 from functools import lru_cache
-import os
+
+from backend.openai_helper import offline_mode, openai_text, setting
 
 
 @dataclass(frozen=True)
@@ -147,43 +148,9 @@ def route_message(message: str) -> SamCommand:
     )
 
 
-@lru_cache(maxsize=64)
-def _setting(name: str, default: str = "") -> str:
-    value = os.getenv(name, "").strip()
-    if value:
-        return value
-    try:
-        import streamlit as st
-
-        return str(st.secrets.get(name, default)).strip()
-    except Exception:
-        return default
-
-
-def _truthy(value: str) -> bool:
-    return str(value).strip().lower() in {"1", "true", "yes", "on"}
-
-
-def _offline_mode() -> bool:
-    if _truthy(os.getenv("LIFELINE_OFFLINE_MODE", "")):
-        return True
-    try:
-        import streamlit as st
-
-        return bool(st.session_state.get("offline_mode")) or _truthy(
-            str(st.secrets.get("LIFELINE_OFFLINE_MODE", ""))
-        )
-    except Exception:
-        return False
-
-
 def _ai_reply(message: str) -> str | None:
-    if _offline_mode():
+    if offline_mode():
         return None
-    api_key = _setting("OPENAI_API_KEY")
-    if not api_key:
-        return None
-    model = _setting("OPENAI_MODEL", "gpt-5.4-nano")
     system = (
         "You are Sam, the friendly AI assistant inside LifeLine AI. "
         "Answer any normal question clearly in 2 to 5 short sentences. For health questions, use simple patient-friendly language, "
@@ -192,21 +159,12 @@ def _ai_reply(message: str) -> str | None:
         "You can also guide users to these app pages: Patient Health Checker, Health Timeline, Disease Q&A Assistant, "
         "Medication Safety Checker, Doctor Dashboard, Scenario Challenge, Safety Videos."
     )
-    try:
-        from openai import OpenAI
-
-        client = OpenAI(api_key=api_key, timeout=float(_setting("OPENAI_TIMEOUT_SECONDS", "3.5")))
-        response = client.responses.create(
-            model=model,
-            input=[
-                {"role": "system", "content": system},
-                {"role": "user", "content": message},
-            ],
-            max_output_tokens=int(_setting("OPENAI_MAX_OUTPUT_TOKENS", "90")),
-        )
-        return (response.output_text or "").strip() or None
-    except Exception:
-        return None
+    return openai_text(
+        system,
+        message,
+        max_output_tokens=int(setting("OPENAI_MAX_OUTPUT_TOKENS", "90")),
+        timeout_seconds=float(setting("OPENAI_TIMEOUT_SECONDS", "3.5")),
+    )
 
 
 def _wants_navigation(message: str) -> bool:
