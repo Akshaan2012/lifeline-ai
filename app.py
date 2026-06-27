@@ -2218,12 +2218,6 @@ def render_home() -> None:
     cases = list_cases()
     summary = case_queue_summary(cases)
     recent_cases = sorted(cases, key=lambda case: str(case.get("created_at", "")), reverse=True)[:4]
-    if not recent_cases:
-        recent_cases = [
-            {"patient_name": "Patient 001", "risk_level": "Urgent Care", "review_status": "New", "score": 62},
-            {"patient_name": "Patient 002", "risk_level": "Doctor Visit Recommended", "review_status": "Reviewed", "score": 38},
-            {"patient_name": "Patient 003", "risk_level": "Self-Care", "review_status": "Resolved", "score": 18},
-        ]
     rows = "".join(
         f"""
         <tr>
@@ -2234,6 +2228,21 @@ def render_home() -> None:
         </tr>
         """
         for case in recent_cases
+    )
+    patient_case_content = (
+        f"""
+        <table class="mini-table">
+            <thead><tr><th>{h("Patient")}</th><th>{h("Risk")}</th><th>{h("Status")}</th><th>{h("Score")}</th></tr></thead>
+            <tbody>{rows}</tbody>
+        </table>
+        """
+        if recent_cases
+        else f"""
+        <div class="empty-result">
+            <b>{h("No patient cases yet.")}</b><br>
+            {h("Cases will appear here only after a patient chooses to share an assessment with the clinic.")}
+        </div>
+        """
     )
     st.markdown(
         f"""
@@ -2264,10 +2273,7 @@ def render_home() -> None:
             <div class="workspace-panel">
                 <div class="small-title">{h("Doctor Dashboard")}</div>
                 <h2>{h("Patient cases")}</h2>
-                <table class="mini-table">
-                    <thead><tr><th>{h("Patient")}</th><th>{h("Risk")}</th><th>{h("Status")}</th><th>{h("Score")}</th></tr></thead>
-                    <tbody>{rows}</tbody>
-                </table>
+                {patient_case_content}
             </div>
             <div class="workspace-panel">
                 <div class="small-title">{h("Health Timeline")}</div>
