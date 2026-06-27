@@ -27,6 +27,16 @@ Or download manually:
 6. Do not run the `.bat` file directly from inside the ZIP window. Windows will extract only that one file and the app will not find `requirements.txt`.
 7. Wait for dependencies to install. The app opens at `http://localhost:8501`.
 
+## Optional OpenAI Features
+
+Sam, Health & Medicine Q&A, and Medication Safety can use OpenAI. To enable them locally:
+
+1. Copy `.env.example` to a new file named `.env`.
+2. Replace `sk-proj-your-key-here` with a valid OpenAI API key.
+3. Restart the launcher.
+
+Do not add the real key to GitHub. For the hosted Streamlit app, put `OPENAI_API_KEY` and `OPENAI_MODEL` in the app's **Settings > Secrets** instead.
+
 ## macOS / Linux
 
 1. Install Python 3.10 or newer.
@@ -63,4 +73,5 @@ Then run the launcher for their operating system.
 
 - The app opens in your browser at `http://localhost:8501`.
 - If Supabase settings are missing, the app uses local SQLite fallback.
+- If OpenAI is missing or unavailable, AI-enhanced pages use their built-in local fallback.
 - LifeLine AI is general health education and decision support. It does not diagnose, prescribe, or replace medical care.

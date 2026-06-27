@@ -99,6 +99,34 @@ sudo apt install python3-venv
 - ReportLab
 - SQLite
 - deep-translator
+- OpenAI API (optional AI enhancements)
+
+## OpenAI Setup
+
+OpenAI enhances Sam, Health & Medicine Q&A, and the Medication Safety Checker. The app continues with local safety rules when OpenAI is unavailable.
+
+For a local install, copy `.env.example` to `.env`, replace the placeholder with a valid key, and keep `.env` private:
+
+```text
+OPENAI_API_KEY=sk-proj-your-real-key
+OPENAI_MODEL=gpt-5.4-nano
+```
+
+For Streamlit Community Cloud:
+
+1. Open the deployed app settings.
+2. Go to **Secrets**.
+3. Add the following TOML values.
+4. Save and reboot the app.
+
+```toml
+OPENAI_API_KEY = "sk-proj-your-real-key"
+OPENAI_MODEL = "gpt-5.4-nano"
+OPENAI_TIMEOUT_SECONDS = "6"
+OPENAI_MAX_OUTPUT_TOKENS = "220"
+```
+
+Never commit `.env` or `.streamlit/secrets.toml`. Both are excluded by `.gitignore`.
 
 ## Supabase Setup
 

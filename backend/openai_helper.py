@@ -1,13 +1,43 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 from functools import lru_cache
+from pathlib import Path
 from typing import Any
+
+
+LOGGER = logging.getLogger(__name__)
+_DOTENV_LOADED = False
+_LAST_OPENAI_ERROR = ""
+
+
+def _load_dotenv() -> None:
+    global _DOTENV_LOADED
+    if _DOTENV_LOADED:
+        return
+    _DOTENV_LOADED = True
+    env_path = Path(".env")
+    if not env_path.exists():
+        return
+    try:
+        for line in env_path.read_text(encoding="utf-8").splitlines():
+            clean = line.strip()
+            if not clean or clean.startswith("#") or "=" not in clean:
+                continue
+            key, value = clean.split("=", 1)
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            if key and key not in os.environ:
+                os.environ[key] = value
+    except OSError as exc:
+        LOGGER.warning("Could not read local .env settings: %s", exc)
 
 
 @lru_cache(maxsize=64)
 def setting(name: str, default: str = "") -> str:
+    _load_dotenv()
     value = os.getenv(name, "").strip()
     if value:
         return value
@@ -40,6 +70,10 @@ def openai_enabled() -> bool:
     return bool(setting("OPENAI_API_KEY")) and not offline_mode()
 
 
+def last_openai_error() -> str:
+    return _LAST_OPENAI_ERROR
+
+
 def openai_text(
     system: str,
     user: str,
@@ -47,7 +81,9 @@ def openai_text(
     max_output_tokens: int | None = None,
     timeout_seconds: float | None = None,
 ) -> str | None:
+    global _LAST_OPENAI_ERROR
     if not openai_enabled():
+        _LAST_OPENAI_ERROR = "OpenAI is disabled or OPENAI_API_KEY is not configured."
         return None
     try:
         from openai import OpenAI
@@ -65,8 +101,14 @@ def openai_text(
             max_output_tokens=max_output_tokens
             or int(setting("OPENAI_MAX_OUTPUT_TOKENS", "220")),
         )
-        return (response.output_text or "").strip() or None
-    except Exception:
+        output = (response.output_text or "").strip() or None
+        _LAST_OPENAI_ERROR = "" if output else "OpenAI returned an empty response."
+        return output
+    except Exception as exc:
+        error_code = getattr(exc, "code", None) or type(exc).__name__
+        status_code = getattr(exc, "status_code", None)
+        _LAST_OPENAI_ERROR = f"{error_code} ({status_code})" if status_code else str(error_code)
+        LOGGER.warning("OpenAI enhancement unavailable: %s", _LAST_OPENAI_ERROR)
         return None
 
 
