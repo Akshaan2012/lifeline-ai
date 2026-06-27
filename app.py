@@ -127,6 +127,7 @@ FOLLOW_UP_RULES = [
 PAGES = [
     "Home",
     "Patient Health Checker",
+    "Health Report",
     "Health Timeline",
     "Disease Q&A Assistant",
     "Medication Safety Checker",
@@ -286,6 +287,18 @@ def prepare_language(selected_language: str) -> None:
 
 def h(text: str) -> str:
     return escape(tr(text))
+
+
+def html_block(markup: str) -> str:
+    """Strip per-line leading whitespace from an HTML string.
+
+    Streamlit renders custom HTML through a Markdown processor. Markdown treats
+    any line indented by 4+ spaces as a code block, so indented multi-line HTML
+    (especially when one f-string is substituted into another) can leak as raw
+    markup on the page. Removing leading whitespace per line keeps the HTML
+    rendering as UI instead of showing literal tags.
+    """
+    return "\n".join(line.lstrip() for line in markup.splitlines()).strip()
 
 
 def split_free_text_items(text: str) -> list[str]:
@@ -507,6 +520,45 @@ def inject_css() -> None:
             right: auto !important;
             left: 16px !important;
             bottom: 16px !important;
+        }
+        /* Keep the "re-open sidebar" control visible and clickable.
+           Streamlit puts it inside the toolbar, which we otherwise hide.
+           Re-show only the branch that contains the expand button. */
+        [data-testid="stToolbar"]:has([data-testid="stExpandSidebarButton"]),
+        [data-testid="stToolbar"]:has([data-testid="stExpandSidebarButton"]) > div,
+        [data-testid="stExpandSidebarButton"] {
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+        [data-testid="stExpandSidebarButton"] {
+            width: 40px !important;
+            height: 40px !important;
+            min-width: 40px !important;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px !important;
+            color: #042029 !important;
+            background: linear-gradient(135deg, #f4fff9, #22dfc9) !important;
+            box-shadow: 0 6px 18px rgba(8, 38, 49, .22) !important;
+            border: 1px solid rgba(8, 38, 49, .12) !important;
+            cursor: pointer;
+        }
+        [data-testid="stExpandSidebarButton"]:hover {
+            filter: brightness(1.05);
+            box-shadow: 0 8px 22px rgba(8, 38, 49, .3) !important;
+        }
+        [data-testid="stExpandSidebarButton"] svg {
+            color: #042029 !important;
+            fill: #042029 !important;
+            width: 22px !important;
+            height: 22px !important;
+        }
+        [data-testid="stExpandSidebarButton"] span,
+        [data-testid="stExpandSidebarButton"] [data-testid="stIconMaterial"] {
+            color: #042029 !important;
+            opacity: 1 !important;
+            font-size: 24px !important;
         }
         [data-testid="stSidebar"] {
             background:
@@ -2296,7 +2348,8 @@ def render_home() -> None:
         ]
     )
     st.markdown(
-        f"""
+        html_block(
+            f"""
         <div class="doctor-strip">
             <div class="workspace-panel">
                 <div class="small-title">{h("Doctor Dashboard")}</div>
@@ -2312,7 +2365,8 @@ def render_home() -> None:
                 <p class="muted">{h("Saved checks become trend charts for risk score, pain, and optional measurements.")}</p>
             </div>
         </div>
-        """,
+        """
+        ),
         unsafe_allow_html=True,
     )
     st.write("")
@@ -2581,6 +2635,89 @@ def render_result_panel(
     st.warning(tr(advice["disclaimer"]))
 
 
+def render_result_summary_card(result: Any, advice: dict[str, Any]) -> None:
+    """Compact result preview shown in the checker's side column.
+
+    The full report opens on its own dedicated full-width page.
+    """
+    danger = danger_status(result.risk_level)
+    st.markdown(
+        html_block(
+            f"""
+            <div class="danger-banner {danger['class']}">
+                <h2>{h(danger['label'])}</h2>
+                <p>{h(danger['text'])}</p>
+            </div>
+            """
+        ),
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        html_block(
+            f"""
+            <div class="summary-grid">
+                <div class="summary-item"><span>{h('Care Level')}</span>{h(result.risk_level)}</div>
+                <div class="summary-item"><span>{h('Risk Score')}</span>{result.score}/100</div>
+                <div class="summary-item"><span>{h('Pattern')}</span>{h(result.possible_category)}</div>
+                <div class="summary-item"><span>{h('Timeframe')}</span>{h(advice['timeframe'])}</div>
+            </div>
+            """
+        ),
+        unsafe_allow_html=True,
+    )
+    st.info(tr(advice["risk_summary"]))
+
+
+def render_report_page() -> None:
+    """Dedicated full-width view for the completed health report."""
+    page_header(
+        "Health Report",
+        "The full risk guidance, care plan, follow-up tracker, and doctor-ready summary in one wide view.",
+        "Health report",
+    )
+    stored = st.session_state.get("checker_result")
+    patient_data = st.session_state.get("checker_patient_data") or {}
+    if not stored:
+        st.markdown(
+            html_block(
+                f"""
+                <div class="empty-result">
+                    <b>{h("No report yet.")}</b><br>
+                    {h("Run a check on the Patient Health Checker, then your full report will open here.")}
+                </div>
+                """
+            ),
+            unsafe_allow_html=True,
+        )
+        if st.button(tr("Go to Patient Health Checker"), type="primary"):
+            switch_page("Patient Health Checker")
+        return
+
+    if stored.get("saved"):
+        share_code = str(stored.get("share_code") or "")
+        if share_code:
+            st.success(tr(f"Shared with the clinic. Keep this private case code: {share_code}"))
+
+    render_result_panel(stored["result"], stored["advice"], patient_data, stored.get("comparison"))
+
+    pdf_bytes = generate_health_report_pdf(patient_data, stored["result"], stored["advice"])
+    dl_col, back_col = st.columns([1, 1])
+    with dl_col:
+        st.download_button(
+            tr("Download Health Report PDF"),
+            data=pdf_bytes,
+            file_name="lifeline_ai_health_report.pdf",
+            mime="application/pdf",
+            width="stretch",
+        )
+    with back_col:
+        if st.button(tr("Back to checker"), width="stretch"):
+            switch_page("Patient Health Checker")
+
+    if patient_data:
+        render_followup_and_summary(patient_data, stored["result"], stored["advice"])
+
+
 def render_followup_and_summary(patient_data: dict[str, Any], result: Any, advice: dict[str, Any]) -> None:
     st.write("")
     st.markdown(f'<div class="section-label">{h("Follow-up and doctor summary")}</div>', unsafe_allow_html=True)
@@ -2703,31 +2840,23 @@ def render_checker() -> None:
                     st.code(share_code, language=None)
                 else:
                     st.warning(tr("The case was saved, but a private code could not be created. Ask the clinic to update its database schema."))
-            patient_data = st.session_state.get("checker_patient_data") or {}
-            render_result_panel(stored["result"], stored["advice"], patient_data, stored.get("comparison"))
-            pdf_bytes = generate_health_report_pdf(patient_data, stored["result"], stored["advice"])
-            st.download_button(
-                tr("Download Health Report PDF"),
-                data=pdf_bytes,
-                file_name="lifeline_ai_health_report.pdf",
-                mime="application/pdf",
-                width="stretch",
-            )
+            render_result_summary_card(stored["result"], stored["advice"])
+            st.caption(tr("Open the full report for the complete care plan, follow-up, and doctor summary."))
+            if st.button(tr("Open full report"), type="primary", width="stretch", key="open_full_report"):
+                switch_page("Health Report")
         else:
             st.markdown(
-                f"""
+                html_block(
+                    f"""
                 <div class="empty-result">
                     <b>{h("No analysis yet.")}</b><br>
                     {h("Fill the patient details on the left and click Analyze Health.")}
                     {h("The danger level will appear here as green, yellow, or red.")}
                 </div>
-                """,
+                """
+                ),
                 unsafe_allow_html=True,
             )
-    stored = st.session_state.get("checker_result")
-    patient_data = st.session_state.get("checker_patient_data") or {}
-    if stored and patient_data:
-        render_followup_and_summary(patient_data, stored["result"], stored["advice"])
     render_clinic_response_lookup()
     st.write("")
 
@@ -3175,6 +3304,8 @@ def main() -> None:
         render_home()
     elif st.session_state.page == "Patient Health Checker":
         render_checker()
+    elif st.session_state.page == "Health Report":
+        render_report_page()
     elif st.session_state.page == "Health Timeline":
         render_timeline()
     elif st.session_state.page == "Disease Q&A Assistant":
