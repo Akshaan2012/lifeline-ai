@@ -130,7 +130,9 @@ def _risk_summary(risk_level: str) -> str:
     return summaries[risk_level]
 
 
-def build_recommendations(triage_result: Any, enhance: bool = True) -> dict[str, Any]:
+def build_recommendations(
+    triage_result: Any, enhance: bool = True, patient_data: dict[str, Any] | None = None
+) -> dict[str, Any]:
     base = BASE_ADVICE[triage_result.risk_level]
     category = CATEGORY_GUIDANCE.get(triage_result.possible_category, CATEGORY_GUIDANCE["General Health"])
 
@@ -159,28 +161,73 @@ def build_recommendations(triage_result: Any, enhance: bool = True) -> dict[str,
     }
     if not enhance:
         return advice
-    return _ai_enhanced_recommendations(triage_result, advice)
+    return _ai_enhanced_recommendations(triage_result, advice, patient_data or {})
 
 
-def _ai_enhanced_recommendations(triage_result: Any, advice: dict[str, Any]) -> dict[str, Any]:
+# How direct the wording should be at each care level. This keeps the tone
+# matched to the actual result instead of sounding alarming for everything.
+TONE_BY_LEVEL = {
+    "Self-Care": "calm and reassuring",
+    "Doctor Visit Recommended": "supportive and matter-of-fact",
+    "Urgent Care": "clear and direct, but not frightening",
+    "Emergency": "serious and direct, focused on getting help now",
+}
+
+
+def _ai_enhanced_recommendations(
+    triage_result: Any, advice: dict[str, Any], patient_data: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    patient_data = patient_data or {}
+    tone = TONE_BY_LEVEL.get(triage_result.risk_level, "calm and clear")
+
+    reported = {
+        "age": patient_data.get("age"),
+        "gender": patient_data.get("gender"),
+        "symptoms": patient_data.get("symptoms", []),
+        "duration_days": patient_data.get("duration_days"),
+        "pain_level_0_10": patient_data.get("pain_level"),
+        "temperature_c": patient_data.get("temperature"),
+        "heart_rate": patient_data.get("heart_rate") or None,
+        "blood_pressure": (
+            f"{patient_data.get('systolic_bp')}/{patient_data.get('diastolic_bp')}"
+            if patient_data.get("systolic_bp")
+            else None
+        ),
+        "oxygen": patient_data.get("oxygen") or None,
+        "conditions": patient_data.get("conditions", []),
+        "medications_or_allergies": patient_data.get("medications", ""),
+    }
+
     system = (
-        "You are LifeLine AI's patient health checker assistant. Return only valid JSON. "
-        "Improve patient-friendly wording while preserving the risk level and safety intent. "
-        "Do not diagnose, prescribe, or replace emergency care."
+        "You are LifeLine AI, a calm home-health explainer for everyday families. "
+        "Return ONLY valid JSON, with no text outside it. "
+        "Write in plain, warm, everyday language at about a sixth-grade reading level. "
+        "Be accurate and safe, but never frighten the reader or imply danger the details do not support. "
+        f"This check came out as the '{triage_result.risk_level}' care level, so your tone must be {tone}. "
+        "Most everyday symptoms are not emergencies; only treat something as serious when the reported "
+        "details clearly justify it. Never use the word 'danger'. Do not name a specific disease as a "
+        "diagnosis and do not prescribe medicines. Only mention red flags that are genuinely relevant to "
+        "THIS person's reported symptoms, never a generic scary list."
     )
     user = (
-        "Enhance these recommendation fields as JSON with exact keys: likely_pattern string, "
-        "care_steps array, home_care array, avoid array, precautions array, prevention array, "
-        "red_flags array, doctor_questions array, simple_explanation string, report_summary string, "
-        "doctor_handoff string. The report_summary must be a concise patient-friendly overview. "
-        "The doctor_handoff must be a concise factual clinical handoff that clearly separates reported "
-        "details from the app's decision-support result. "
-        "Keep arrays to 3-5 short strings. "
-        f"Risk level: {triage_result.risk_level}\nScore: {triage_result.score}\n"
-        f"Possible category: {triage_result.possible_category}\nSignals: {', '.join(triage_result.signals)}\n"
-        f"Existing advice: {advice}"
+        "Write patient-friendly guidance as JSON with EXACTLY these keys: "
+        "report_summary (string), simple_explanation (string), likely_pattern (string), "
+        "care_steps (array), home_care (array), avoid (array), precautions (array), "
+        "prevention (array), red_flags (array), doctor_questions (array), doctor_handoff (string).\n"
+        "- report_summary: 2-3 warm sentences telling the person, in everyday words, what this result "
+        "means and how worried they should (or should not) be. Match the calm/serious tone to the care level.\n"
+        "- simple_explanation: one short sentence on why this care level was chosen.\n"
+        "- red_flags: 3-5 specific warning signs relevant to the reported symptoms, each saying what to do if it happens.\n"
+        "- every other array: 3-5 short, practical, friendly items tailored to the reported details.\n"
+        "- doctor_handoff: a concise, factual clinical handoff that separates reported details from this "
+        "app's decision-support result.\n\n"
+        f"Care level: {triage_result.risk_level}\n"
+        f"Risk score (0-100): {triage_result.score}\n"
+        f"Possible category: {triage_result.possible_category}\n"
+        f"Signals the app noticed: {', '.join(triage_result.signals)}\n"
+        f"Reported patient details: {reported}"
     )
-    data = openai_json(system, user, max_output_tokens=620)
+    data = openai_json(system, user, max_output_tokens=2000)
     if not data:
         return advice
 
@@ -198,5 +245,5 @@ def _ai_enhanced_recommendations(triage_result: Any, advice: dict[str, Any]) -> 
     for key in ["likely_pattern", "simple_explanation", "report_summary", "doctor_handoff"]:
         if str(data.get(key) or "").strip():
             enhanced[key] = str(data[key]).strip()
-    enhanced["source"] = "OpenAI-enhanced guidance with LifeLine AI safety rules."
+    enhanced["source"] = "Written for you by LifeLine AI (gpt-5.4-nano), guided by the app's safety rules."
     return enhanced

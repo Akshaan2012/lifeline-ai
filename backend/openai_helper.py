@@ -98,8 +98,14 @@ def openai_text(
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
             ],
+            # gpt-5.4-nano is a reasoning model: keep effort low so the token
+            # budget goes to the actual answer instead of hidden reasoning
+            # (a low budget here was silently returning empty text before).
+            reasoning={"effort": setting("OPENAI_REASONING_EFFORT", "low")},
+            # Keep answers tight so structured JSON does not get truncated.
+            text={"verbosity": setting("OPENAI_VERBOSITY", "low")},
             max_output_tokens=max_output_tokens
-            or int(setting("OPENAI_MAX_OUTPUT_TOKENS", "220")),
+            or int(setting("OPENAI_MAX_OUTPUT_TOKENS", "700")),
         )
         output = (response.output_text or "").strip() or None
         _LAST_OPENAI_ERROR = "" if output else "OpenAI returned an empty response."

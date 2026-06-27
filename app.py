@@ -1632,23 +1632,51 @@ def render_quick_jumps(prefix: str, exclude: str | None = None) -> None:
             switch_page(page)
 
 
+def inject_accessibility_css() -> None:
+    """Bigger text, higher contrast, and stronger focus outlines for easier reading."""
+    st.markdown(
+        """
+        <style>
+        .stApp, .stApp p, .stApp li, .stApp label, .stApp .stMarkdown { font-size: 1.18rem !important; line-height: 1.7 !important; }
+        .stApp h1 { font-size: clamp(2.6rem, 5vw, 4.6rem) !important; }
+        .stApp h2 { font-size: 1.7rem !important; }
+        .stApp h3 { font-size: 1.3rem !important; }
+        label, .stTextInput label, .stNumberInput label, .stSelectbox label, .stMultiSelect label { font-weight: 800 !important; color: #06212a !important; }
+        .stTextInput input, .stNumberInput input, .stTextArea textarea, div[data-baseweb="select"] > div { min-height: 3rem !important; font-size: 1.12rem !important; }
+        .stButton>button, [data-testid="stFormSubmitButton"] button, [data-testid="stDownloadButton"] button { min-height: 3.1rem !important; font-size: 1.12rem !important; }
+        *:focus-visible { outline: 3px solid #b5552e !important; outline-offset: 3px !important; }
+        .danger-banner h2 { font-size: 1.7rem !important; }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def danger_status(risk_level: str) -> dict[str, str]:
+    # Calm, care-level language. The old version labelled everything "DANGER"
+    # (even self-care), which made the whole app feel alarming.
     if risk_level == "Self-Care":
         return {
-            "label": "LOW DANGER",
+            "label": "SELF-CARE LEVEL",
             "class": "danger-low",
-            "text": "Home monitoring may be enough for now, but watch for changes.",
+            "text": "This looks low concern right now. Home care is usually enough — just keep an eye on any changes.",
         }
     if risk_level == "Doctor Visit Recommended":
         return {
-            "label": "MODERATE DANGER",
+            "label": "WORTH A DOCTOR VISIT",
             "class": "danger-moderate",
-            "text": "A doctor visit is recommended, especially if symptoms continue or worsen.",
+            "text": "This is not an emergency, but a doctor should take a look — sooner if things get worse.",
+        }
+    if risk_level == "Urgent Care":
+        return {
+            "label": "GET CARE TODAY",
+            "class": "danger-high",
+            "text": "These details suggest getting medical care today rather than waiting.",
         }
     return {
-        "label": "HIGH DANGER",
+        "label": "EMERGENCY — ACT NOW",
         "class": "danger-high",
-        "text": "This needs urgent attention. Do not delay medical help.",
+        "text": "Some details look serious. Treat this as time-sensitive and get emergency help now.",
     }
 
 
@@ -2308,6 +2336,7 @@ def patient_form() -> dict[str, Any]:
         value=str(profile.get("patient_name", "")),
         placeholder=tr("Example: Patient 001"),
         key="patient_name_input",
+        help=tr("Optional. Use any name or ID, or leave this blank."),
     )
     b1, b2 = st.columns(2)
     with b1:
@@ -2328,7 +2357,8 @@ def patient_form() -> dict[str, Any]:
             format_func=tr,
             key="patient_gender_input",
         )
-    st.markdown(f"**{tr('Symptoms')}**")
+    st.markdown(f"**{tr('Symptoms')}** ❗")
+    st.caption(tr("Pick at least one symptom — this is the only required field. You can also type your own."))
     selected_symptoms = st.multiselect(
         tr("Choose symptoms from list"),
         SYMPTOM_OPTIONS,
@@ -2336,6 +2366,7 @@ def patient_form() -> dict[str, Any]:
         accept_new_options=True,
         format_func=tr,
         key="patient_symptoms_input",
+        help=tr("Start typing to search. Choose all that apply, or type a symptom that is not in the list."),
     )
     typed_symptoms = st.text_area(
         tr("Write any other symptoms"),
@@ -2358,7 +2389,8 @@ def patient_form() -> dict[str, Any]:
         pain_level = st.slider(tr("Pain level"), 0, 10, 3, key="patient_pain_input")
 
     st.markdown(f"**{tr('Optional measurements')}**")
-    with st.expander(tr("Add temperature, pulse, blood pressure, or oxygen"), expanded=True):
+    st.caption(tr("All optional. Skip anything you do not have a device for — the checker still works without them."))
+    with st.expander(tr("Add temperature, pulse, blood pressure, or oxygen"), expanded=False):
         temperature = st.number_input(
             tr("Temperature in Celsius"),
             min_value=32.0,
@@ -2611,6 +2643,13 @@ def render_checker() -> None:
         "Enter symptoms and the details you know. Heart rate, blood pressure, and oxygen are optional for home users.",
         "Prediction workspace",
     )
+    access = st.toggle(
+        tr("Easier-to-read mode (bigger text, higher contrast)"),
+        key="a11y_mode",
+        help=tr("Turn on larger fonts, stronger focus outlines, and higher contrast for easier reading."),
+    )
+    if access:
+        inject_accessibility_css()
     form_col, result_col = st.columns([1.05, .95], gap="large")
     with form_col:
         st.markdown(f'<div class="section-label">{h("Patient intake")}</div>', unsafe_allow_html=True)
@@ -2640,7 +2679,7 @@ def render_checker() -> None:
                 st.error(tr("Please choose at least one symptom."))
             else:
                 result = analyze_patient(data, use_ml=False)
-                advice = build_recommendations(result, enhance=True)
+                advice = build_recommendations(result, enhance=True, patient_data=data)
                 previous_case = latest_previous_case(data)
                 st.session_state.checker_result = {
                     "result": result,
