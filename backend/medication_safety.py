@@ -14,6 +14,7 @@ class MedicationSafetyResult:
     what_to_do: list[str]
     emergency_signs: list[str]
     questions: list[str]
+    source: str = "LifeLine AI medication safety rules"
 
 
 MEDICINE_RULES = {
@@ -139,6 +140,7 @@ def analyze_medication_safety(
             "Can I take it with my current medicines?",
             "What side effects should make me stop and get help?",
         ],
+        source="LifeLine AI medication safety rules",
     )
     return _ai_enhanced_safety_result(
         result,
@@ -192,4 +194,5 @@ def _ai_enhanced_safety_result(
         what_to_do=items("what_to_do", result.what_to_do),
         emergency_signs=items("emergency_signs", result.emergency_signs),
         questions=items("questions", result.questions),
+        source="OpenAI-enhanced medication guidance with LifeLine AI safety rules",
     )

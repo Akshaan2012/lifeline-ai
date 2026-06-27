@@ -77,6 +77,8 @@ def generate_health_report_pdf(patient_data: dict[str, Any], result: Any, advice
     story.append(Spacer(1, 12))
 
     sections = [
+        ("AI-assisted patient overview" if advice.get("source") else "Patient overview", advice["report_summary"]),
+        ("Doctor handoff", advice["doctor_handoff"]),
         ("Recommendation", result.recommendation),
         ("Why LifeLine AI thinks this", _items(result.signals)),
         ("What to do now", _items(advice["care_steps"])),
@@ -98,5 +100,13 @@ def generate_health_report_pdf(patient_data: dict[str, Any], result: Any, advice
             styles["BodyText"],
         )
     )
+    if advice.get("source"):
+        story.append(Spacer(1, 6))
+        story.append(
+            Paragraph(
+                "The overview and doctor handoff were written with OpenAI and constrained by LifeLine AI safety rules.",
+                styles["BodyText"],
+            )
+        )
     doc.build(story)
     return buffer.getvalue()

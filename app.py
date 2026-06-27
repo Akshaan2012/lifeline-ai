@@ -2855,6 +2855,7 @@ def render_medication_safety() -> None:
                     st.markdown(f"**{tr(title)}**")
                     for item in translate_items(items, st.session_state.language):
                         st.write(f"- {item}")
+                st.caption(f"{tr('Source')}: {tr(med_result.source)}")
                 st.warning(tr("This tool does not prescribe medicine or dosage. Ask a doctor or pharmacist before changing medicines."))
         else:
             st.markdown(

@@ -147,6 +147,14 @@ def build_recommendations(triage_result: Any, enhance: bool = True) -> dict[str,
         "doctor_questions": category["doctor_questions"],
         "risk_summary": _risk_summary(triage_result.risk_level),
         "simple_explanation": triage_result.explanation,
+        "report_summary": (
+            f"LifeLine AI classified this check as {triage_result.risk_level} with a risk score of "
+            f"{triage_result.score}/100 and a possible {triage_result.possible_category} pattern."
+        ),
+        "doctor_handoff": (
+            f"Review the reported symptoms, measured vital signs, and the signals that produced a "
+            f"{triage_result.risk_level} result."
+        ),
         "disclaimer": "This is general guidance only. It does not replace a doctor, diagnosis, prescription, or emergency service.",
     }
     if not enhance:
@@ -163,7 +171,10 @@ def _ai_enhanced_recommendations(triage_result: Any, advice: dict[str, Any]) -> 
     user = (
         "Enhance these recommendation fields as JSON with exact keys: likely_pattern string, "
         "care_steps array, home_care array, avoid array, precautions array, prevention array, "
-        "red_flags array, doctor_questions array, simple_explanation string. "
+        "red_flags array, doctor_questions array, simple_explanation string, report_summary string, "
+        "doctor_handoff string. The report_summary must be a concise patient-friendly overview. "
+        "The doctor_handoff must be a concise factual clinical handoff that clearly separates reported "
+        "details from the app's decision-support result. "
         "Keep arrays to 3-5 short strings. "
         f"Risk level: {triage_result.risk_level}\nScore: {triage_result.score}\n"
         f"Possible category: {triage_result.possible_category}\nSignals: {', '.join(triage_result.signals)}\n"
@@ -184,7 +195,7 @@ def _ai_enhanced_recommendations(triage_result: Any, advice: dict[str, Any]) -> 
 
     for key in ["care_steps", "home_care", "avoid", "precautions", "prevention", "red_flags", "doctor_questions"]:
         enhanced[key] = items(key)
-    for key in ["likely_pattern", "simple_explanation"]:
+    for key in ["likely_pattern", "simple_explanation", "report_summary", "doctor_handoff"]:
         if str(data.get(key) or "").strip():
             enhanced[key] = str(data[key]).strip()
     enhanced["source"] = "OpenAI-enhanced guidance with LifeLine AI safety rules."

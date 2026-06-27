@@ -821,18 +821,19 @@ def _safe_unknown_answer(question: str) -> dict[str, Any]:
     }
 
 
-def _ai_health_answer(question: str) -> dict[str, Any] | None:
+def _ai_health_answer(question: str, existing_answer: dict[str, Any]) -> dict[str, Any] | None:
     system = (
         "You are LifeLine AI's health education assistant. Return only valid JSON. "
-        "Give simple, cautious, patient-friendly general health education. Do not diagnose, prescribe, "
-        "calculate doses, or say a medicine is personally safe. Include emergency warning signs when relevant."
+        "Improve the supplied draft using accurate, simple, cautious, patient-friendly health education. "
+        "Preserve its safety intent. Do not diagnose, prescribe, calculate doses, or say a medicine is "
+        "personally safe. Include emergency warning signs when relevant."
     )
     user = (
-        "Answer this health or medicine question as JSON with these exact keys: "
+        "Enhance the draft answer as JSON with these exact keys: "
         "title string, meaning string, symptoms array of 2-4 strings, precautions array of 2-4 strings, "
         "prevention array of 2-4 strings, doctor string, emergency array of 2-4 strings, kind string, "
-        "intent string, source string, safety_note string. "
-        f"Question: {question}"
+        "intent string, safety_note string. Do not invent citations or claim a diagnosis. "
+        f"Question: {question}\nDraft answer: {existing_answer}"
     )
     data = openai_json(system, user, max_output_tokens=520)
     if not data:
@@ -849,9 +850,9 @@ def _ai_health_answer(question: str) -> dict[str, Any] | None:
         "prevention": [str(item) for item in data.get("prevention", []) if str(item).strip()][:4],
         "doctor": str(data.get("doctor") or "Ask a doctor if symptoms continue, worsen, or you are unsure what is safe."),
         "emergency": [str(item) for item in data.get("emergency", []) if str(item).strip()][:4],
-        "kind": str(data.get("kind") or "general"),
-        "intent": str(data.get("intent") or _question_intent(question)),
-        "source": str(data.get("source") or "OpenAI general health education with LifeLine AI safety rules."),
+        "kind": str(existing_answer.get("kind") or data.get("kind") or "general"),
+        "intent": str(existing_answer.get("intent") or data.get("intent") or _question_intent(question)),
+        "source": "OpenAI-enhanced health education with LifeLine AI safety rules",
     }
     safety_note = str(data.get("safety_note") or "").strip()
     if safety_note:
@@ -864,37 +865,36 @@ def _ai_health_answer(question: str) -> dict[str, Any] | None:
 def answer_question(question: str) -> dict[str, Any]:
     relationship_answer = _medicine_relationship_answer(question)
     if relationship_answer:
-        return _finalize_answer(relationship_answer, question)
+        draft = relationship_answer
+    else:
+        medicine_answer = _medicine_answer(question)
+        if medicine_answer:
+            draft = medicine_answer
+        else:
+            key = _find_local_key(question)
+            if key:
+                draft = dict(DISEASE_LIBRARY[key])
+                draft["kind"] = "disease"
+                draft["source"] = "LifeLine AI local knowledge base"
+                draft = _adapt_known_disease_answer(draft, question)
+            elif _looks_like_medicine_question(question):
+                draft = _safe_unknown_medicine_answer(question)
+                draft["kind"] = "medicine"
+                draft["safety_note"] = (
+                    "This is general medicine information. It cannot tell you the exact dose or confirm "
+                    "if this medicine is safe for you personally."
+                )
+            else:
+                internet_answer = _internet_answer(question)
+                if internet_answer:
+                    draft = internet_answer
+                    draft["kind"] = "disease"
+                else:
+                    draft = _general_health_answer(question)
 
-    medicine_answer = _medicine_answer(question)
-    if medicine_answer:
-        return _finalize_answer(medicine_answer, question)
-
-    key = _find_local_key(question)
-    if key:
-        answer = dict(DISEASE_LIBRARY[key])
-        answer["kind"] = "disease"
-        answer["source"] = "LifeLine AI local knowledge base"
-        return _finalize_answer(_adapt_known_disease_answer(answer, question), question)
-
-    if _looks_like_medicine_question(question):
-        ai_answer = _ai_health_answer(question)
-        if ai_answer:
-            ai_answer["kind"] = "medicine"
-            ai_answer["safety_note"] = ai_answer.get(
-                "safety_note",
-                "This is general medicine information. It cannot tell you the exact dose or confirm if this medicine is safe for you personally.",
-            )
-            return _finalize_answer(ai_answer, question)
-        return _finalize_answer(_safe_unknown_medicine_answer(question), question)
-
-    internet_answer = _internet_answer(question)
-    if internet_answer:
-        internet_answer["kind"] = "disease"
-        return _finalize_answer(internet_answer, question)
-
-    ai_answer = _ai_health_answer(question)
-    if ai_answer:
-        return _finalize_answer(ai_answer, question)
-
-    return _finalize_answer(_general_health_answer(question), question)
+    enhanced = _ai_health_answer(question, draft)
+    if enhanced:
+        if draft.get("safety_note") and not enhanced.get("safety_note"):
+            enhanced["safety_note"] = draft["safety_note"]
+        return _finalize_answer(enhanced, question)
+    return _finalize_answer(draft, question)
