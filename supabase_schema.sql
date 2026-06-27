@@ -10,7 +10,9 @@ create table if not exists public.patient_cases (
   score integer not null,
   raw_data jsonb not null,
   review_status text not null default 'New',
-  doctor_notes text not null default ''
+  doctor_notes text not null default '',
+  share_code text unique,
+  patient_consent boolean not null default false
 );
 
 alter table public.patient_cases
@@ -18,6 +20,12 @@ add column if not exists review_status text not null default 'New';
 
 alter table public.patient_cases
 add column if not exists doctor_notes text not null default '';
+
+alter table public.patient_cases
+add column if not exists share_code text unique;
+
+alter table public.patient_cases
+add column if not exists patient_consent boolean not null default false;
 
 alter table public.patient_cases enable row level security;
 

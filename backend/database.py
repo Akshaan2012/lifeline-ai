@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import secrets
 import sqlite3
 from datetime import datetime
 from pathlib import Path
@@ -128,6 +129,8 @@ def init_db() -> None:
                 raw_data TEXT NOT NULL,
                 review_status TEXT NOT NULL DEFAULT 'New',
                 doctor_notes TEXT NOT NULL DEFAULT ''
+                ,share_code TEXT
+                ,patient_consent INTEGER NOT NULL DEFAULT 0
             )
             """
         )
@@ -142,9 +145,23 @@ def init_db() -> None:
             conn.execute(
                 "ALTER TABLE patient_cases ADD COLUMN doctor_notes TEXT NOT NULL DEFAULT ''"
             )
+        if "share_code" not in existing_columns:
+            conn.execute("ALTER TABLE patient_cases ADD COLUMN share_code TEXT")
+        if "patient_consent" not in existing_columns:
+            conn.execute(
+                "ALTER TABLE patient_cases ADD COLUMN patient_consent INTEGER NOT NULL DEFAULT 0"
+            )
+        conn.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS patient_cases_share_code_idx ON patient_cases (share_code)"
+        )
 
 
-def save_case(patient_data: dict[str, Any], triage_result: Any) -> None:
+def _new_share_code() -> str:
+    return f"LL-{secrets.token_hex(6).upper()}"
+
+
+def save_case(patient_data: dict[str, Any], triage_result: Any) -> str:
+    share_code = _new_share_code()
     supabase = _supabase_client()
     row = {
         "created_at": datetime.now().isoformat(timespec="minutes"),
@@ -158,26 +175,28 @@ def save_case(patient_data: dict[str, Any], triage_result: Any) -> None:
         "raw_data": patient_data,
         "review_status": "New",
         "doctor_notes": "",
+        "share_code": share_code,
+        "patient_consent": True,
     }
     if supabase:
         try:
             supabase.table("patient_cases").insert(row).execute()
             _set_database_error("")
-            return
+            return share_code
         except Exception:
             legacy_row = {
                 key: value
                 for key, value in row.items()
-                if key not in {"review_status", "doctor_notes"}
+                if key not in {"review_status", "doctor_notes", "share_code", "patient_consent"}
             }
             try:
                 supabase.table("patient_cases").insert(legacy_row).execute()
                 _set_database_error("")
-                return
+                return ""
             except Exception as exc:
                 _set_database_error(str(exc))
                 if _supabase_configured():
-                    return
+                    return ""
 
     init_db()
     with sqlite3.connect(DB_PATH) as conn:
@@ -185,9 +204,10 @@ def save_case(patient_data: dict[str, Any], triage_result: Any) -> None:
             """
             INSERT INTO patient_cases (
                 created_at, patient_name, age, symptoms, category, risk_level,
-                recommendation, score, raw_data, review_status, doctor_notes
+                recommendation, score, raw_data, review_status, doctor_notes,
+                share_code, patient_consent
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 row["created_at"],
@@ -201,8 +221,44 @@ def save_case(patient_data: dict[str, Any], triage_result: Any) -> None:
                 json.dumps(row["raw_data"]),
                 row["review_status"],
                 row["doctor_notes"],
+                row["share_code"],
+                1,
             ),
         )
+    return share_code
+
+
+def get_case_by_share_code(share_code: str) -> dict[str, Any] | None:
+    code = share_code.strip().upper()
+    if not code:
+        return None
+    supabase = _supabase_client()
+    if supabase:
+        try:
+            response = (
+                supabase.table("patient_cases")
+                .select("created_at,patient_name,risk_level,review_status,doctor_notes,share_code")
+                .eq("share_code", code)
+                .limit(1)
+                .execute()
+            )
+            return dict(response.data[0]) if response.data else None
+        except Exception as exc:
+            _set_database_error(str(exc))
+            if _supabase_configured():
+                return None
+    init_db()
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        row = conn.execute(
+            """
+            SELECT created_at, patient_name, risk_level, review_status,
+                   doctor_notes, share_code
+            FROM patient_cases WHERE share_code = ? AND patient_consent = 1
+            """,
+            (code,),
+        ).fetchone()
+    return dict(row) if row else None
 
 
 def list_cases() -> list[dict[str, Any]]:

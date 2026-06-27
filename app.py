@@ -9,7 +9,7 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from backend.database import clear_cases, database_backend, database_error_message, delete_patient_cases, list_cases, save_case, update_case_review
+from backend.database import clear_cases, database_backend, database_error_message, delete_patient_cases, get_case_by_share_code, list_cases, save_case, update_case_review
 from backend.disease_qa import answer_question
 from backend.doctor_summary import build_doctor_summary
 from backend.followup import evaluate_follow_up
@@ -77,7 +77,7 @@ CONDITION_OPTIONS = [
     "Weak immune system",
 ]
 
-REVIEW_STATUSES = ["New", "Reviewed", "Referred", "Resolved"]
+REVIEW_STATUSES = ["New", "Reviewed", "Book appointment", "Seek urgent care", "Resolved"]
 
 FOLLOW_UP_RULES = [
     {
@@ -936,6 +936,24 @@ def inject_css() -> None:
         .care-plan li {
             margin: 6px 0;
         }
+        .care-journey {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            overflow: hidden;
+            background: var(--panel);
+            margin: 14px 0 18px;
+            box-shadow: var(--shadow-tight);
+        }
+        .journey-stop { padding: 13px 12px; border-right: 1px solid var(--line); }
+        .journey-stop:last-child { border-right: 0; }
+        .journey-stop b { display: block; color: var(--text); font-size: .88rem; }
+        .journey-stop small { color: var(--muted); line-height: 1.35; }
+        .journey-stop span {
+            display: block; color: var(--blue); font-size: .68rem; font-weight: 900;
+            letter-spacing: .09em; margin-bottom: 5px;
+        }
         .care-emergency { border-left-color: var(--red); }
         .care-urgent { border-left-color: var(--amber); }
         .care-doctor { border-left-color: var(--blue); }
@@ -1497,6 +1515,9 @@ def inject_css() -> None:
             .pulse-line { width: 100%; }
             .command-bar { align-items: flex-start; flex-direction: column; }
             .summary-grid { grid-template-columns: 1fr; }
+            .care-journey { grid-template-columns: 1fr; }
+            .journey-stop { border-right: 0; border-bottom: 1px solid var(--line); }
+            .journey-stop:last-child { border-bottom: 0; }
             div[data-testid="stPopover"] {
                 right: 16px;
                 bottom: 16px;
@@ -1901,6 +1922,46 @@ def render_care_action_plan(result: Any) -> None:
         """,
         unsafe_allow_html=True,
     )
+
+
+def render_care_journey() -> None:
+    stops = [
+        ("01", "What this may mean", "Understand the pattern"),
+        ("02", "What to do now", "Take the safest next step"),
+        ("03", "Prevention", "Lower avoidable risk"),
+        ("04", "Warning signs", "Know when to act faster"),
+        ("05", "Share with doctor", "Continue care with context"),
+    ]
+    content = "".join(
+        f'<div class="journey-stop"><span>{number}</span><b>{h(title)}</b><small>{h(detail)}</small></div>'
+        for number, title, detail in stops
+    )
+    st.markdown(f'<div class="care-journey">{content}</div>', unsafe_allow_html=True)
+
+
+def render_clinic_response_lookup() -> None:
+    with st.expander(tr("Check a clinic response")):
+        st.caption(tr("Enter the private case code created when you shared your assessment."))
+        code = st.text_input(
+            tr("Private case code"),
+            placeholder="LL-12AB34",
+            key="clinic_response_code",
+        )
+        if st.button(tr("Check response"), key="check_clinic_response", width="stretch"):
+            case = get_case_by_share_code(code)
+            st.session_state.clinic_response_case = case
+            if not case:
+                st.error(tr("No shared case was found. Check the code and try again."))
+        case = st.session_state.get("clinic_response_case")
+        if case:
+            st.success(tr(f"Clinic status: {case.get('review_status') or 'New'}"))
+            notes = str(case.get("doctor_notes") or "").strip()
+            if notes:
+                st.markdown(f"**{tr('Message from the clinic')}**")
+                st.write(tr(notes))
+            else:
+                st.info(tr("The clinic has not added a response yet."))
+            st.caption(tr("If symptoms worsen or a red flag appears, do not wait for an online response."))
 
 
 def render_queue_insights(cases: list[dict[str, Any]]) -> None:
@@ -2428,6 +2489,7 @@ def render_result_panel(
         """,
         unsafe_allow_html=True,
     )
+    render_care_journey()
     with st.expander(tr("How this score works")):
         st.write(f"- {tr('0-21')}: {tr('Self-Care')}")
         st.write(f"- {tr('22-44')}: {tr('Doctor Visit Recommended')}")
@@ -2562,7 +2624,11 @@ def render_checker() -> None:
             clear_profile_form()
             st.success(tr("Patient profile cleared."))
             st.rerun()
-        save_to_dashboard = st.checkbox(tr("Save this case to Doctor Dashboard"), value=True)
+        save_to_dashboard = st.checkbox(
+            tr("I consent to share this assessment with the clinic dashboard"),
+            value=False,
+            help=tr("Only share when you want a clinician to review this case. A private case code will be created."),
+        )
         if st.button(tr("Analyze Health"), type="primary", width="stretch"):
             if not data["symptoms"]:
                 st.error(tr("Please choose at least one symptom."))
@@ -2579,14 +2645,19 @@ def render_checker() -> None:
                 st.session_state.checker_patient_data = data
                 st.session_state.pop("followup_result", None)
                 if save_to_dashboard:
-                    save_case(data, result)
+                    st.session_state.checker_result["share_code"] = save_case(data, result)
                 st.rerun()
     with result_col:
         st.markdown(f'<div class="section-label">{h("Live result")}</div>', unsafe_allow_html=True)
         stored = st.session_state.get("checker_result")
         if stored:
             if stored.get("saved"):
-                st.success(tr("Case saved to Doctor Dashboard."))
+                share_code = str(stored.get("share_code") or "")
+                if share_code:
+                    st.success(tr(f"Shared with the clinic. Keep this private case code: {share_code}"))
+                    st.code(share_code, language=None)
+                else:
+                    st.warning(tr("The case was saved, but a private code could not be created. Ask the clinic to update its database schema."))
             patient_data = st.session_state.get("checker_patient_data") or {}
             render_result_panel(stored["result"], stored["advice"], patient_data, stored.get("comparison"))
             pdf_bytes = generate_health_report_pdf(patient_data, stored["result"], stored["advice"])
@@ -2612,6 +2683,7 @@ def render_checker() -> None:
     patient_data = st.session_state.get("checker_patient_data") or {}
     if stored and patient_data:
         render_followup_and_summary(patient_data, stored["result"], stored["advice"])
+    render_clinic_response_lookup()
     st.write("")
 
 
@@ -2924,7 +2996,7 @@ def render_dashboard() -> None:
 
     st.markdown(f'<div class="section-label">{h("Patient cases")}</div>', unsafe_allow_html=True)
     st.dataframe(
-        df[["created_at", "patient_name", "age", "symptoms", "category", "risk_level", "review_status", "recommendation", "score"]],
+        df[[column for column in ["created_at", "share_code", "patient_name", "age", "symptoms", "category", "risk_level", "review_status", "recommendation", "score"] if column in df.columns]],
         width="stretch",
         hide_index=True,
     )
@@ -2959,9 +3031,9 @@ def render_dashboard() -> None:
             format_func=tr,
         )
         new_notes = st.text_area(
-            tr("Doctor case notes"),
+            tr("Patient-visible clinic response"),
             value=str(selected_case.get("doctor_notes") or ""),
-            placeholder=tr("Example: Called patient, advised clinic visit, reviewed allergy history."),
+            placeholder=tr("Example: Please book an appointment today and bring your medicine list."),
             height=140,
         )
         if st.form_submit_button(tr("Save review"), width="stretch"):

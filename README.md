@@ -13,6 +13,7 @@ LifeLine AI is a patient-friendly health decision-support app built with Streaml
 - Medication Safety Checker for common cautions and pharmacist questions
 - Home command center with saved-case and priority-case status
 - Doctor Dashboard for saved cases, queue insights, review status, and doctor notes
+- Consent-based clinic handoff with a private case code and patient-visible responses
 - Scenario Challenge for practice
 - Sam assistant bubble for navigation help
 - GitHub repo launch scripts for Windows, macOS, and Linux
@@ -149,6 +150,8 @@ In Supabase:
 1. Create a new project.
 2. Open **SQL Editor**.
 3. Paste and run the SQL from `supabase_schema.sql`.
+
+Run the schema again after updating the app; it safely adds the clinic handoff columns when they are missing.
 
 If Supabase secrets are missing, the app uses a local SQLite fallback for testing.
 
