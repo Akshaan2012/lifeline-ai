@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "akshaan",
+      "runtimeExecutable": "/private/tmp/claude-501/-Users-keshavatearth-Downloads-Genwise-2026-AI-ML/742be731-6590-4962-aba1-dc89c04318e6/scratchpad/venvs/akshaan/bin/python",
+      "runtimeArgs": ["-m", "streamlit", "run", "app.py", "--server.headless", "true", "--server.port", "8731", "--server.address", "127.0.0.1"],
+      "port": 8731
+    }
+  ]
+}

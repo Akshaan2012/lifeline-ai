@@ -455,8 +455,14 @@ SCENARIOS = [
 def inject_css() -> None:
     st.markdown(
         """
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
         <style>
         :root {
+            --font-display: "Archivo", "Noto Sans Devanagari", "Nirmala UI", "Segoe UI", system-ui, sans-serif;
+            --font-body: "Inter", "Noto Sans Devanagari", "Nirmala UI", "Segoe UI", system-ui, sans-serif;
+            --font-mono: ui-monospace, "SFMono-Regular", "Consolas", monospace;
             --bg: #eef6f4;
             --surface: #fbfffd;
             --surface-2: #e7f0ee;
@@ -486,7 +492,10 @@ def inject_css() -> None:
                 linear-gradient(180deg, #f9fdfb 0%, #eef6f4 48%, #e4efec 100%);
             background-size: 36px 36px, 36px 36px, auto;
             color: var(--text);
-            font-family: "Noto Sans Devanagari", "Mangal", "Nirmala UI", "Segoe UI", Arial, sans-serif;
+            font-family: var(--font-body);
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
+            font-feature-settings: "cv05", "ss01";
         }
         header[data-testid="stHeader"] { background: rgba(248, 252, 251, .86); backdrop-filter: blur(12px); }
         #MainMenu, footer { visibility: hidden; }
@@ -597,9 +606,10 @@ def inject_css() -> None:
         .brand-name {
             display: block;
             color: #ffffff;
-            font-size: 1.16rem;
+            font-size: 1.2rem;
             font-weight: 900;
             line-height: 1;
+            letter-spacing: -.02em;
         }
         .brand-sub {
             display: block;
@@ -626,11 +636,29 @@ def inject_css() -> None:
             transform: translateX(2px);
         }
         .block-container { padding-top: 1rem; padding-bottom: 3rem; max-width: 1260px; }
-        h1, h2, h3 { letter-spacing: 0; color: var(--text); }
-        h1 { font-size: clamp(2.25rem, 4vw, 4.25rem); line-height: .98; margin-bottom: .6rem; font-weight: 900; }
-        h2 { font-size: 1.38rem; }
-        h3 { font-size: 1.05rem; }
+        .stApp, .stApp p, .stApp li, .stApp label, .stApp .stMarkdown,
+        .stApp input, .stApp textarea, .stApp button, .stApp [data-baseweb="select"] {
+            font-family: var(--font-body) !important;
+        }
+        .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6,
+        h1, h2, h3, h4 {
+            font-family: var(--font-display) !important;
+            letter-spacing: -.012em;
+            color: var(--text);
+            font-feature-settings: "ss01";
+        }
+        h1 { font-size: clamp(2.25rem, 4vw, 4.25rem); line-height: .96; margin-bottom: .6rem; font-weight: 900; letter-spacing: -.026em; }
+        h2 { font-size: 1.38rem; font-weight: 800; }
+        h3 { font-size: 1.05rem; font-weight: 700; }
         p, li, label, .stMarkdown { color: var(--text); }
+        /* Instrument-panel labels + numeric readouts ride the display face. */
+        .brand-name, .small-title, .section-label, .command-card span, .command-card b,
+        .monitor-top, .monitor-readouts b, .hero-stat b, .snapshot-value, .score-ring b,
+        .metric-card .token, .journey-stop span, .field-preview span, .summary-item span,
+        [data-testid="stMetricValue"], [data-testid="stMetricLabel"] {
+            font-family: var(--font-display);
+        }
+        .metric-card .token { font-family: var(--font-mono); }
         .stCaptionContainer, [data-testid="stCaptionContainer"] { color: var(--muted); }
         .muted { color: var(--muted); }
         .command-bar {
@@ -811,6 +839,29 @@ def inject_css() -> None:
                     rgba(255,255,255,.20) 74% 100%);
             border-radius: 999px;
             box-shadow: 0 0 24px rgba(16,184,166,.3);
+        }
+        /* Signature element: a slow scanning sweep tracing the EKG, like a live monitor. */
+        .monitor-wave:after {
+            content: "";
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            width: 90px;
+            pointer-events: none;
+            background: linear-gradient(90deg, transparent, rgba(34, 223, 201, .42) 55%, rgba(244, 255, 252, .9));
+            mix-blend-mode: screen;
+            opacity: .9;
+            animation: ekg-sweep 4.6s linear infinite;
+        }
+        @keyframes ekg-sweep {
+            0% { transform: translateX(-90px); opacity: 0; }
+            8% { opacity: .9; }
+            92% { opacity: .9; }
+            100% { transform: translateX(100%); opacity: 0; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .monitor-wave:after { animation: none; opacity: 0; }
         }
         .monitor-readouts {
             display: grid;
@@ -1151,6 +1202,13 @@ def inject_css() -> None:
         div[data-testid="stPopover"] span {
             color: #ffffff !important;
             opacity: 1 !important;
+        }
+        div[data-testid="stPopover"] button p {
+            font-family: var(--font-display) !important;
+            font-size: .92rem !important;
+            line-height: 1 !important;
+            letter-spacing: -.01em;
+            white-space: nowrap !important;
         }
         div[data-testid="stPopover"] button:hover {
             border-color: #ffffff !important;
