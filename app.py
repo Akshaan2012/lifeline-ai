@@ -2415,7 +2415,8 @@ def render_result_panel(
         """,
         unsafe_allow_html=True,
     )
-    st.markdown(f'<div class="section-label">{h("AI recommendation")}</div>', unsafe_allow_html=True)
+    recommendation_label = "AI-enhanced recommendation" if advice.get("source") else "Safety recommendation"
+    st.markdown(f'<div class="section-label">{h(recommendation_label)}</div>', unsafe_allow_html=True)
     st.markdown(
         f"""
         <div class="summary-grid">
@@ -2435,6 +2436,8 @@ def render_result_panel(
     st.subheader(tr(result.recommendation))
     st.info(tr(advice["risk_summary"]))
     st.write(tr(advice["simple_explanation"]))
+    if advice.get("source"):
+        st.caption(tr(str(advice["source"])))
     render_care_action_plan(result)
     render_previous_check_comparison(comparison)
     if result.model_prediction:
@@ -2565,7 +2568,7 @@ def render_checker() -> None:
                 st.error(tr("Please choose at least one symptom."))
             else:
                 result = analyze_patient(data, use_ml=False)
-                advice = build_recommendations(result, enhance=False)
+                advice = build_recommendations(result, enhance=True)
                 previous_case = latest_previous_case(data)
                 st.session_state.checker_result = {
                     "result": result,
