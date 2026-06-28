@@ -2267,8 +2267,7 @@ def render_home() -> None:
             ("Last check", "Stable" if not summary["high_priority"] else "Needs attention", "Queue signal"),
         ]
     )
-    st.markdown(
-        f"""
+    home_workspace_html = f"""
         <div class="doctor-strip">
             <div class="workspace-panel">
                 <div class="small-title">{h("Doctor Dashboard")}</div>
@@ -2284,7 +2283,11 @@ def render_home() -> None:
                 <p class="muted">{h("Saved checks become trend charts for risk score, pain, and optional measurements.")}</p>
             </div>
         </div>
-        """,
+        """
+    # Markdown ends a raw HTML block at a blank line. The interpolated empty
+    # state contains blank lines, so compact the fragment before rendering it.
+    st.markdown(
+        "".join(line.strip() for line in home_workspace_html.splitlines()),
         unsafe_allow_html=True,
     )
     st.write("")
@@ -2639,9 +2642,13 @@ def render_checker() -> None:
             if not data["symptoms"]:
                 st.error(tr("Please choose at least one symptom."))
             else:
+                # Keep the primary health-check response local and immediate.
+                # AI rewriting is optional enrichment and must not delay safety guidance.
                 result = analyze_patient(data, use_ml=False)
-                advice = build_recommendations(result, enhance=True)
-                previous_case = latest_previous_case(data)
+                advice = build_recommendations(result, enhance=False)
+                # Avoid a remote case-history request for anonymous checks. Named
+                # patients still receive the previous-check comparison.
+                previous_case = latest_previous_case(data) if data["patient_name"].strip() else None
                 st.session_state.checker_result = {
                     "result": result,
                     "advice": advice,
@@ -3127,6 +3134,33 @@ def render_safety_videos() -> None:
         st.warning(tr("Videos and tips are for education only. They do not replace medical care."))
 
 
+def render_regulatory_fine_print() -> None:
+    """Keep the app's intended use and regulatory status visible on every page."""
+    st.divider()
+    with st.expander("Safety, privacy & regulatory fine print", expanded=False):
+        st.markdown(
+            """
+**Intended use.** LifeLine AI is an educational, preliminary decision-support tool. It does not diagnose, prescribe, calculate a dose, monitor a patient continuously, or replace a doctor, pharmacist, hospital, or emergency service. Results can be incomplete, delayed, or wrong. A clinician must make medical decisions.
+
+**Emergencies.** Do not wait for this app if there is chest pain, severe breathing difficulty, blue lips, fainting, stroke signs, seizure, severe allergic reaction, confusion, dangerously low oxygen, or another life-threatening concern. Contact local emergency services or go to the nearest emergency department now. The app does not contact emergency services for you.
+
+**AI and benchmark limits.** Rule-based red-flag checks are designed to prevent an emergency or urgent warning from being downgraded by a lower numeric score. This is a safety benchmark, not clinical validation. The model has not been represented here as CDSCO-approved, independently clinically validated, or certified to ISO 13485, ISO 14971, IEC 62304, or IEC 62366-1. Do not use it as the sole basis for care.
+
+**Medicines.** Medication results are general cautions only. They do not verify every interaction, contraindication, allergy, pregnancy risk, product formulation, or dose. Check the product label and ask a doctor or pharmacist before starting, stopping, combining, or changing medicine.
+
+**Privacy and sharing.** Health details, medicines, symptoms, and identifiers are sensitive in practice. Submit only information you are authorised to provide. A case is sent to the clinic dashboard only after the sharing checkbox is selected; the generated case code should be kept private. Depending on configuration, data may be stored in local SQLite or Supabase, and optional AI/translation features may send entered text to configured third-party services. Offline mode disables those cloud calls. The operator deploying this app must provide its identity, contact/grievance route, purposes, retention period, processors, security measures, and a practical way to access, correct, erase, or withdraw consent before real-patient use.
+
+**Children and capacity.** A parent or lawful guardian should supervise use for a child or anyone unable to provide valid consent. The deployer is responsible for applying the consent requirements that are in force.
+
+**India regulatory position (reviewed 27 June 2026).** The product's actual intended purpose and claims—not this disclaimer alone—determine whether it is regulated. Software intended for diagnosis, prevention, monitoring, treatment, or alleviation may fall within India's medical-device framework. Before clinical deployment or marketing, obtain qualified review under the Medical Devices Rules, 2017 and current CDSCO classification/licensing requirements. Personal-data handling should be reviewed against the Digital Personal Data Protection Act, 2023 and the phased commencement of the Digital Personal Data Protection Rules, 2025. ABDM Health Data Management Policy controls are relevant if the service participates in the ABDM ecosystem. Telemedicine requirements apply when a registered medical practitioner provides a consultation; this app itself is not a registered medical practitioner.
+
+Official references: [CDSCO medical-device framework](https://cdsco.gov.in/opencms/opencms/en/Medical-Device-Diagnostics/Medical-Device-Diagnostics/) · [Medical Devices Rules, 2017](https://cdsco.gov.in/opencms/opencms/en/Acts-and-rules/Medical-Devices-Rules/) · [DPDP Rules, 2025](https://www.meity.gov.in/documents/act-and-policies/digital-personal-data-protection-rules-2025-gDOxUjMtQWa) · [ABDM Health Data Management Policy](https://abdm.gov.in/static/media/health_management_policy_bac9429a79.80f74bc3e039c00acd4f.pdf)
+
+This disclosure is a product-safety summary, not legal advice or evidence of regulatory approval.
+            """
+        )
+
+
 def main() -> None:
     inject_css()
     init_state()
@@ -3148,6 +3182,7 @@ def main() -> None:
         render_challenge()
     elif st.session_state.page == "Safety Videos":
         render_safety_videos()
+    render_regulatory_fine_print()
     render_sam()
 
 
