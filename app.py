@@ -18,7 +18,7 @@ from backend.recommender import build_recommendations
 from backend.report import generate_health_report_pdf
 from backend.sam import answer_message
 from backend.translator import (
-    preload_translations_async,
+    preload_translations,
     translate_answer,
     translate_items,
     translate_text,
@@ -154,6 +154,8 @@ COMMON_TRANSLATION_TEXTS = [
     "Navigation",
     "Decision support. Not a replacement for doctors.",
     "AI health guidance",
+    "Decision support only",
+    "Patient-friendly risk guidance for safer next steps. Check symptoms, review saved cases, and keep doctor-ready summaries in one calm workspace.",
     "A simple health risk and doctor-visit advisor. It helps users check symptoms, learn about diseases, get precautions, and understand when medical help is needed.",
     "Prediction",
     "Recommendations",
@@ -228,10 +230,21 @@ COMMON_TRANSLATION_TEXTS = [
     "No existing conditions were provided.",
     "Home command center",
     "Saved cases",
+    "Priority cases",
     "High-priority cases",
     "New reviews",
+    "Last check",
+    "Stable",
+    "Needs attention",
+    "Queue signal",
+    "Emergency and urgent",
+    "Waiting for review",
     "Resolved",
     "Ready for the next check",
+    "Patient cases",
+    "No patient cases yet.",
+    "Cases will appear here only after a patient chooses to share an assessment with the clinic.",
+    "Saved checks become trend charts for risk score, pain, and optional measurements.",
     "Start with a symptom check, review saved cases, or practice care-level decisions.",
     "Care action plan",
     "Immediate safety steps",
@@ -280,7 +293,10 @@ def prepare_language(selected_language: str) -> None:
     prepared_languages = st.session_state.setdefault("prepared_languages", [])
     if selected_language in prepared_languages:
         return
-    preload_translations_async(COMMON_TRANSLATION_TEXTS, selected_language)
+    # Complete the shared UI translation before rerunning. Previously this was
+    # started in the background and the language was marked ready immediately,
+    # so Streamlit often kept showing English with no later rerun.
+    preload_translations(COMMON_TRANSLATION_TEXTS, selected_language)
     prepared_languages.append(selected_language)
 
 

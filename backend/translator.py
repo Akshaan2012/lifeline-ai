@@ -58,13 +58,36 @@ HINDI_FALLBACKS = {
     "Navigation": "\u0928\u0947\u0935\u093f\u0917\u0947\u0936\u0928",
     "Home": "\u0939\u094b\u092e",
     "Patient Health Checker": "\u0930\u094b\u0917\u0940 \u0938\u094d\u0935\u093e\u0938\u094d\u0925\u094d\u092f \u091c\u093e\u0902\u091a",
+    "Health Timeline": "स्वास्थ्य समयरेखा",
     "Disease Q&A Assistant": "\u0930\u094b\u0917 \u092a\u094d\u0930\u0936\u094d\u0928\u094b\u0924\u094d\u0924\u0930 \u0938\u0939\u093e\u092f\u0915",
     "Health & Medicine Q&A": "\u0938\u094d\u0935\u093e\u0938\u094d\u0925\u094d\u092f \u0914\u0930 \u0926\u0935\u093e \u092a\u094d\u0930\u0936\u094d\u0928\u094b\u0924\u094d\u0924\u0930",
+    "Medication Safety Checker": "दवा सुरक्षा जांच",
     "Doctor Dashboard": "\u0921\u0949\u0915\u094d\u091f\u0930 \u0921\u0948\u0936\u092c\u094b\u0930\u094d\u0921",
     "Scenario Challenge": "\u0938\u094d\u0925\u093f\u0924\u093f \u091a\u0941\u0928\u094c\u0924\u0940",
+    "Safety Videos": "सुरक्षा वीडियो",
     "V1 prototype": "\u0935\u0940 1 \u092a\u094d\u0930\u094b\u091f\u094b\u091f\u093e\u0907\u092a",
     "Decision-support prototype. Not a replacement for doctors.": "\u092f\u0939 \u0928\u093f\u0930\u094d\u0923\u092f \u0938\u0939\u093e\u092f\u0924\u093e \u092a\u094d\u0930\u094b\u091f\u094b\u091f\u093e\u0907\u092a \u0939\u0948\u0964 \u092f\u0939 \u0921\u0949\u0915\u094d\u091f\u0930 \u0915\u093e \u0935\u093f\u0915\u0932\u094d\u092a \u0928\u0939\u0940\u0902 \u0939\u0948\u0964",
     "AI health guidance": "\u090f\u0906\u0908 \u0938\u094d\u0935\u093e\u0938\u094d\u0925\u094d\u092f \u092e\u093e\u0930\u094d\u0917\u0926\u0930\u094d\u0936\u0928",
+    "Decision support only": "केवल निर्णय सहायता",
+    "Patient-friendly risk guidance for safer next steps. Check symptoms, review saved cases, and keep doctor-ready summaries in one calm workspace.": "सुरक्षित अगले कदमों के लिए रोगी-अनुकूल जोखिम मार्गदर्शन। लक्षण जांचें, सहेजे गए मामलों की समीक्षा करें और डॉक्टर के लिए तैयार सारांश एक ही सरल कार्यक्षेत्र में रखें।",
+    "Saved cases": "सहेजे गए मामले",
+    "Ready for the next check": "अगली जांच के लिए तैयार",
+    "Priority cases": "प्राथमिकता वाले मामले",
+    "Emergency and urgent": "आपातकालीन और तत्काल",
+    "New reviews": "नई समीक्षाएं",
+    "Waiting for review": "समीक्षा की प्रतीक्षा में",
+    "Last check": "पिछली जांच",
+    "Stable": "स्थिर",
+    "Needs attention": "ध्यान देने की जरूरत",
+    "Queue signal": "कतार संकेत",
+    "Patient cases": "रोगी मामले",
+    "No patient cases yet.": "अभी कोई रोगी मामला नहीं है।",
+    "Cases will appear here only after a patient chooses to share an assessment with the clinic.": "मामले यहां तभी दिखाई देंगे जब कोई रोगी अपना आकलन क्लिनिक के साथ साझा करना चुनेगा।",
+    "Risk and vitals over time": "समय के साथ जोखिम और महत्वपूर्ण माप",
+    "Saved checks become trend charts for risk score, pain, and optional measurements.": "सहेजी गई जांचें जोखिम स्कोर, दर्द और वैकल्पिक मापों के रुझान चार्ट बनाती हैं।",
+    "Start Health Check": "स्वास्थ्य जांच शुरू करें",
+    "View Timeline": "समयरेखा देखें",
+    "Open Doctor Dashboard": "डॉक्टर डैशबोर्ड खोलें",
     "A simple health risk and doctor-visit advisor. It helps users check symptoms, learn about diseases, get precautions, and understand when medical help is needed.": "\u090f\u0915 \u0938\u0930\u0932 \u0938\u094d\u0935\u093e\u0938\u094d\u0925\u094d\u092f \u091c\u094b\u0916\u093f\u092e \u0914\u0930 \u0921\u0949\u0915\u094d\u091f\u0930 \u0935\u093f\u091c\u093f\u091f \u0938\u0932\u093e\u0939\u0915\u093e\u0930\u0964 \u092f\u0939 \u0932\u0915\u094d\u0937\u0923 \u091c\u093e\u0902\u091a\u0928\u0947, \u0930\u094b\u0917 \u0938\u092e\u091d\u0928\u0947, \u0938\u093e\u0935\u0927\u093e\u0928\u0940 \u092a\u093e\u0928\u0947 \u0914\u0930 \u091a\u093f\u0915\u093f\u0924\u094d\u0938\u093e \u0938\u0939\u093e\u092f\u0924\u093e \u0915\u092c \u091a\u093e\u0939\u093f\u090f \u092f\u0939 \u0938\u092e\u091d\u0928\u0947 \u092e\u0947\u0902 \u092e\u0926\u0926 \u0915\u0930\u0924\u093e \u0939\u0948\u0964",
     "Prediction": "\u092d\u0935\u093f\u0937\u094d\u092f\u0935\u093e\u0923\u0940",
     "Recommendations": "\u0938\u093f\u092b\u093e\u0930\u093f\u0936\u0947\u0902",
@@ -176,13 +199,19 @@ def _direct_google_batch(texts: list[str], target: str) -> list[str] | None:
     try:
         import requests
 
+        # Google Translate accepts one `q` reliably. Join the batch with a
+        # stable sentinel, then split the translated response back into items.
+        # Repeating `q` caused only the first string to be returned, which left
+        # most UI labels untranslated.
+        separator = "\n__LLSEP_91C7__\n"
+        combined_text = separator.join(texts)
         params: list[tuple[str, str]] = [
             ("client", "gtx"),
             ("sl", "auto"),
             ("tl", target),
             ("dt", "t"),
+            ("q", combined_text),
         ]
-        params.extend(("q", text) for text in texts)
         response = requests.get(
             "https://translate.googleapis.com/translate_a/single",
             params=params,
@@ -191,10 +220,14 @@ def _direct_google_batch(texts: list[str], target: str) -> list[str] | None:
         response.raise_for_status()
         data = response.json()
         rows = data[0] if isinstance(data, list) and data else []
-        if len(rows) == len(texts):
-            values = [str(row[0] or texts[index]) for index, row in enumerate(rows)]
-            if values:
-                return values
+        translated_text = "".join(
+            str(row[0] or "")
+            for row in rows
+            if isinstance(row, list) and row
+        )
+        values = [value.strip() for value in translated_text.split("__LLSEP_91C7__")]
+        if len(values) == len(texts) and all(values):
+            return values
     except Exception:
         return None
     return None
