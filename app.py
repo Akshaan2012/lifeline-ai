@@ -1659,6 +1659,13 @@ def init_state() -> None:
     st.session_state.setdefault("workspace_role_picker", st.session_state.workspace_role)
     if st.session_state.workspace_role_picker not in ROLE_OPTIONS:
         st.session_state.workspace_role_picker = st.session_state.workspace_role
+    if role_from_url in {"patient", "professional"}:
+        url_role = "Healthcare Professional" if role_from_url == "professional" else "Patient"
+        if st.session_state.workspace_role != url_role:
+            st.session_state.workspace_role = url_role
+            st.session_state.workspace_role_picker = url_role
+            st.session_state.page = "Home"
+            st.session_state.page_picker = "Home"
 
 
 def sidebar() -> None:
