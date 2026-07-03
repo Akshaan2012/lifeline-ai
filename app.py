@@ -2,13 +2,16 @@
 
 import random
 import json
+from datetime import date
 from html import escape
 from typing import Any
 
 import altair as alt
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 
+from backend.care_features import build_fhir_bundle, clinician_evidence, emergency_action_plan, reconcile_medications, reminder_status
 from backend.database import clear_cases, database_backend, database_error_message, delete_patient_cases, get_case_by_share_code, list_cases, save_case, update_case_review
 from backend.disease_qa import answer_question
 from backend.doctor_summary import build_doctor_summary
@@ -24,7 +27,7 @@ from backend.translator import (
     translate_text,
     translate_text_cached,
 )
-from backend.triage_engine import RISK_ORDER, analyze_patient
+from backend.triage_engine import RISK_ORDER, analyze_patient, canonicalize_symptom
 
 
 st.set_page_config(
@@ -64,6 +67,11 @@ SYMPTOM_OPTIONS = [
     "Itching",
     "Swelling",
     "Severe allergic reaction",
+    "Blood in stool",
+    "Black stool",
+    "Heavy bleeding",
+    "Pregnancy bleeding",
+    "Severe weakness",
 ]
 
 CONDITION_OPTIONS = [
@@ -83,7 +91,7 @@ FOLLOW_UP_RULES = [
     {
         "triggers": {"chest pain", "palpitations", "sweating"},
         "question": "Is the pain spreading to the arm, jaw, back, or happening with heavy sweating?",
-        "signal": "sweating",
+        "signal": "heart attack warning signs",
         "reason": "Chest pain with spreading pain or sweating can be a serious heart warning.",
     },
     {
@@ -122,6 +130,30 @@ FOLLOW_UP_RULES = [
         "signal": "very high sugar symptoms",
         "reason": "These symptoms together can suggest a high blood sugar warning pattern.",
     },
+    {
+        "triggers": {"stomach pain", "severe stomach pain", "nausea"},
+        "question": "Is the pain sudden or severe, is the abdomen hard, or is there blood in vomit or stool?",
+        "signal": "severe stomach pain",
+        "reason": "Sudden severe abdominal pain or bleeding needs urgent assessment.",
+    },
+    {
+        "triggers": {"fever", "high fever"},
+        "question": "Is there a stiff neck, purple rash, seizure, confusion, severe weakness, or difficulty waking?",
+        "signal": "confusion",
+        "reason": "Fever with these danger signs can be an emergency.",
+    },
+    {
+        "triggers": {"pregnancy bleeding", "heavy bleeding"},
+        "question": "Is there heavy bleeding, severe pain, faintness, shoulder pain, or possible pregnancy?",
+        "signal": "fainting",
+        "reason": "Heavy bleeding or pain with possible pregnancy needs emergency assessment.",
+    },
+    {
+        "triggers": {"blood in stool", "black stool", "heavy bleeding"},
+        "question": "Is the bleeding heavy, continuing, or happening with faintness, weakness, or black stools?",
+        "signal": "fainting",
+        "reason": "Significant bleeding with weakness or faintness can be an emergency.",
+    },
 ]
 
 PAGES = [
@@ -130,7 +162,9 @@ PAGES = [
     "Health Timeline",
     "Disease Q&A Assistant",
     "Medication Safety Checker",
+    "Health Passport & Reminders",
     "Doctor Dashboard",
+    "Safety & Quality",
     "Scenario Challenge",
     "Safety Videos",
 ]
@@ -283,8 +317,19 @@ COMMON_TRANSLATION_TEXTS = [
 ]
 
 
+SIMPLE_LANGUAGE = {
+    "Doctor Visit Recommended": "See a doctor",
+    "Urgent Care": "Get medical help today",
+    "Emergency": "Get emergency help now",
+    "This needs urgent attention. Do not delay medical help.": "Get medical help now. Do not wait.",
+    "A doctor visit is recommended, especially if symptoms continue or worsen.": "See a doctor, especially if you do not get better.",
+    "Decision support. Not a replacement for doctors.": "This app helps you decide what to do. It is not a doctor.",
+}
+
+
 def tr(text: str) -> str:
-    return translate_text_cached(text, st.session_state.language)
+    source = SIMPLE_LANGUAGE.get(text, text) if st.session_state.get("simple_language") else text
+    return translate_text_cached(source, st.session_state.language)
 
 
 def prepare_language(selected_language: str) -> None:
@@ -328,7 +373,7 @@ def key_fragment(text: str) -> str:
 
 
 def adaptive_followup_rules(symptoms: list[str]) -> list[dict[str, Any]]:
-    selected = {symptom.strip().lower() for symptom in symptoms}
+    selected = {canonicalize_symptom(symptom) for symptom in symptoms}
     return [
         rule
         for rule in FOLLOW_UP_RULES
@@ -350,13 +395,15 @@ def render_adaptive_followups(symptoms: list[str]) -> tuple[list[dict[str, str]]
         answer = st.radio(
             tr(rule["question"]),
             ["No", "Yes", "Not sure"],
+            index=None,
             horizontal=True,
             key=f"adaptive_followup_{index}_{key_fragment(rule['signal'])}",
             format_func=tr,
         )
+        recorded_answer = str(answer or "Not answered")
         answer_record = {
             "question": str(rule["question"]),
-            "answer": str(answer),
+            "answer": recorded_answer,
             "reason": str(rule["reason"]),
             "signal": str(rule["signal"]),
         }
@@ -364,8 +411,11 @@ def render_adaptive_followups(symptoms: list[str]) -> tuple[list[dict[str, str]]
         if answer == "Yes":
             safety_signals.append(str(rule["signal"]).title())
             st.warning(tr(rule["reason"]))
-        elif answer == "Not sure":
-            st.info(tr("If you are unsure and symptoms feel serious, choose faster medical care."))
+        elif answer in {"Not sure", None}:
+            # Uncertainty must fail safely. It is not evidence that a danger
+            # sign is absent, especially when a user skips the questions.
+            safety_signals.append(str(rule["signal"]).title())
+            st.warning(tr("If you are unsure or cannot answer, treat this as a possible danger sign and choose faster medical care."))
 
     return answers, safety_signals
 
@@ -1561,6 +1611,13 @@ def init_state() -> None:
     st.session_state.setdefault("checker_result", None)
     st.session_state.setdefault("checker_patient_data", None)
     st.session_state.setdefault("patient_profile", {})
+    st.session_state.setdefault("care_profiles", {})
+    st.session_state.setdefault("active_profile", "My profile")
+    st.session_state.setdefault("care_reminders", [])
+    st.session_state.setdefault("safety_events", [])
+    st.session_state.setdefault("large_text", False)
+    st.session_state.setdefault("high_contrast", False)
+    st.session_state.setdefault("simple_language", False)
     st.session_state.setdefault("language", "🇺🇸 English")
     if st.session_state.language not in LANGUAGE_OPTIONS:
         st.session_state.language = "🇺🇸 English"
@@ -1606,6 +1663,17 @@ def sidebar() -> None:
         st.rerun()
     if st.session_state.offline_mode:
         st.sidebar.caption("Offline mode: local rules only.")
+    with st.sidebar.expander("Accessibility"):
+        large_text = st.checkbox("Larger text", value=bool(st.session_state.large_text), key="access_large_text")
+        high_contrast = st.checkbox("High contrast", value=bool(st.session_state.high_contrast), key="access_high_contrast")
+        simple_language = st.checkbox("Simpler wording", value=bool(st.session_state.simple_language), key="access_simple_language")
+        st.session_state.large_text = large_text
+        st.session_state.high_contrast = high_contrast
+        st.session_state.simple_language = simple_language
+    if st.session_state.large_text or st.session_state.high_contrast:
+        font_size = "18px" if st.session_state.large_text else "inherit"
+        contrast_css = "body, .stApp { background:#000 !important; color:#fff !important; }" if st.session_state.high_contrast else ""
+        st.markdown(f"<style>html, body, [class*='css'] {{font-size:{font_size};}} {contrast_css}</style>", unsafe_allow_html=True)
     st.sidebar.caption(tr("Smart inside. Simple outside."))
     selected_page = st.sidebar.radio(
         tr("Navigation"),
@@ -1937,6 +2005,43 @@ def render_care_action_plan(result: Any) -> None:
         </div>
         """,
         unsafe_allow_html=True,
+    )
+
+
+def record_safety_event(event_type: str, details: str, *, anonymous: bool = True) -> None:
+    st.session_state.safety_events.append(
+        {
+            "date": date.today().isoformat(),
+            "event": event_type,
+            "details": details,
+            "anonymous": anonymous,
+        }
+    )
+
+
+def render_emergency_actions(patient_data: dict[str, Any], result: Any) -> None:
+    if result.risk_level != "Emergency":
+        return
+    st.error(tr("Possible emergency: act now and do not wait for an online reply."))
+    for step in emergency_action_plan(patient_data):
+        st.write(f"- {tr(step)}")
+    st.markdown(
+        '<a href="tel:112" style="display:inline-block;padding:.75rem 1rem;background:#b42318;color:white;border-radius:.6rem;text-decoration:none;font-weight:700">Call 112</a> '
+        '<a href="https://www.google.com/maps/search/hospital+near+me" target="_blank" rel="noopener" style="display:inline-block;padding:.75rem 1rem;background:#174f46;color:white;border-radius:.6rem;text-decoration:none;font-weight:700">Find nearby hospitals</a>',
+        unsafe_allow_html=True,
+    )
+    st.caption(tr("Location is opened only when you choose the hospital link; LifeLine AI does not track it."))
+
+
+def render_voice_summary(result: Any) -> None:
+    spoken = escape(f"LifeLine AI result. Care level: {result.risk_level}. {result.recommendation}")
+    components.html(
+        f"""
+        <button aria-label="Read result aloud" onclick="speechSynthesis.cancel();speechSynthesis.speak(new SpeechSynthesisUtterance(document.getElementById('speech').textContent));"
+          style="padding:8px 12px;border-radius:8px;border:1px solid #4f8f83;background:#fff;cursor:pointer">Read result aloud</button>
+        <span id="speech" style="display:none">{spoken}</span>
+        """,
+        height=45,
     )
 
 
@@ -2515,6 +2620,8 @@ def render_result_panel(
         unsafe_allow_html=True,
     )
     render_care_journey()
+    render_emergency_actions(patient_data or {}, result)
+    render_voice_summary(result)
     with st.expander(tr("How this score works")):
         st.write(f"- {tr('0-21')}: {tr('Self-Care')}")
         st.write(f"- {tr('22-44')}: {tr('Doctor Visit Recommended')}")
@@ -2529,6 +2636,10 @@ def render_result_panel(
     render_previous_check_comparison(comparison)
     if result.model_prediction:
         st.caption(tr(f"ML model prediction: {result.model_prediction} | Confidence: {result.model_confidence}"))
+    with st.expander(tr("Clinician evidence and rule trace")):
+        st.caption(tr("This shows the information used so a clinician can independently review the recommendation."))
+        for item in clinician_evidence(patient_data or {}, result):
+            st.write(f"- **{item['input']}** — {item['effect']}")
     followup_answers = list((patient_data or {}).get("followup_answers", []))
     positive_followups = [item for item in followup_answers if item.get("answer") in {"Yes", "Not sure"}]
     if positive_followups:
@@ -2566,6 +2677,22 @@ def render_result_panel(
     for item in translate_items(advice["doctor_questions"], st.session_state.language):
         st.write(f"- {item}")
     st.warning(tr(advice["disclaimer"]))
+    export_bundle = build_fhir_bundle(patient_data or {}, result)
+    st.download_button(
+        tr("Download structured health bundle"),
+        data=json.dumps(export_bundle, indent=2),
+        file_name="lifeline_ai_health_bundle.json",
+        mime="application/fhir+json",
+        width="stretch",
+    )
+    st.caption(tr("Standards-ready export for clinician review; it is not automatically sent to any health system."))
+    feedback1, feedback2 = st.columns(2)
+    if feedback1.button(tr("This guidance was helpful"), key="result_helpful", width="stretch"):
+        record_safety_event("Guidance feedback", f"Helpful: {result.risk_level}")
+        st.success(tr("Thank you. No identifying details were added to this feedback."))
+    if feedback2.button(tr("This guidance may be wrong"), key="result_concern", width="stretch"):
+        record_safety_event("Safety concern", f"Review requested: {result.risk_level}")
+        st.warning(tr("Thank you. Seek professional care if the result does not match how serious the situation feels."))
 
 
 def render_followup_and_summary(patient_data: dict[str, Any], result: Any, advice: dict[str, Any]) -> None:
@@ -2637,6 +2764,7 @@ def render_checker() -> None:
         p1, p2 = st.columns(2)
         if p1.button(tr("Save patient profile"), width="stretch"):
             st.session_state.patient_profile = {
+                **st.session_state.get("patient_profile", {}),
                 "patient_name": data["patient_name"],
                 "age": int(data["age"] or 0),
                 "gender": data["gender"],
@@ -2662,6 +2790,8 @@ def render_checker() -> None:
                 # AI rewriting is optional enrichment and must not delay safety guidance.
                 result = analyze_patient(data, use_ml=False)
                 advice = build_recommendations(result, enhance=False)
+                if result.risk_level == "Emergency":
+                    record_safety_event("Emergency override", "Explicit red flag or emergency score triggered")
                 # Avoid a remote case-history request for anonymous checks. Named
                 # patients still receive the previous-check comparison.
                 previous_case = latest_previous_case(data) if data["patient_name"].strip() else None
@@ -2958,6 +3088,17 @@ def render_medication_safety() -> None:
                         st.write(f"- {item}")
                 st.caption(f"{tr('Source')}: {tr(med_result.source)}")
                 st.warning(tr("This tool does not prescribe medicine or dosage. Ask a doctor or pharmacist before changing medicines."))
+                reconciliation = reconcile_medications(
+                    [medicine_name, *[item for item in current_medicines.replace(";", ",").split(",") if item.strip()]],
+                    allergies,
+                )
+                st.markdown(f"**{tr('Medication reconciliation')}**")
+                flags = reconciliation["duplicate_flags"] + reconciliation["interaction_flags"] + reconciliation["allergy_flags"]
+                if flags:
+                    for flag in flags:
+                        st.warning(tr(flag))
+                else:
+                    st.info(tr("No duplicate ingredient, listed interaction, or allergy match was found by the local rules. A pharmacist should still review the full list."))
         else:
             st.markdown(
                 f"""
@@ -2968,6 +3109,112 @@ def render_medication_safety() -> None:
                 """,
                 unsafe_allow_html=True,
             )
+
+
+def render_passport_and_reminders() -> None:
+    page_header(
+        "Health Passport & Reminders",
+        "Keep separate patient or caregiver profiles, prepare an emergency card, and track care reminders.",
+        "Patient-controlled record",
+    )
+    profiles: dict[str, dict[str, Any]] = st.session_state.care_profiles
+    profile_names = list(profiles) or ["My profile"]
+    active = st.selectbox("Profile", profile_names, index=profile_names.index(st.session_state.active_profile) if st.session_state.active_profile in profile_names else 0)
+    st.session_state.active_profile = active
+    profile = dict(profiles.get(active, st.session_state.get("patient_profile", {})))
+
+    with st.expander("Add another patient or caregiver profile"):
+        new_profile_name = st.text_input("Profile label", placeholder="Example: Mother, Child 1, My profile")
+        relationship = st.selectbox("Relationship", ["Self", "Child", "Parent", "Partner", "Other"])
+        consent = st.checkbox("I am authorised to manage health information for this person")
+        if st.button("Create profile", disabled=not (new_profile_name.strip() and consent)):
+            profiles[new_profile_name.strip()] = {"profile_label": new_profile_name.strip(), "relationship": relationship}
+            st.session_state.active_profile = new_profile_name.strip()
+            st.rerun()
+
+    left, right = st.columns(2, gap="large")
+    with left:
+        st.markdown("**Emergency health passport**")
+        patient_name = st.text_input("Name or patient ID", value=str(profile.get("patient_name", "")), key="passport_name")
+        patient_id = st.text_input("Local patient identifier", value=str(profile.get("patient_id", "")), key="passport_id")
+        emergency_contact = st.text_input("Emergency contact", value=str(profile.get("emergency_contact", "")), key="passport_emergency")
+        blood_group = st.selectbox("Blood group (optional)", ["Not known", "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"], index=0 if profile.get("blood_group") not in ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"] else ["Not known", "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].index(profile.get("blood_group")))
+        allergies = st.text_area("Allergies", value=str(profile.get("allergies", "")), key="passport_allergies")
+        medications = st.text_area("Current medicines", value=str(profile.get("medications", "")), key="passport_medicines")
+        conditions = st.multiselect("Conditions", CONDITION_OPTIONS, default=[item for item in profile.get("conditions", []) if item in CONDITION_OPTIONS], key="passport_conditions")
+        if st.button("Save passport", type="primary", width="stretch"):
+            saved_profile = {
+                **profile,
+                "patient_name": patient_name,
+                "patient_id": patient_id,
+                "emergency_contact": emergency_contact,
+                "blood_group": "" if blood_group == "Not known" else blood_group,
+                "allergies": allergies,
+                "medications": medications,
+                "conditions": conditions,
+            }
+            profiles[active] = saved_profile
+            st.session_state.patient_profile = saved_profile
+            st.success("Passport saved for this browser session.")
+        bundle = build_fhir_bundle({**profile, "patient_name": patient_name, "patient_id": patient_id, "emergency_contact": emergency_contact, "blood_group": blood_group, "allergies": allergies, "medications": medications, "conditions": conditions})
+        st.download_button("Download structured passport", json.dumps(bundle, indent=2), "lifeline_ai_passport.json", "application/fhir+json", width="stretch")
+        if st.button("Use this profile in Health Checker", width="stretch"):
+            selected_profile = profiles.get(active, profile)
+            st.session_state.patient_profile = selected_profile
+            load_profile_into_form(selected_profile)
+            switch_page("Patient Health Checker")
+
+    with right:
+        st.markdown("**Care reminders**")
+        reminder_title = st.text_input("Reminder", placeholder="Doctor follow-up, vaccination, medicine-list review")
+        reminder_date = st.date_input("Due date", value=date.today())
+        reminder_profile = st.selectbox("For profile", profile_names, key="reminder_profile")
+        if st.button("Add reminder", disabled=not reminder_title.strip(), width="stretch"):
+            st.session_state.care_reminders.append({"title": reminder_title.strip(), "due_date": reminder_date.isoformat(), "profile": reminder_profile, "completed": False})
+            st.rerun()
+        if not st.session_state.care_reminders:
+            st.info("No reminders yet.")
+        for index, reminder in enumerate(st.session_state.care_reminders):
+            status = reminder_status(reminder)
+            done = st.checkbox(
+                f"{reminder['title']} — {reminder['profile']} — {reminder['due_date']} ({status})",
+                value=bool(reminder.get("completed")),
+                key=f"reminder_done_{index}",
+            )
+            reminder["completed"] = done
+
+
+def render_safety_quality() -> None:
+    page_header(
+        "Safety & Quality",
+        "Review rule behavior, anonymous feedback, high-risk overrides, and validation limits.",
+        "Clinical safety monitoring",
+    )
+    cases = list_cases()
+    emergency = sum(str(case.get("risk_level")) == "Emergency" for case in cases)
+    urgent = sum(str(case.get("risk_level")) == "Urgent Care" for case in cases)
+    concerns = sum(event.get("event") == "Safety concern" for event in st.session_state.safety_events)
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Saved checks", len(cases))
+    c2.metric("Emergency", emergency)
+    c3.metric("Urgent", urgent)
+    c4.metric("Safety concerns", concerns)
+    st.markdown("**Built-in safety controls**")
+    controls = [
+        "Explicit emergency signs override numeric scoring and model output.",
+        "Unanswered or uncertain red-flag follow-ups fail safely to faster care.",
+        "Medication guidance does not calculate dosage or prescribe treatment.",
+        "Offline mode disables cloud AI, translation, Supabase, and video embeds.",
+        "Clinician evidence traces show the basis of each recommendation.",
+    ]
+    for control in controls:
+        st.write(f"- {control}")
+    st.markdown("**Anonymous session feedback**")
+    if st.session_state.safety_events:
+        st.dataframe(pd.DataFrame(st.session_state.safety_events), hide_index=True, width="stretch")
+    else:
+        st.info("No feedback or safety concerns recorded in this session.")
+    st.warning("This dashboard monitors software behavior; it is not proof of clinical validation. Prospective clinical testing and regulatory review are required before relying on LifeLine AI for real-world medical decisions.")
 
 
 def render_dashboard() -> None:
@@ -3192,8 +3439,12 @@ def main() -> None:
         render_qa()
     elif st.session_state.page == "Medication Safety Checker":
         render_medication_safety()
+    elif st.session_state.page == "Health Passport & Reminders":
+        render_passport_and_reminders()
     elif st.session_state.page == "Doctor Dashboard":
         render_dashboard()
+    elif st.session_state.page == "Safety & Quality":
+        render_safety_quality()
     elif st.session_state.page == "Scenario Challenge":
         render_challenge()
     elif st.session_state.page == "Safety Videos":

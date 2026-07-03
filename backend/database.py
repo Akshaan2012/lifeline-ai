@@ -235,13 +235,11 @@ def get_case_by_share_code(share_code: str) -> dict[str, Any] | None:
     supabase = _supabase_client()
     if supabase:
         try:
-            response = (
-                supabase.table("patient_cases")
-                .select("created_at,patient_name,risk_level,review_status,doctor_notes,share_code")
-                .eq("share_code", code)
-                .limit(1)
-                .execute()
-            )
+            # Use a narrowly-scoped RPC instead of granting anonymous SELECT
+            # access to the entire patient table.
+            response = supabase.rpc(
+                "get_patient_case_by_share_code", {"input_code": code}
+            ).execute()
             return dict(response.data[0]) if response.data else None
         except Exception as exc:
             _set_database_error(str(exc))

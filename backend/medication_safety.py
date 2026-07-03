@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from backend.openai_helper import openai_json
+from backend.care_features import reconcile_medications
 
 
 @dataclass(frozen=True)
@@ -84,6 +85,10 @@ def analyze_medication_safety(
     rule = _match_medicine(medicine_name)
     context = _text_blob([allergies, current_medicines, *conditions])
     caution_flags: list[str] = []
+    reconciliation = reconcile_medications(
+        [medicine_name, *[item for item in current_medicines.replace(";", ",").split(",") if item.strip()]],
+        allergies,
+    )
 
     if age < 12:
         caution_flags.append("Child: medicine safety and dose can be very different for children.")
@@ -108,6 +113,9 @@ def analyze_medication_safety(
         caution_flags.append("Possible bleeding-risk medicine: ask before mixing with painkillers or aspirin.")
     if any(word in context for word in ["kidney", "liver", "heart"]):
         caution_flags.append("Long-term condition mentioned: medicine choice may need professional review.")
+    caution_flags.extend(reconciliation["duplicate_flags"])
+    caution_flags.extend(reconciliation["interaction_flags"])
+    caution_flags.extend(reconciliation["allergy_flags"])
 
     level = "Low caution"
     if caution_flags:
