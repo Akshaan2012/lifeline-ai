@@ -19,6 +19,15 @@ LifeLine AI is a patient-friendly health decision-support app built with Streaml
 - GitHub repo launch scripts for Windows, macOS, and Linux
 - Multi-language dropdown support
 - Offline mode for local rules, local SQLite storage, and no cloud calls
+- Plain-language red-flag interviews with fail-safe handling for unanswered or uncertain responses
+- Emergency action screen with one-tap 112 calling and user-initiated nearby-hospital search
+- Medication reconciliation for duplicate ingredients, selected interactions, and allergy matches
+- Patient-controlled health passports and separate caregiver profiles
+- Care reminders for follow-ups, vaccinations, and medicine-list reviews
+- Read-aloud result summaries, larger text, high contrast, and simpler-language preferences
+- Clinician evidence traces showing the inputs and rules behind recommendations
+- Safety and quality dashboard with anonymous session feedback
+- FHIR-style structured JSON exports for clinician and interoperability preparation
 
 ## Safety
 
@@ -152,6 +161,8 @@ In Supabase:
 3. Paste and run the SQL from `supabase_schema.sql`.
 
 Run the schema again after updating the app; it safely adds the clinic handoff columns when they are missing.
+
+The updated schema keeps anonymous patient submissions and private-code response lookup working, but blocks anonymous table-wide reads, edits, and deletes. Doctor-dashboard access requires an authenticated Supabase user whose `app_metadata.role` is `staff`. Set that role only from a trusted server or the Supabase administration tools; users must never be allowed to assign it to themselves.
 
 If Supabase secrets are missing, the app uses a local SQLite fallback for testing.
 

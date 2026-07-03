@@ -12,7 +12,7 @@ RISK_ORDER = {
 }
 
 EMERGENCY_SYMPTOMS = {
-    "chest pain",
+    "heart attack warning signs",
     "severe breathing difficulty",
     "fainting",
     "confusion",
@@ -22,7 +22,15 @@ EMERGENCY_SYMPTOMS = {
     "blue lips",
 }
 
+# These descriptions are broad enough that ordinary users may select them for
+# both dangerous and non-dangerous problems. They must never become self-care,
+# but the follow-up answers decide whether they need emergency escalation.
+AMBIGUOUS_HIGH_RISK_SYMPTOMS = {
+    "chest pain",
+}
+
 URGENT_SYMPTOMS = {
+    "chest pain",
     "shortness of breath",
     "high fever",
     "severe headache",
@@ -30,14 +38,45 @@ URGENT_SYMPTOMS = {
     "persistent vomiting",
     "dehydration",
     "blood in stool",
+    "black stool",
+    "heavy bleeding",
+    "pregnancy bleeding",
+    "severe weakness",
     "very high sugar symptoms",
+}
+
+SYMPTOM_ALIASES = {
+    "chest pain": (
+        "chest hurts", "chest hurt", "pain in my chest", "pain in the chest",
+        "chest discomfort", "chest tightness", "tight chest", "chest pressure",
+    ),
+    "shortness of breath": (
+        "short of breath", "breathless", "trouble breathing", "hard to breathe",
+        "difficulty breathing",
+    ),
+    "severe breathing difficulty": (
+        "cannot breathe", "can't breathe", "cant breathe", "gasping for air",
+    ),
+    "confusion": ("confused", "disoriented", "not making sense"),
+    "fainting": ("fainted", "passed out", "blacked out", "lost consciousness"),
+    "stroke signs": ("face drooping", "face droop", "slurred speech", "speech is slurred", "arm weakness"),
+    "seizure": ("convulsion", "convulsions", "having a fit"),
+    "severe allergic reaction": ("anaphylaxis", "throat swelling", "throat is swelling", "tongue swelling"),
+    "blue lips": ("lips are blue", "bluish lips"),
+    "severe headache": ("worst headache", "extreme headache"),
+    "persistent vomiting": ("cannot stop vomiting", "keeps vomiting", "repeated vomiting"),
+    "blood in stool": ("bloody stool", "blood in poo", "blood in poop"),
+    "black stool": ("black stools", "tarry stool", "tarry stools"),
+    "heavy bleeding": ("bleeding heavily", "a lot of bleeding", "won't stop bleeding", "wont stop bleeding"),
+    "pregnancy bleeding": ("bleeding while pregnant", "pregnant and bleeding"),
 }
 
 SYMPTOM_CATEGORIES = {
     "Respiratory": {"cough", "sore throat", "shortness of breath", "severe breathing difficulty", "wheezing"},
     "Heart Warning": {"chest pain", "sweating", "fainting", "palpitations"},
     "Infection/Fever": {"fever", "high fever", "chills", "body pain", "fatigue"},
-    "Digestive": {"stomach pain", "severe stomach pain", "diarrhea", "persistent vomiting", "nausea"},
+    "Digestive": {"stomach pain", "severe stomach pain", "diarrhea", "persistent vomiting", "nausea", "blood in stool", "black stool"},
+    "Bleeding/Pregnancy Warning": {"heavy bleeding", "pregnancy bleeding"},
     "Diabetes Warning": {"very high sugar symptoms", "frequent urination", "excessive thirst", "blurred vision"},
     "Neurological": {"severe headache", "confusion", "stroke signs", "seizure", "dizziness"},
     "Skin/Allergy": {"rash", "itching", "swelling", "severe allergic reaction"},
@@ -56,8 +95,22 @@ class TriageResult:
     model_confidence: float | None = None
 
 
+def canonicalize_symptom(value: Any) -> str:
+    text = " ".join(str(value).strip().lower().split())
+    if not text:
+        return ""
+    for canonical, aliases in SYMPTOM_ALIASES.items():
+        if text == canonical or any(alias in text for alias in aliases):
+            return canonical
+    return text
+
+
 def _selected_symptoms(data: dict[str, Any]) -> set[str]:
-    return {str(item).strip().lower() for item in data.get("symptoms", []) if str(item).strip()}
+    return {
+        canonicalize_symptom(item)
+        for item in data.get("symptoms", [])
+        if canonicalize_symptom(item)
+    }
 
 
 def _safe_float(value: Any, default: float = 0) -> float:
@@ -101,11 +154,14 @@ def analyze_patient(data: dict[str, Any], use_ml: bool = True) -> TriageResult:
     signals: list[str] = []
 
     emergency_hits = symptoms.intersection(EMERGENCY_SYMPTOMS)
+    ambiguous_high_risk_hits = symptoms.intersection(AMBIGUOUS_HIGH_RISK_SYMPTOMS)
     urgent_hits = symptoms.intersection(URGENT_SYMPTOMS)
 
     if emergency_hits:
-        score += 60
+        score += 70
         signals.append("One or more emergency warning symptoms are present.")
+    if ambiguous_high_risk_hits:
+        signals.append("A potentially serious symptom needs careful follow-up answers.")
     if urgent_hits:
         score += 28
         signals.append("Some symptoms can become serious and need faster attention.")
@@ -158,7 +214,22 @@ def analyze_patient(data: dict[str, Any], use_ml: bool = True) -> TriageResult:
         score += 22
         signals.append("This combination can be a diabetes warning pattern.")
 
-    if score >= 70:
+    if ambiguous_high_risk_hits:
+        # A broad high-risk description may be clarified down from Emergency,
+        # but never below same-day urgent assessment.
+        score = max(score, 45)
+    if urgent_hits:
+        # Symptoms defined as urgent must never fall through to a routine
+        # doctor visit merely because few other score inputs were supplied.
+        score = max(score, 45)
+
+    if emergency_hits:
+        # Explicit red flags override numeric scoring. A model or a low total
+        # must never downgrade an emergency warning.
+        score = max(score, 70)
+        risk = "Emergency"
+        recommendation = "Get medical help immediately."
+    elif score >= 70:
         risk = "Emergency"
         recommendation = "Get medical help immediately."
     elif score >= 45:

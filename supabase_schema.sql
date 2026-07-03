@@ -29,30 +29,64 @@ add column if not exists patient_consent boolean not null default false;
 
 alter table public.patient_cases enable row level security;
 
+drop policy if exists "Allow app inserts for patient cases" on public.patient_cases;
+drop policy if exists "Allow app reads for patient dashboard" on public.patient_cases;
+drop policy if exists "Allow app reset for patient cases" on public.patient_cases;
+drop policy if exists "Allow app review updates for patient cases" on public.patient_cases;
+drop policy if exists "Allow authenticated staff reads" on public.patient_cases;
+drop policy if exists "Allow authenticated staff deletes" on public.patient_cases;
+drop policy if exists "Allow authenticated staff review updates" on public.patient_cases;
+
 create policy "Allow app inserts for patient cases"
 on public.patient_cases
 for insert
 to anon
 with check (true);
 
-create policy "Allow app reads for patient dashboard"
+create policy "Allow authenticated staff reads"
 on public.patient_cases
 for select
-to anon
-using (true);
+to authenticated
+using ((auth.jwt() -> 'app_metadata' ->> 'role') = 'staff');
 
-create policy "Allow app reset for patient cases"
+create policy "Allow authenticated staff deletes"
 on public.patient_cases
 for delete
-to anon
-using (true);
+to authenticated
+using ((auth.jwt() -> 'app_metadata' ->> 'role') = 'staff');
 
-create policy "Allow app review updates for patient cases"
+create policy "Allow authenticated staff review updates"
 on public.patient_cases
 for update
-to anon
-using (true)
-with check (true);
+to authenticated
+using ((auth.jwt() -> 'app_metadata' ->> 'role') = 'staff')
+with check ((auth.jwt() -> 'app_metadata' ->> 'role') = 'staff');
+
+-- Patients may retrieve only the small response associated with a private,
+-- unguessable case code. Anonymous users never receive table-wide SELECT.
+create or replace function public.get_patient_case_by_share_code(input_code text)
+returns table (
+  created_at timestamptz,
+  patient_name text,
+  risk_level text,
+  review_status text,
+  doctor_notes text,
+  share_code text
+)
+language sql
+security definer
+set search_path = public
+as $$
+  select p.created_at, p.patient_name, p.risk_level, p.review_status,
+         p.doctor_notes, p.share_code
+  from public.patient_cases p
+  where p.share_code = upper(trim(input_code))
+    and p.patient_consent = true
+  limit 1;
+$$;
+
+revoke all on function public.get_patient_case_by_share_code(text) from public;
+grant execute on function public.get_patient_case_by_share_code(text) to anon, authenticated;
 
 create index if not exists patient_cases_score_idx
 on public.patient_cases (score desc);
