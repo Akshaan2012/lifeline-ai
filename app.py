@@ -169,6 +169,30 @@ PAGES = [
     "Safety Videos",
 ]
 
+PATIENT_PAGES = [
+    "Home",
+    "Patient Health Checker",
+    "Health Timeline",
+    "Disease Q&A Assistant",
+    "Medication Safety Checker",
+    "Health Passport & Reminders",
+    "Safety & Quality",
+    "Scenario Challenge",
+    "Safety Videos",
+]
+
+PROFESSIONAL_PAGES = [
+    "Home",
+    "Doctor Dashboard",
+    "Health Timeline",
+    "Medication Safety Checker",
+    "Disease Q&A Assistant",
+    "Safety & Quality",
+    "Safety Videos",
+]
+
+ROLE_OPTIONS = ["Patient", "Healthcare Professional"]
+
 LANGUAGE_OPTIONS = [
     "\U0001f1fa\U0001f1f8 English", "\U0001f1ee\U0001f1f3 Hindi", "\U0001f1f7\U0001f1fa Russian", "\U0001f1e9\U0001f1ea German", "\U0001f1eb\U0001f1f7 French",
     "\U0001f1ea\U0001f1f8 Spanish", "\U0001f1ee\U0001f1ea Gaelic", "\U0001f1ee\U0001f1f3 Sanskrit", "\U0001f1ee\U0001f1f3 Marathi", "\U0001f1ee\U0001f1f3 Kannada",
@@ -1627,6 +1651,14 @@ def init_state() -> None:
     st.session_state.setdefault("offline_mode", False)
     st.session_state.setdefault("preloaded_languages", [])
     st.session_state.setdefault("prepared_languages", [])
+    role_from_url = str(st.query_params.get("role", "")).strip().lower()
+    default_role = "Healthcare Professional" if role_from_url == "professional" else "Patient"
+    st.session_state.setdefault("workspace_role", default_role)
+    if st.session_state.workspace_role not in ROLE_OPTIONS:
+        st.session_state.workspace_role = "Patient"
+    st.session_state.setdefault("workspace_role_picker", st.session_state.workspace_role)
+    if st.session_state.workspace_role_picker not in ROLE_OPTIONS:
+        st.session_state.workspace_role_picker = st.session_state.workspace_role
 
 
 def sidebar() -> None:
@@ -1675,9 +1707,25 @@ def sidebar() -> None:
         contrast_css = "body, .stApp { background:#000 !important; color:#fff !important; }" if st.session_state.high_contrast else ""
         st.markdown(f"<style>html, body, [class*='css'] {{font-size:{font_size};}} {contrast_css}</style>", unsafe_allow_html=True)
     st.sidebar.caption(tr("Smart inside. Simple outside."))
+    selected_role = st.sidebar.radio(
+        "Workspace",
+        ROLE_OPTIONS,
+        key="workspace_role_picker",
+        horizontal=True,
+    )
+    if selected_role != st.session_state.workspace_role:
+        st.session_state.workspace_role = selected_role
+        st.query_params["role"] = "professional" if selected_role == "Healthcare Professional" else "patient"
+        st.session_state.page = "Home"
+        st.session_state.page_picker = "Home"
+        st.rerun()
+    available_pages = PATIENT_PAGES if st.session_state.workspace_role == "Patient" else PROFESSIONAL_PAGES
+    if st.session_state.page not in available_pages:
+        st.session_state.page = "Home"
+        st.session_state.page_picker = "Home"
     selected_page = st.sidebar.radio(
         tr("Navigation"),
-        PAGES,
+        available_pages,
         key="page_picker",
         label_visibility="collapsed",
         format_func=lambda page: tr(page),
@@ -2335,7 +2383,73 @@ def render_sam() -> None:
                 switch_page(str(target_page))
 
 
-def render_home() -> None:
+def render_patient_home() -> None:
+    profile = st.session_state.get("patient_profile", {})
+    reminders = st.session_state.get("care_reminders", [])
+    open_reminders = sum(1 for reminder in reminders if not reminder.get("completed"))
+    last_result = st.session_state.get("checker_result")
+    last_score = getattr(last_result, "score", None) if last_result else None
+    last_risk = compact_risk_label(str(getattr(last_result, "risk_level", "Not checked"))) if last_result else "Not checked"
+    profile_name = str(profile.get("patient_name") or "My health")
+
+    st.markdown(
+        f"""
+        <div class="dashboard-shell">
+            <div class="app-hero">
+                <div>
+                    <div class="small-title">{h("Patient workspace")}</div>
+                    <h1>{h("How can we help today?")}</h1>
+                    <p>{h("Check symptoms, review your health timeline, and keep medicines and reminders together in one safe place.")}</p>
+                </div>
+                <div class="safety-badge">{h("Decision support only")}</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    render_command_center_cards(
+        [
+            ("Profile", profile_name, "Your saved health details"),
+            ("Last risk level", last_risk, "Most recent check"),
+            ("Last score", f"{last_score}/100" if last_score is not None else "—", "Risk guidance"),
+            ("Reminders", str(open_reminders), "Still to complete"),
+        ]
+    )
+    st.markdown(
+        f"""
+        <div class="home-workspace">
+            <div class="workspace-panel">
+                <div class="small-title">{h("Start here")}</div>
+                <h2>{h("Analyze symptoms")}</h2>
+                <p class="muted">{h("Tell LifeLine AI what is happening and get clear next-step guidance, including urgent warning signs.")}</p>
+                <div class="chip-row">
+                    <span class="clinical-chip">{h("Symptoms")}</span>
+                    <span class="clinical-chip">{h("Risk guidance")}</span>
+                    <span class="clinical-chip">{h("Doctor-ready summary")}</span>
+                </div>
+            </div>
+            <div class="workspace-panel">
+                <div class="small-title">{h("Your health")}</div>
+                <h2>{h("Timeline and care tools")}</h2>
+                <p class="muted">{h("Review previous checks, medication safety, profiles, and care reminders.")}</p>
+                <div class="trend-card"><div class="trend-line"></div></div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.write("")
+    with st.container(key="patient_home_actions"):
+        action1, action2, action3 = st.columns(3)
+        if action1.button("Start Health Check", type="primary", width="stretch"):
+            switch_page("Patient Health Checker")
+        if action2.button("Medication Safety", width="stretch"):
+            switch_page("Medication Safety Checker")
+        if action3.button("Timeline & Reminders", width="stretch"):
+            switch_page("Health Passport & Reminders")
+
+
+def render_professional_home() -> None:
     cases = list_cases()
     summary = case_queue_summary(cases)
     recent_cases = sorted(cases, key=lambda case: str(case.get("created_at", "")), reverse=True)[:4]
@@ -2370,9 +2484,9 @@ def render_home() -> None:
         <div class="dashboard-shell">
             <div class="app-hero">
                 <div>
-                    <div class="small-title">{h("AI health guidance")}</div>
-                    <h1>LifeLine AI</h1>
-                    <p>{h("Patient-friendly risk guidance for safer next steps. Check symptoms, review saved cases, and keep doctor-ready summaries in one calm workspace.")}</p>
+                    <div class="small-title">{h("Clinical workspace")}</div>
+                    <h1>{h("Care team overview")}</h1>
+                    <p>{h("Review shared patient cases, prioritize urgent needs, and follow risk and vital-sign trends from one focused workspace.")}</p>
                 </div>
                 <div class="safety-badge">{h("Decision support only")}</div>
             </div>
@@ -2420,6 +2534,13 @@ def render_home() -> None:
             switch_page("Health Timeline")
         if action3.button(tr("Open Doctor Dashboard"), width="stretch"):
             switch_page("Doctor Dashboard")
+
+
+def render_home() -> None:
+    if st.session_state.workspace_role == "Healthcare Professional":
+        render_professional_home()
+    else:
+        render_patient_home()
 
 
 def patient_form() -> dict[str, Any]:
