@@ -111,6 +111,58 @@ def database_backend() -> str:
     return "Supabase" if _supabase_client() else "SQLite local fallback"
 
 
+def supabase_is_configured() -> bool:
+    """Return whether this deployment can authenticate clinic staff."""
+    return _supabase_configured()
+
+
+def sign_in_staff(email: str, password: str) -> tuple[bool, str]:
+    """Sign in and accept only a server-assigned staff role."""
+    client = _supabase_client()
+    if client is None:
+        return False, "Clinic sign-in is not configured on this deployment."
+    try:
+        response = client.auth.sign_in_with_password(
+            {"email": email.strip(), "password": password}
+        )
+        user = getattr(response, "user", None)
+        metadata = getattr(user, "app_metadata", {}) or {}
+        if metadata.get("role") != "staff":
+            client.auth.sign_out()
+            return False, "This account does not have clinic staff access."
+        return True, "Signed in."
+    except Exception:
+        return False, "Sign-in failed. Check the email and password."
+
+
+def current_staff_user() -> dict[str, str] | None:
+    """Return a minimal staff identity without exposing session tokens."""
+    client = _supabase_client()
+    if client is None:
+        return None
+    try:
+        session = client.auth.get_session()
+        user = getattr(session, "user", None)
+        metadata = getattr(user, "app_metadata", {}) or {}
+        if user is None or metadata.get("role") != "staff":
+            return None
+        return {
+            "id": str(getattr(user, "id", "")),
+            "email": str(getattr(user, "email", "")),
+        }
+    except Exception:
+        return None
+
+
+def sign_out_staff() -> None:
+    client = _supabase_client()
+    if client is not None:
+        try:
+            client.auth.sign_out()
+        except Exception:
+            pass
+
+
 def init_db() -> None:
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(DB_PATH) as conn:
