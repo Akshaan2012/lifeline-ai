@@ -12,7 +12,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 from backend.care_features import build_fhir_bundle, clinician_evidence, emergency_action_plan, reconcile_medications, reminder_status
-from backend.database import clear_cases, database_backend, database_error_message, delete_patient_cases, get_case_by_share_code, list_cases, save_case, update_case_review
+from backend.database import clear_cases, current_staff_user, database_backend, database_error_message, delete_patient_cases, get_case_by_share_code, list_cases, save_case, sign_in_staff, sign_out_staff, supabase_is_configured, update_case_review
 from backend.disease_qa import answer_question
 from backend.doctor_summary import build_doctor_summary
 from backend.followup import evaluate_follow_up
@@ -477,6 +477,7 @@ def load_profile_into_form(profile: dict[str, Any]) -> None:
     st.session_state.patient_conditions_input = known_conditions
     st.session_state.patient_custom_conditions_input = ", ".join(custom_conditions)
     st.session_state.patient_medications_input = str(profile.get("medications", ""))
+    st.session_state.patient_allergies_input = str(profile.get("allergies", ""))
 
 
 def clear_profile_form() -> None:
@@ -499,6 +500,7 @@ def clear_profile_form() -> None:
         "patient_conditions_input",
         "patient_custom_conditions_input",
         "patient_medications_input",
+        "patient_allergies_input",
         "checker_result",
         "checker_patient_data",
         "followup_result",
@@ -1726,7 +1728,8 @@ def sidebar() -> None:
         st.session_state.page = "Home"
         st.session_state.page_picker = "Home"
         st.rerun()
-    available_pages = PATIENT_PAGES if st.session_state.workspace_role == "Patient" else PROFESSIONAL_PAGES
+    staff_user = current_staff_user() if st.session_state.workspace_role == "Healthcare Professional" else None
+    available_pages = PATIENT_PAGES if st.session_state.workspace_role == "Patient" else (PROFESSIONAL_PAGES if staff_user else ["Home"])
     if st.session_state.page not in available_pages:
         st.session_state.page = "Home"
         st.session_state.page_picker = "Home"
@@ -1740,6 +1743,13 @@ def sidebar() -> None:
     page_changed = selected_page != st.session_state.page
     if page_changed:
         st.session_state.page = selected_page
+    if staff_user:
+        st.sidebar.caption(f"Signed in: {staff_user.get('email') or 'Clinic staff'}")
+        if st.sidebar.button("Sign out", width="stretch"):
+            sign_out_staff()
+            st.session_state.page = "Home"
+            st.session_state.page_picker = "Home"
+            st.rerun()
     st.sidebar.divider()
     st.sidebar.caption(tr("Decision support. Not a replacement for doctors."))
 
@@ -2414,6 +2424,10 @@ def render_patient_home() -> None:
         """,
         unsafe_allow_html=True,
     )
+    st.info(
+        tr("If there is severe breathing difficulty, chest pain, fainting, stroke signs, a seizure, or another life-threatening concern, do not wait for this app. Call 112 or go to the nearest emergency department."),
+        icon="☎️",
+    )
     render_command_center_cards(
         [
             ("Profile", profile_name, "Your saved health details"),
@@ -2545,18 +2559,48 @@ def render_professional_home() -> None:
 
 def render_home() -> None:
     if st.session_state.workspace_role == "Healthcare Professional":
-        render_professional_home()
+        if current_staff_user():
+            render_professional_home()
+        else:
+            render_staff_sign_in()
     else:
         render_patient_home()
+
+
+def render_staff_sign_in() -> None:
+    page_header(
+        "Clinic staff sign-in",
+        "Patient cases are available only to authenticated clinic accounts with the staff role.",
+        "Protected workspace",
+    )
+    if not supabase_is_configured():
+        st.error("Clinic access is unavailable because Supabase has not been configured for this deployment.")
+        st.info("Add the Supabase settings, create the staff account, and assign app_metadata.role = staff using trusted administration tools.")
+        return
+    with st.form("staff_sign_in_form"):
+        email = st.text_input("Clinic email", autocomplete="email")
+        password = st.text_input("Password", type="password", autocomplete="current-password")
+        submitted = st.form_submit_button("Sign in securely", type="primary", width="stretch")
+    if submitted:
+        if not email.strip() or not password:
+            st.error("Enter both the clinic email and password.")
+            return
+        ok, message = sign_in_staff(email, password)
+        if ok:
+            st.success(message)
+            st.rerun()
+        else:
+            st.error(message)
 
 
 def patient_form() -> dict[str, Any]:
     profile = st.session_state.get("patient_profile", {})
     profile_conditions = list(profile.get("conditions", []))
     known_conditions, custom_conditions = split_known_conditions(profile_conditions)
-    st.markdown(f"**{tr('Basic details')}**")
+    st.markdown(f"**1. {tr('Basic details')}**")
+    st.caption(tr("You can check symptoms without entering a name. Only add details you are comfortable using."))
     patient_name = st.text_input(
-        tr("Patient name or ID"),
+        tr("Patient name or ID (optional)"),
         value=str(profile.get("patient_name", "")),
         placeholder=tr("Example: Patient 001"),
         key="patient_name_input",
@@ -2580,7 +2624,7 @@ def patient_form() -> dict[str, Any]:
             format_func=tr,
             key="patient_gender_input",
         )
-    st.markdown(f"**{tr('Symptoms')}**")
+    st.markdown(f"**2. {tr('Symptoms')}**")
     selected_symptoms = st.multiselect(
         tr("Choose symptoms from list"),
         SYMPTOM_OPTIONS,
@@ -2609,8 +2653,9 @@ def patient_form() -> dict[str, Any]:
     with s2:
         pain_level = st.slider(tr("Pain level"), 0, 10, 3, key="patient_pain_input")
 
-    st.markdown(f"**{tr('Optional measurements')}**")
-    with st.expander(tr("Add temperature, pulse, blood pressure, or oxygen"), expanded=True):
+    st.markdown(f"**3. {tr('Optional measurements')}**")
+    st.caption(tr("Skip these if you do not have a thermometer, blood-pressure monitor, or pulse oximeter."))
+    with st.expander(tr("Add temperature, pulse, blood pressure, or oxygen"), expanded=False):
         temperature = st.number_input(
             tr("Temperature in Celsius"),
             min_value=32.0,
@@ -2660,7 +2705,7 @@ def patient_form() -> dict[str, Any]:
             )
             st.caption(tr("Most people at home will only know this if they have a pulse oximeter."))
 
-    st.markdown(f"**{tr('Existing conditions')}**")
+    st.markdown(f"**4. {tr('Health background')}**")
     selected_conditions = st.multiselect(
         tr("Choose existing conditions from list"),
         CONDITION_OPTIONS,
@@ -2678,10 +2723,16 @@ def patient_form() -> dict[str, Any]:
     )
     conditions = unique_items(selected_conditions + split_free_text_items(typed_conditions))
     medications = st.text_area(
-        tr("Current medicines or allergies"),
+        tr("Current medicines (optional)"),
         value=str(profile.get("medications", "")),
-        placeholder=tr("Example: allergic to penicillin, taking asthma inhaler"),
+        placeholder=tr("Example: asthma inhaler, metformin 500 mg"),
         key="patient_medications_input",
+    )
+    allergies = st.text_area(
+        tr("Allergies (optional)"),
+        value=str(profile.get("allergies", "")),
+        placeholder=tr("Example: penicillin allergy, peanut allergy"),
+        key="patient_allergies_input",
     )
     return {
         "patient_name": patient_name,
@@ -2697,6 +2748,7 @@ def patient_form() -> dict[str, Any]:
         "oxygen": oxygen,
         "conditions": conditions,
         "medications": medications,
+        "allergies": allergies,
         "followup_answers": followup_answers,
     }
 
@@ -2734,6 +2786,12 @@ def render_result_panel(
         """,
         unsafe_allow_html=True,
     )
+    # Put the safest next action before scores and technical detail. In an
+    # urgent situation, users should not need to interpret the dashboard first.
+    render_emergency_actions(patient_data or {}, result)
+    st.subheader(tr(result.recommendation))
+    st.info(tr(advice["risk_summary"]))
+    st.write(tr(advice["simple_explanation"]))
     recommendation_label = "AI-enhanced recommendation" if advice.get("source") else "Safety recommendation"
     st.markdown(f'<div class="section-label">{h(recommendation_label)}</div>', unsafe_allow_html=True)
     st.markdown(
@@ -2748,16 +2806,12 @@ def render_result_panel(
         unsafe_allow_html=True,
     )
     render_care_journey()
-    render_emergency_actions(patient_data or {}, result)
     render_voice_summary(result)
     with st.expander(tr("How this score works")):
         st.write(f"- {tr('0-21')}: {tr('Self-Care')}")
         st.write(f"- {tr('22-44')}: {tr('Doctor Visit Recommended')}")
         st.write(f"- {tr('45-69')}: {tr('Urgent Care')}")
         st.write(f"- {tr('70-100')}: {tr('Emergency')}")
-    st.subheader(tr(result.recommendation))
-    st.info(tr(advice["risk_summary"]))
-    st.write(tr(advice["simple_explanation"]))
     if advice.get("source"):
         st.caption(tr(str(advice["source"])))
     render_care_action_plan(result)
@@ -2898,6 +2952,7 @@ def render_checker() -> None:
                 "gender": data["gender"],
                 "conditions": data["conditions"],
                 "medications": data["medications"],
+                "allergies": data["allergies"],
             }
             st.success(tr("Patient profile saved for this session."))
         if p2.button(tr("Clear profile"), width="stretch"):
@@ -3557,7 +3612,9 @@ def main() -> None:
     init_state()
     sidebar()
 
-    if st.session_state.page == "Home":
+    if st.session_state.workspace_role == "Healthcare Professional" and not current_staff_user():
+        render_staff_sign_in()
+    elif st.session_state.page == "Home":
         render_home()
     elif st.session_state.page == "Patient Health Checker":
         render_checker()

@@ -164,6 +164,8 @@ Run the schema again after updating the app; it safely adds the clinic handoff c
 
 The updated schema keeps anonymous patient submissions and private-code response lookup working, but blocks anonymous table-wide reads, edits, and deletes. Doctor-dashboard access requires an authenticated Supabase user whose `app_metadata.role` is `staff`. Set that role only from a trusted server or the Supabase administration tools; users must never be allowed to assign it to themselves.
 
+The interface enforces this role too: professional navigation and patient cases stay locked until staff sign-in succeeds. Never place a Supabase service-role key in this app or its Streamlit secrets.
+
 If Supabase secrets are missing, the app uses a local SQLite fallback for testing.
 
 ## Offline Mode
