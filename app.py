@@ -647,6 +647,30 @@ def inject_css() -> None:
             border-right: 1px solid rgba(255,255,255,.1);
             box-shadow: 18px 0 42px rgba(8, 38, 49, .14);
         }
+        @media (min-width: 900px) {
+            section[data-testid="stSidebar"] {
+                display: block !important;
+                visibility: visible !important;
+                min-width: 300px !important;
+                max-width: 300px !important;
+                width: 300px !important;
+                transform: none !important;
+                margin-left: 0 !important;
+                left: 0 !important;
+            }
+            section[data-testid="stSidebar"][aria-expanded="false"] {
+                min-width: 300px !important;
+                max-width: 300px !important;
+                width: 300px !important;
+                transform: none !important;
+                margin-left: 0 !important;
+                left: 0 !important;
+            }
+            [data-testid="collapsedControl"] {
+                display: none !important;
+                visibility: hidden !important;
+            }
+        }
         [data-testid="stSidebar"] * { color: #efffff; }
         .sidebar-brand {
             border: 1px solid rgba(255, 255, 255, .14);
