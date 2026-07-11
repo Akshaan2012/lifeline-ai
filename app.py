@@ -345,6 +345,34 @@ COMMON_TRANSLATION_TEXTS = [
     "Digital intake",
     "Minutes saved",
     "Monthly recurring revenue",
+    "Patient workspace",
+    "How can we help today?",
+    "Prepare a clearer doctor visit, review your health timeline, and keep medicines and reminders together in one safe place.",
+    "Profile",
+    "My health",
+    "Your saved health details",
+    "Last risk level",
+    "Not checked",
+    "Most recent check",
+    "Last score",
+    "Reminders",
+    "Still to complete",
+    "Start here",
+    "Prepare a doctor visit",
+    "Tell LifeLine AI what is happening and get a doctor-ready summary, questions to ask, and urgent warning signs.",
+    "Doctor-ready summary",
+    "Your health",
+    "Timeline and care tools",
+    "Review previous checks, medication safety, profiles, and care reminders.",
+    "Medication Safety",
+    "Timeline & Reminders",
+    "Workspace",
+    "Patient",
+    "Healthcare Professional",
+    "Accessibility",
+    "Larger text",
+    "High contrast",
+    "Simpler wording",
 ]
 
 
@@ -671,6 +699,26 @@ def inject_css() -> None:
             border-color: rgba(98, 224, 204, .6);
             background: rgba(98, 224, 204, .14);
             transform: translateX(2px);
+        }
+        [data-testid="stSidebar"] [data-testid="stExpander"] {
+            background: #f7fffc !important;
+            border-color: rgba(176, 214, 207, .95) !important;
+        }
+        [data-testid="stSidebar"] [data-testid="stExpander"] details,
+        [data-testid="stSidebar"] [data-testid="stExpander"] div,
+        [data-testid="stSidebar"] [data-testid="stExpander"] label,
+        [data-testid="stSidebar"] [data-testid="stExpander"] p,
+        [data-testid="stSidebar"] [data-testid="stExpander"] span {
+            color: #102528 !important;
+            -webkit-text-fill-color: #102528 !important;
+            opacity: 1 !important;
+        }
+        [data-testid="stSidebar"] [data-testid="stExpander"] summary {
+            background: #ffffff !important;
+        }
+        [data-testid="stSidebar"] [data-testid="stExpander"] svg {
+            color: #0d8f81 !important;
+            fill: #0d8f81 !important;
         }
         .block-container { padding-top: 1rem; padding-bottom: 3rem; max-width: 1260px; }
         h1, h2, h3 { letter-spacing: 0; color: var(--text); }
@@ -1711,10 +1759,10 @@ def sidebar() -> None:
         st.rerun()
     if st.session_state.offline_mode:
         st.sidebar.caption("Offline mode: local rules only.")
-    with st.sidebar.expander("Accessibility"):
-        large_text = st.checkbox("Larger text", value=bool(st.session_state.large_text), key="access_large_text")
-        high_contrast = st.checkbox("High contrast", value=bool(st.session_state.high_contrast), key="access_high_contrast")
-        simple_language = st.checkbox("Simpler wording", value=bool(st.session_state.simple_language), key="access_simple_language")
+    with st.sidebar.expander(tr("Accessibility")):
+        large_text = st.checkbox(tr("Larger text"), value=bool(st.session_state.large_text), key="access_large_text")
+        high_contrast = st.checkbox(tr("High contrast"), value=bool(st.session_state.high_contrast), key="access_high_contrast")
+        simple_language = st.checkbox(tr("Simpler wording"), value=bool(st.session_state.simple_language), key="access_simple_language")
         st.session_state.large_text = large_text
         st.session_state.high_contrast = high_contrast
         st.session_state.simple_language = simple_language
@@ -1724,10 +1772,11 @@ def sidebar() -> None:
         st.markdown(f"<style>html, body, [class*='css'] {{font-size:{font_size};}} {contrast_css}</style>", unsafe_allow_html=True)
     st.sidebar.caption(tr("Smart inside. Simple outside."))
     selected_role = st.sidebar.radio(
-        "Workspace",
+        tr("Workspace"),
         ROLE_OPTIONS,
         key="workspace_role_picker",
         horizontal=True,
+        format_func=lambda role: tr(role),
     )
     if selected_role != st.session_state.workspace_role:
         st.session_state.workspace_role = selected_role
@@ -2414,7 +2463,7 @@ def render_patient_home() -> None:
     last_result = st.session_state.get("checker_result")
     last_score = getattr(last_result, "score", None) if last_result else None
     last_risk = compact_risk_label(str(getattr(last_result, "risk_level", "Not checked"))) if last_result else "Not checked"
-    profile_name = str(profile.get("patient_name") or "My health")
+    profile_name = str(profile.get("patient_name") or tr("My health"))
 
     st.markdown(
         f"""
@@ -2469,11 +2518,11 @@ def render_patient_home() -> None:
     st.write("")
     with st.container(key="patient_home_actions"):
         action1, action2, action3 = st.columns(3)
-        if action1.button("Start Health Check", type="primary", width="stretch"):
+        if action1.button(tr("Start Health Check"), type="primary", width="stretch"):
             switch_page("Patient Health Checker")
-        if action2.button("Medication Safety", width="stretch"):
+        if action2.button(tr("Medication Safety"), width="stretch"):
             switch_page("Medication Safety Checker")
-        if action3.button("Timeline & Reminders", width="stretch"):
+        if action3.button(tr("Timeline & Reminders"), width="stretch"):
             switch_page("Health Passport & Reminders")
 
 
