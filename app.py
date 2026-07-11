@@ -177,7 +177,6 @@ PATIENT_PAGES = [
     "Disease Q&A Assistant",
     "Medication Safety Checker",
     "Health Passport & Reminders",
-    "Clinic Pilot Plan",
     "Safety & Quality",
     "Scenario Challenge",
     "Safety Videos",
@@ -2469,15 +2468,13 @@ def render_patient_home() -> None:
     )
     st.write("")
     with st.container(key="patient_home_actions"):
-        action1, action2, action3, action4 = st.columns(4)
+        action1, action2, action3 = st.columns(3)
         if action1.button("Start Health Check", type="primary", width="stretch"):
             switch_page("Patient Health Checker")
         if action2.button("Medication Safety", width="stretch"):
             switch_page("Medication Safety Checker")
         if action3.button("Timeline & Reminders", width="stretch"):
             switch_page("Health Passport & Reminders")
-        if action4.button("Clinic Pilot Plan", width="stretch"):
-            switch_page("Clinic Pilot Plan")
 
 
 def render_professional_home() -> None:
