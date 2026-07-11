@@ -164,6 +164,7 @@ PAGES = [
     "Medication Safety Checker",
     "Health Passport & Reminders",
     "Doctor Dashboard",
+    "Clinic Pilot Plan",
     "Safety & Quality",
     "Scenario Challenge",
     "Safety Videos",
@@ -176,6 +177,7 @@ PATIENT_PAGES = [
     "Disease Q&A Assistant",
     "Medication Safety Checker",
     "Health Passport & Reminders",
+    "Clinic Pilot Plan",
     "Safety & Quality",
     "Scenario Challenge",
     "Safety Videos",
@@ -184,6 +186,7 @@ PATIENT_PAGES = [
 PROFESSIONAL_PAGES = [
     "Home",
     "Doctor Dashboard",
+    "Clinic Pilot Plan",
     "Health Timeline",
     "Medication Safety Checker",
     "Disease Q&A Assistant",
@@ -211,15 +214,15 @@ COMMON_TRANSLATION_TEXTS = [
     "Smart inside. Simple outside.",
     "Navigation",
     "Decision support. Not a replacement for doctors.",
-    "AI health guidance",
+    "Doctor-visit preparation",
     "Decision support only",
     "Patient-friendly risk guidance for safer next steps. Check symptoms, review saved cases, and keep doctor-ready summaries in one calm workspace.",
-    "A simple health risk and doctor-visit advisor. It helps users check symptoms, learn about diseases, get precautions, and understand when medical help is needed.",
-    "Prediction",
+    "A simple doctor-visit preparation assistant. It helps users record symptoms, learn about health topics, get precautions, and understand when medical help is needed.",
+    "Visit guidance",
     "Recommendations",
     "Simple language",
     "Sam bubble assistant",
-    "Risk Prediction",
+    "Risk guidance",
     "Advanced Advice",
     "Sam Assistant",
     "Click the bottom-right bubble to ask for help.",
@@ -229,7 +232,7 @@ COMMON_TRANSLATION_TEXTS = [
     "Write any other symptoms",
     "Existing conditions",
     "Current medicines or allergies",
-    "Analyze Health",
+    "Create Visit Summary",
     "Clear profile",
     "Save patient profile",
     "Live result",
@@ -338,6 +341,11 @@ COMMON_TRANSLATION_TEXTS = [
     "Review emergency and urgent cases first.",
     "Review new cases before resolved cases.",
     "Using local fallback storage. To use Supabase, run supabase_schema.sql in Supabase SQL Editor and reboot.",
+    "Clinic Pilot Plan",
+    "Doctor-visit preparation",
+    "Digital intake",
+    "Minutes saved",
+    "Monthly recurring revenue",
 ]
 
 
@@ -1729,7 +1737,7 @@ def sidebar() -> None:
         st.session_state.page_picker = "Home"
         st.rerun()
     staff_user = current_staff_user() if st.session_state.workspace_role == "Healthcare Professional" else None
-    available_pages = PATIENT_PAGES if st.session_state.workspace_role == "Patient" else (PROFESSIONAL_PAGES if staff_user else ["Home"])
+    available_pages = PATIENT_PAGES if st.session_state.workspace_role == "Patient" else (PROFESSIONAL_PAGES if staff_user else ["Home", "Clinic Pilot Plan"])
     if st.session_state.page not in available_pages:
         st.session_state.page = "Home"
         st.session_state.page_picker = "Home"
@@ -2416,7 +2424,7 @@ def render_patient_home() -> None:
                 <div>
                     <div class="small-title">{h("Patient workspace")}</div>
                     <h1>{h("How can we help today?")}</h1>
-                    <p>{h("Check symptoms, review your health timeline, and keep medicines and reminders together in one safe place.")}</p>
+                    <p>{h("Prepare a clearer doctor visit, review your health timeline, and keep medicines and reminders together in one safe place.")}</p>
                 </div>
                 <div class="safety-badge">{h("Decision support only")}</div>
             </div>
@@ -2441,8 +2449,8 @@ def render_patient_home() -> None:
         <div class="home-workspace">
             <div class="workspace-panel">
                 <div class="small-title">{h("Start here")}</div>
-                <h2>{h("Analyze symptoms")}</h2>
-                <p class="muted">{h("Tell LifeLine AI what is happening and get clear next-step guidance, including urgent warning signs.")}</p>
+                <h2>{h("Prepare a doctor visit")}</h2>
+                <p class="muted">{h("Tell LifeLine AI what is happening and get a doctor-ready summary, questions to ask, and urgent warning signs.")}</p>
                 <div class="chip-row">
                     <span class="clinical-chip">{h("Symptoms")}</span>
                     <span class="clinical-chip">{h("Risk guidance")}</span>
@@ -2461,13 +2469,15 @@ def render_patient_home() -> None:
     )
     st.write("")
     with st.container(key="patient_home_actions"):
-        action1, action2, action3 = st.columns(3)
+        action1, action2, action3, action4 = st.columns(4)
         if action1.button("Start Health Check", type="primary", width="stretch"):
             switch_page("Patient Health Checker")
         if action2.button("Medication Safety", width="stretch"):
             switch_page("Medication Safety Checker")
         if action3.button("Timeline & Reminders", width="stretch"):
             switch_page("Health Passport & Reminders")
+        if action4.button("Clinic Pilot Plan", width="stretch"):
+            switch_page("Clinic Pilot Plan")
 
 
 def render_professional_home() -> None:
@@ -2507,7 +2517,7 @@ def render_professional_home() -> None:
                 <div>
                     <div class="small-title">{h("Clinical workspace")}</div>
                     <h1>{h("Care team overview")}</h1>
-                    <p>{h("Review shared patient cases, prioritize urgent needs, and follow risk and vital-sign trends from one focused workspace.")}</p>
+                    <p>{h("Review consent-shared intake summaries, prioritize urgent needs, and measure whether LifeLine AI saves clinic time.")}</p>
                 </div>
                 <div class="safety-badge">{h("Decision support only")}</div>
             </div>
@@ -2548,13 +2558,15 @@ def render_professional_home() -> None:
     )
     st.write("")
     with st.container(key="home_actions"):
-        action1, action2, action3 = st.columns(3)
+        action1, action2, action3, action4 = st.columns(4)
         if action1.button(tr("Start Health Check"), width="stretch"):
             switch_page("Patient Health Checker")
         if action2.button(tr("View Timeline"), width="stretch"):
             switch_page("Health Timeline")
         if action3.button(tr("Open Doctor Dashboard"), width="stretch"):
             switch_page("Doctor Dashboard")
+        if action4.button(tr("Clinic Pilot Plan"), type="primary", width="stretch"):
+            switch_page("Clinic Pilot Plan")
 
 
 def render_home() -> None:
@@ -2817,7 +2829,7 @@ def render_result_panel(
     render_care_action_plan(result)
     render_previous_check_comparison(comparison)
     if result.model_prediction:
-        st.caption(tr(f"ML model prediction: {result.model_prediction} | Confidence: {result.model_confidence}"))
+        st.caption(tr(f"Model support signal: {result.model_prediction} | Confidence: {result.model_confidence}"))
     with st.expander(tr("Clinician evidence and rule trace")):
         st.caption(tr("This shows the information used so a clinician can independently review the recommendation."))
         for item in clinician_evidence(patient_data or {}, result):
@@ -2937,7 +2949,7 @@ def render_checker() -> None:
     page_header(
         "Patient Health Checker",
         "Enter symptoms and the details you know. Heart rate, blood pressure, and oxygen are optional for home users.",
-        "Prediction workspace",
+        "Visit-prep workspace",
     )
     form_col, result_col = st.columns([1.05, .95], gap="large")
     with form_col:
@@ -2965,7 +2977,7 @@ def render_checker() -> None:
             value=False,
             help=tr("Only share when you want a clinician to review this case. A private case code will be created."),
         )
-        if st.button(tr("Analyze Health"), type="primary", width="stretch"):
+        if st.button(tr("Create Visit Summary"), type="primary", width="stretch"):
             if not data["symptoms"]:
                 st.error(tr("Please choose at least one symptom."))
             else:
@@ -3013,11 +3025,11 @@ def render_checker() -> None:
         else:
             st.markdown(
                 f"""
-                <div class="empty-result">
-                    <b>{h("No analysis yet.")}</b><br>
-                    {h("Fill the patient details on the left and click Analyze Health.")}
-                    {h("The danger level will appear here as green, yellow, or red.")}
-                </div>
+                    <div class="empty-result">
+                        <b>{h("No analysis yet.")}</b><br>
+                    {h("Fill the patient details on the left and click Create Visit Summary.")}
+                        {h("The danger level will appear here as green, yellow, or red.")}
+                    </div>
                 """,
                 unsafe_allow_html=True,
             )
@@ -3400,6 +3412,124 @@ def render_safety_quality() -> None:
     st.warning("This dashboard monitors software behavior; it is not proof of clinical validation. Prospective clinical testing and regulatory review are required before relying on LifeLine AI for real-world medical decisions.")
 
 
+def render_clinic_pilot_plan() -> None:
+    page_header(
+        "Clinic Pilot Plan",
+        "Turn LifeLine AI into a safer doctor-visit preparation and clinic-intake product, with measurable pilot goals.",
+        "Launch strategy",
+    )
+    cases = list_cases()
+    shared_cases = len(cases)
+    priority_cases = sum(str(case.get("risk_level")) in {"Emergency", "Urgent Care"} for case in cases)
+    reviewed_cases = sum(str(case.get("review_status") or "New") != "New" for case in cases)
+    unique_patients = len({str(case.get("patient_name") or "Anonymous") for case in cases}) if cases else 0
+
+    st.info(
+        tr("Best positioning: LifeLine AI helps patients record symptoms and prepare for a doctor visit. It does not diagnose diseases or replace a clinician."),
+        icon="🛡️",
+    )
+    render_command_center_cards(
+        [
+            ("Doctor-visit preparation", "Core product", "Safer than autonomous diagnosis"),
+            ("Digital intake", str(shared_cases), "Consent-shared patient summaries"),
+            ("Priority cases", str(priority_cases), "Emergency and urgent"),
+            ("Reviewed cases", str(reviewed_cases), f"{unique_patients} patient profile(s)"),
+        ]
+    )
+
+    workflow_col, checklist_col = st.columns([1.15, .85], gap="large")
+    with workflow_col:
+        st.markdown(f'<div class="section-label">{h("One workflow to sell first")}</div>', unsafe_allow_html=True)
+        steps = [
+            ("1", "Patient completes intake", "Symptoms, timeline, medicines, allergies, conditions, and optional measurements."),
+            ("2", "LifeLine AI creates summary", "Doctor-ready report, questions to ask, red flags, and clear next-step guidance."),
+            ("3", "Clinic reviews queue", "Shared cases appear by urgency, with review status and patient-visible clinic notes."),
+            ("4", "Clinic measures time saved", "Track whether intake is faster and whether important details are easier to collect."),
+        ]
+        for number, title, detail in steps:
+            st.markdown(
+                f"""
+                <div class="journey-stop">
+                    <span>{h(number)}</span>
+                    <b>{h(title)}</b>
+                    <small>{h(detail)}</small>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+    with checklist_col:
+        st.markdown(f'<div class="section-label">{h("Pilot checklist")}</div>', unsafe_allow_html=True)
+        checklist = [
+            "Pick one niche first, such as GP, sports injury, physiotherapy, or orthopaedics.",
+            "Recruit 5 pilot clinicians and 20 test users before selling broadly.",
+            "Ask a licensed doctor to review the intake questions, red flags, and patient-facing statements.",
+            "Use mock or consented pilot data only; do not collect real patient data without adult, privacy, and clinical oversight.",
+            "Measure minutes saved per consultation and missing-information rate.",
+        ]
+        for item in checklist:
+            st.write(f"- {tr(item)}")
+
+    st.write("")
+    st.markdown(f'<div class="section-label">{h("Pilot metrics calculator")}</div>', unsafe_allow_html=True)
+    metric_col1, metric_col2, metric_col3 = st.columns(3)
+    with metric_col1:
+        pilot_clinics = st.number_input("Pilot clinics", min_value=0, max_value=200, value=5, step=1)
+        monthly_price = st.number_input("Average clinic price / month", min_value=0, max_value=1000, value=79, step=10)
+    with metric_col2:
+        visits_per_clinic = st.number_input("Visits per clinic / month", min_value=0, max_value=5000, value=300, step=25)
+        minutes_saved = st.number_input("Minutes saved per visit", min_value=0.0, max_value=30.0, value=4.0, step=0.5)
+    with metric_col3:
+        patient_plus_users = st.number_input("Patient Plus users", min_value=0, max_value=100000, value=0, step=10)
+        patient_plus_price = st.number_input("Patient Plus price / month", min_value=0.0, max_value=50.0, value=4.99, step=0.5)
+
+    clinic_revenue = pilot_clinics * monthly_price
+    patient_revenue = patient_plus_users * patient_plus_price
+    total_revenue = clinic_revenue + patient_revenue
+    clinic_hours_saved = pilot_clinics * visits_per_clinic * minutes_saved / 60
+    calc1, calc2, calc3 = st.columns(3)
+    calc1.metric(tr("Monthly recurring revenue"), f"€{total_revenue:,.0f}")
+    calc2.metric(tr("Clinic time saved"), f"{clinic_hours_saved:,.0f} hrs/month")
+    calc3.metric(tr("Target progress"), "Start pilots" if pilot_clinics < 10 else "Clinic traction")
+    st.caption(tr("These numbers are planning estimates only. Real revenue depends on pricing, costs, retention, privacy work, clinical review, and support."))
+
+    st.write("")
+    pricing_col, guardrail_col = st.columns(2, gap="large")
+    with pricing_col:
+        st.markdown(f'<div class="section-label">{h("Simple pricing ladder")}</div>', unsafe_allow_html=True)
+        pricing = pd.DataFrame(
+            [
+                {"Plan": "Free", "Customer": "Patients", "Price": "€0", "Purpose": "Symptom diary + visit summary"},
+                {"Plan": "Patient Plus", "Customer": "Individuals", "Price": "€4.99/mo", "Purpose": "Family profiles, trends, exports"},
+                {"Plan": "Clinic Starter", "Customer": "Small clinics", "Price": "€79/mo", "Purpose": "Digital intake + dashboard"},
+                {"Plan": "Clinic Pro", "Customer": "Larger clinics", "Price": "€199/mo", "Purpose": "Staff workflow + analytics"},
+                {"Plan": "Custom", "Customer": "Hospital/network", "Price": "Negotiated", "Purpose": "Security, onboarding, integrations"},
+            ]
+        )
+        st.dataframe(pricing, hide_index=True, width="stretch")
+    with guardrail_col:
+        st.markdown(f'<div class="section-label">{h("Safety guardrails")}</div>', unsafe_allow_html=True)
+        guardrails = [
+            "Do not market this as AI diagnosis.",
+            "Do not say a user does or does not have a specific disease.",
+            "Do not recommend prescription medicines or tell someone to stop treatment.",
+            "Do not downgrade chest pain, confusion, stroke signs, fainting, severe breathing trouble, or severe allergic reaction.",
+            "Before real clinic use, get adult supervision, clinical review, privacy review, and local regulatory advice.",
+        ]
+        for item in guardrails:
+            st.write(f"- {tr(item)}")
+
+    st.write("")
+    st.markdown(f'<div class="section-label">{h("Next build targets")}</div>', unsafe_allow_html=True)
+    targets = [
+        ("First revenue", "€100 total", "Proves someone will pay."),
+        ("First clinic milestone", "10 paying clinics", "A real early B2B signal."),
+        ("MRR milestone", "€1,000/month", "Track recurring revenue, not downloads."),
+        ("Quality milestone", "Doctor-reviewed intake", "Every red flag and patient statement should be reviewed."),
+    ]
+    render_command_center_cards(targets)
+
+
 def render_dashboard() -> None:
     page_header(
         "Doctor / Hospital Dashboard",
@@ -3612,7 +3742,7 @@ def main() -> None:
     init_state()
     sidebar()
 
-    if st.session_state.workspace_role == "Healthcare Professional" and not current_staff_user():
+    if st.session_state.workspace_role == "Healthcare Professional" and not current_staff_user() and st.session_state.page != "Clinic Pilot Plan":
         render_staff_sign_in()
     elif st.session_state.page == "Home":
         render_home()
@@ -3628,6 +3758,8 @@ def main() -> None:
         render_passport_and_reminders()
     elif st.session_state.page == "Doctor Dashboard":
         render_dashboard()
+    elif st.session_state.page == "Clinic Pilot Plan":
+        render_clinic_pilot_plan()
     elif st.session_state.page == "Safety & Quality":
         render_safety_quality()
     elif st.session_state.page == "Scenario Challenge":

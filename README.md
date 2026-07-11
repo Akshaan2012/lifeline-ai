@@ -1,6 +1,6 @@
 # LifeLine AI
 
-LifeLine AI is a patient-friendly health decision-support app built with Streamlit. It helps users check symptoms, learn about health and medicine topics, create a health report PDF, review saved cases, and check basic medication safety concerns.
+LifeLine AI is a patient-friendly doctor-visit preparation and clinic-intake app built with Streamlit. It helps users record symptoms, create a doctor-ready summary, learn about health and medicine topics, review saved cases, and check basic medication safety concerns. It is not an autonomous diagnosis product.
 
 ## Features
 
@@ -13,6 +13,7 @@ LifeLine AI is a patient-friendly health decision-support app built with Streaml
 - Medication Safety Checker for common cautions and pharmacist questions
 - Home command center with saved-case and priority-case status
 - Doctor Dashboard for saved cases, queue insights, review status, and doctor notes
+- Clinic Pilot Plan with pricing, clinic workflow, pilot checklist, and time-saved / recurring-revenue calculator
 - Consent-based clinic handoff with a private case code and patient-visible responses
 - Scenario Challenge for practice
 - Sam assistant bubble for navigation help
@@ -31,7 +32,18 @@ LifeLine AI is a patient-friendly health decision-support app built with Streaml
 
 ## Safety
 
-LifeLine AI is general health education and decision support. It does not diagnose, prescribe medicine, calculate personal dosage, or replace doctors, pharmacists, or emergency services.
+LifeLine AI is general health education, doctor-visit preparation, and decision support. It does not diagnose, prescribe medicine, calculate personal dosage, or replace doctors, pharmacists, clinics, hospitals, or emergency services.
+
+## Product Direction
+
+The safest first business version is a doctor-visit preparation and digital clinic-intake workflow:
+
+1. Patient records symptoms, timing, medicines, allergies, conditions, and optional measurements.
+2. LifeLine AI creates an organized timeline, warning signs, questions for the doctor, and a downloadable report.
+3. Patient chooses whether to share the case with a clinic.
+4. Clinic staff review a structured queue and measure whether intake time improves.
+
+Do not market the app as “AI diagnosis.” Before real clinic use, get adult supervision, licensed clinical review, privacy review, and local regulatory advice.
 
 ## Run Locally
 
