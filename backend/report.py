@@ -13,7 +13,7 @@ from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, Tabl
 
 
 def _items(items: list[str]) -> str:
-    return "<br/>".join(f"- {item}" for item in items)
+    return "\n".join(f"- {item}" for item in items)
 
 
 def _short(value: Any) -> str:
@@ -23,6 +23,11 @@ def _short(value: Any) -> str:
 
 def _p(text: Any, style: Any) -> Paragraph:
     return Paragraph(escape(str(text)), style)
+
+
+def _body_paragraph(text: Any, style: Any) -> Paragraph:
+    safe_text = escape(str(text)).replace("\n", "<br/>")
+    return Paragraph(safe_text, style)
 
 
 def generate_health_report_pdf(patient_data: dict[str, Any], result: Any, advice: dict[str, Any]) -> bytes:
@@ -90,8 +95,8 @@ def generate_health_report_pdf(patient_data: dict[str, Any], result: Any, advice
         ("Questions to ask a doctor", _items(advice["doctor_questions"])),
     ]
     for title, body in sections:
-        story.append(Paragraph(f"<b>{title}</b>", styles["Heading3"]))
-        story.append(Paragraph(str(body).replace("\n", "<br/>"), styles["BodyText"]))
+        story.append(Paragraph(f"<b>{escape(str(title))}</b>", styles["Heading3"]))
+        story.append(_body_paragraph(body, styles["BodyText"]))
         story.append(Spacer(1, 8))
 
     story.append(Paragraph("<b>Safety note</b>", styles["Heading3"]))
