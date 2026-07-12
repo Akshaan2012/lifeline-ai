@@ -47,6 +47,15 @@ URGENT_SYMPTOMS = {
 }
 
 SYMPTOM_ALIASES = {
+    "heart attack warning signs": (
+        "chest pain spreading to my arm", "chest pain spreading to arm",
+        "chest pain going to arm", "pain going to arm", "pain spreading to arm",
+        "chest pain going to jaw", "chest pain spreading to jaw",
+        "pain going to jaw", "pain spreading to jaw",
+        "chest pain going to back", "chest pain spreading to back",
+        "crushing chest pain", "crushing chest pressure",
+        "severe chest pain with sweating", "chest pain with sweating",
+    ),
     "chest pain": (
         "chest hurts", "chest hurt", "pain in my chest", "pain in the chest",
         "chest discomfort", "chest tightness", "tight chest", "chest pressure",
@@ -60,11 +69,14 @@ SYMPTOM_ALIASES = {
         "cannot breathe", "can't breathe", "cant breathe", "gasping for air",
     ),
     "confusion": ("confused", "disoriented", "not making sense"),
-    "fainting": ("fainted", "passed out", "blacked out", "lost consciousness"),
-    "stroke signs": ("face drooping", "face droop", "slurred speech", "speech is slurred", "arm weakness"),
+    "fainting": ("fainted", "passed out", "blacked out", "lost consciousness", "feel faint", "feeling faint", "almost fainted"),
+    "stroke signs": (
+        "face drooping", "face droop", "slurred speech", "speech is slurred", "arm weakness",
+        "worst headache of my life", "sudden worst headache", "sudden severe headache",
+    ),
     "seizure": ("convulsion", "convulsions", "having a fit"),
     "severe allergic reaction": ("anaphylaxis", "throat swelling", "throat is swelling", "tongue swelling"),
-    "blue lips": ("lips are blue", "bluish lips"),
+    "blue lips": ("lips are blue", "bluish lips", "lips turning blue", "blue face"),
     "severe headache": ("worst headache", "extreme headache"),
     "persistent vomiting": ("cannot stop vomiting", "keeps vomiting", "repeated vomiting"),
     "blood in stool": ("bloody stool", "blood in poo", "blood in poop"),
@@ -74,8 +86,8 @@ SYMPTOM_ALIASES = {
 }
 
 SYMPTOM_CATEGORIES = {
-    "Respiratory": {"cough", "sore throat", "shortness of breath", "severe breathing difficulty", "wheezing"},
-    "Heart Warning": {"chest pain", "sweating", "fainting", "palpitations"},
+    "Respiratory": {"cough", "sore throat", "shortness of breath", "severe breathing difficulty", "wheezing", "blue lips"},
+    "Heart Warning": {"chest pain", "heart attack warning signs", "sweating", "fainting", "palpitations"},
     "Infection/Fever": {"fever", "high fever", "chills", "body pain", "fatigue"},
     "Digestive": {"stomach pain", "severe stomach pain", "diarrhea", "persistent vomiting", "nausea", "blood in stool", "black stool"},
     "Bleeding/Pregnancy Warning": {"heavy bleeding", "pregnancy bleeding"},

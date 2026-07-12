@@ -64,6 +64,23 @@ class TriageSafetyTests(unittest.TestCase):
         )
         self.assertEqual(escalated.risk_level, "Emergency")
 
+    def test_natural_heart_and_neuro_emergency_phrases_are_caught(self) -> None:
+        expectations = {
+            "chest pain spreading to my arm": "Heart Warning",
+            "chest pain going to jaw": "Heart Warning",
+            "crushing chest pressure": "Heart Warning",
+            "severe chest pain with sweating": "Heart Warning",
+            "chest pain and I feel faint": "Heart Warning",
+            "lips turning blue": "Respiratory",
+            "worst headache of my life": "Neurological",
+            "sudden worst headache": "Neurological",
+        }
+        for phrase, category in expectations.items():
+            with self.subTest(phrase=phrase):
+                result = analyze_patient({"symptoms": [phrase]}, use_ml=False)
+                self.assertEqual(result.risk_level, "Emergency")
+                self.assertEqual(result.possible_category, category)
+
     def test_new_bleeding_phrases_require_same_day_care(self) -> None:
         for phrase in ("black stools", "pregnant and bleeding", "won't stop bleeding"):
             with self.subTest(phrase=phrase):
