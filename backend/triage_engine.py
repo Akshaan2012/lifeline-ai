@@ -21,6 +21,7 @@ EMERGENCY_SYMPTOMS = {
     "seizure",
     "severe allergic reaction",
     "blue lips",
+    "overdose",
 }
 
 # These descriptions are broad enough that ordinary users may select them for
@@ -55,6 +56,8 @@ SYMPTOM_ALIASES = {
         "chest pain going to back", "chest pain spreading to back",
         "crushing chest pain", "crushing chest pressure",
         "severe chest pain with sweating", "chest pain with sweating",
+        "heart attack", "having a heart attack", "heart attack symptoms",
+        "severe chest pain", "pressure in chest and sweating",
     ),
     "chest pain": (
         "chest hurts", "chest hurt", "pain in my chest", "pain in the chest",
@@ -73,10 +76,19 @@ SYMPTOM_ALIASES = {
     "stroke signs": (
         "face drooping", "face droop", "slurred speech", "speech is slurred", "arm weakness",
         "worst headache of my life", "sudden worst headache", "sudden severe headache",
+        "weak on one side", "one side weakness", "weakness on one side",
+        "cannot move my arm", "can't move my arm", "cant move my arm",
+        "cannot speak properly", "can't speak properly", "cant speak properly",
+        "speech trouble", "trouble speaking",
     ),
     "seizure": ("convulsion", "convulsions", "having a fit"),
-    "severe allergic reaction": ("anaphylaxis", "throat swelling", "throat is swelling", "tongue swelling"),
+    "severe allergic reaction": (
+        "anaphylaxis", "throat swelling", "throat is swelling", "tongue swelling",
+        "swollen tongue", "lips swelling", "swollen lips", "lip swelling",
+        "face swelling with rash", "swollen lips and rash",
+    ),
     "blue lips": ("lips are blue", "bluish lips", "lips turning blue", "blue face"),
+    "overdose": ("overdose", "medicine overdose", "took too many pills", "too many pills", "accidental overdose"),
     "severe headache": ("worst headache", "extreme headache"),
     "persistent vomiting": ("cannot stop vomiting", "keeps vomiting", "repeated vomiting"),
     "blood in stool": ("bloody stool", "blood in poo", "blood in poop"),
@@ -94,6 +106,7 @@ SYMPTOM_CATEGORIES = {
     "Diabetes Warning": {"very high sugar symptoms", "frequent urination", "excessive thirst", "blurred vision"},
     "Neurological": {"severe headache", "confusion", "stroke signs", "seizure", "dizziness"},
     "Skin/Allergy": {"rash", "itching", "swelling", "severe allergic reaction"},
+    "Medication Emergency": {"overdose"},
 }
 
 KNOWN_SYMPTOMS = set().union(

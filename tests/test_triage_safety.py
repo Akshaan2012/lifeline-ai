@@ -71,9 +71,19 @@ class TriageSafetyTests(unittest.TestCase):
             "crushing chest pressure": "Heart Warning",
             "severe chest pain with sweating": "Heart Warning",
             "chest pain and I feel faint": "Heart Warning",
+            "i think i am having a heart attack": "Heart Warning",
+            "severe chest pain": "Heart Warning",
+            "pressure in chest and sweating": "Heart Warning",
             "lips turning blue": "Respiratory",
             "worst headache of my life": "Neurological",
             "sudden worst headache": "Neurological",
+            "weak on one side": "Neurological",
+            "one side weakness": "Neurological",
+            "cannot speak properly": "Neurological",
+            "swollen tongue": "Skin/Allergy",
+            "swollen lips and rash": "Skin/Allergy",
+            "medicine overdose": "Medication Emergency",
+            "took too many pills": "Medication Emergency",
         }
         for phrase, category in expectations.items():
             with self.subTest(phrase=phrase):
