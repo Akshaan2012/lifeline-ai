@@ -710,29 +710,57 @@ def inject_css() -> None:
             display: flex !important;
             visibility: visible !important;
             position: fixed !important;
-            top: 14px !important;
-            left: 14px !important;
+            top: 18px !important;
+            left: 18px !important;
             z-index: 100001 !important;
-            background: rgba(6, 30, 39, .96) !important;
-            border: 1px solid rgba(98, 224, 204, .62) !important;
-            border-radius: 12px !important;
-            box-shadow: 0 12px 28px rgba(6, 30, 39, .24), 0 0 0 4px rgba(16, 184, 166, .14) !important;
-            padding: 4px !important;
+            align-items: center !important;
+            gap: 8px !important;
+            background: rgba(6, 30, 39, .98) !important;
+            border: 1px solid rgba(98, 224, 204, .72) !important;
+            border-radius: 999px !important;
+            box-shadow: 0 16px 36px rgba(6, 30, 39, .30), 0 0 0 5px rgba(16, 184, 166, .16) !important;
+            padding: 5px 12px 5px 5px !important;
+        }
+        [data-testid="collapsedControl"]::after {
+            content: "Open menu";
+            color: #efffff !important;
+            font-size: .84rem !important;
+            font-weight: 800 !important;
+            letter-spacing: .02em !important;
+            line-height: 1 !important;
         }
         [data-testid="collapsedControl"] button,
         [data-testid="stSidebarCollapseButton"] {
-            width: 40px !important;
-            height: 40px !important;
-            border-radius: 10px !important;
-            background: rgba(255, 255, 255, .08) !important;
+            width: 44px !important;
+            height: 44px !important;
+            min-width: 44px !important;
+            border-radius: 999px !important;
+            background: rgba(255, 255, 255, .10) !important;
             color: #efffff !important;
+            border: 1px solid rgba(255, 255, 255, .20) !important;
+            box-shadow: none !important;
+        }
+        [data-testid="stSidebarCollapseButton"] {
+            position: fixed !important;
+            top: 18px !important;
+            left: 252px !important;
+            z-index: 100002 !important;
+            background: rgba(6, 30, 39, .94) !important;
+            border: 1px solid rgba(98, 224, 204, .58) !important;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, .22) !important;
+        }
+        [data-testid="collapsedControl"] button:hover,
+        [data-testid="stSidebarCollapseButton"]:hover {
+            background: rgba(16, 184, 166, .24) !important;
+            border-color: rgba(134, 255, 235, .86) !important;
+            transform: translateY(-1px);
         }
         [data-testid="collapsedControl"] svg,
         [data-testid="stSidebarCollapseButton"] svg {
             color: #efffff !important;
             fill: #efffff !important;
-            width: 22px !important;
-            height: 22px !important;
+            width: 24px !important;
+            height: 24px !important;
         }
         [data-testid="stSidebar"] * { color: #efffff; }
         .sidebar-brand {
