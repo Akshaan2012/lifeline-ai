@@ -1906,7 +1906,7 @@ def sidebar() -> None:
         st.session_state.page_picker = "Home"
         st.rerun()
     staff_user = current_staff_user() if st.session_state.workspace_role == "Healthcare Professional" else None
-    available_pages = PATIENT_PAGES if st.session_state.workspace_role == "Patient" else (PROFESSIONAL_PAGES if staff_user else ["Home", "Clinic Pilot Plan"])
+    available_pages = pages_for_current_workspace()
     if st.session_state.page not in available_pages:
         st.session_state.page = "Home"
         st.session_state.page_picker = "Home"
@@ -1942,20 +1942,36 @@ def stable_key(value: str) -> str:
     return "".join(char.lower() if char.isalnum() else "_" for char in value).strip("_")
 
 
+def pages_for_current_workspace() -> list[str]:
+    if st.session_state.workspace_role == "Patient":
+        return PATIENT_PAGES
+    staff_user = current_staff_user()
+    return PROFESSIONAL_PAGES if staff_user else ["Home", "Clinic Pilot Plan"]
+
+
 def render_quick_jumps(prefix: str, exclude: str | None = None) -> None:
-    targets = [
+    all_targets = [
         ("Health Checker", "Patient Health Checker"),
         ("Timeline", "Health Timeline"),
         ("Health & Medicine Q&A", "Disease Q&A Assistant"),
         ("Medication Safety", "Medication Safety Checker"),
+        ("Health Passport", "Health Passport & Reminders"),
         ("Doctor Dashboard", "Doctor Dashboard"),
+        ("Clinic Pilot Plan", "Clinic Pilot Plan"),
+        ("Safety & Quality", "Safety & Quality"),
         ("Scenario Challenge", "Scenario Challenge"),
     ]
-    cols = st.columns(len(targets))
-    for index, (label, page) in enumerate(targets):
-        disabled = page == exclude
-        if cols[index].button(tr(label), key=f"{prefix}_{stable_key(page)}", disabled=disabled, width="stretch"):
-            switch_page(page)
+    available_pages = set(pages_for_current_workspace())
+    targets = [(label, page) for label, page in all_targets if page in available_pages]
+    if not targets:
+        return
+    for row_start in range(0, len(targets), 4):
+        row = targets[row_start:row_start + 4]
+        cols = st.columns(len(row))
+        for index, (label, page) in enumerate(row):
+            disabled = page == exclude
+            if cols[index].button(tr(label), key=f"{prefix}_{stable_key(page)}", disabled=disabled, width="stretch"):
+                switch_page(page)
 
 
 def render_page_launcher(prefix: str, pages: list[tuple[str, str]]) -> None:
