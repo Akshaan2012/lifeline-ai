@@ -11,15 +11,34 @@ ACTIVE_INGREDIENT_GROUPS = {
     "ibuprofen": {"ibuprofen", "brufen", "advil", "motrin"},
     "aspirin": {"aspirin", "ecosprin"},
     "cetirizine": {"cetirizine", "zyrtec"},
+    "amoxicillin": {"amoxicillin", "amoxil"},
+    "penicillin": {"penicillin"},
+    "warfarin": {"warfarin", "coumadin"},
+    "apixaban": {"apixaban", "eliquis"},
+    "rivaroxaban": {"rivaroxaban", "xarelto"},
+    "dabigatran": {"dabigatran", "pradaxa"},
+    "clopidogrel": {"clopidogrel", "plavix"},
+    "diphenhydramine": {"diphenhydramine", "benadryl"},
 }
 
 INTERACTION_RULES = [
     ({"ibuprofen", "aspirin"}, "Ibuprofen and aspirin together can increase stomach irritation and bleeding risk."),
     ({"ibuprofen", "warfarin"}, "Ibuprofen with warfarin can increase bleeding risk."),
+    ({"ibuprofen", "apixaban"}, "Ibuprofen with apixaban/Eliquis can increase bleeding risk."),
+    ({"ibuprofen", "rivaroxaban"}, "Ibuprofen with rivaroxaban/Xarelto can increase bleeding risk."),
+    ({"ibuprofen", "dabigatran"}, "Ibuprofen with dabigatran/Pradaxa can increase bleeding risk."),
+    ({"ibuprofen", "clopidogrel"}, "Ibuprofen with clopidogrel/Plavix can increase bleeding risk."),
     ({"aspirin", "warfarin"}, "Aspirin with warfarin can increase bleeding risk."),
+    ({"aspirin", "apixaban"}, "Aspirin with apixaban/Eliquis can increase bleeding risk."),
+    ({"aspirin", "rivaroxaban"}, "Aspirin with rivaroxaban/Xarelto can increase bleeding risk."),
+    ({"aspirin", "dabigatran"}, "Aspirin with dabigatran/Pradaxa can increase bleeding risk."),
+    ({"aspirin", "clopidogrel"}, "Aspirin with clopidogrel/Plavix can increase bleeding risk."),
     ({"cetirizine", "diphenhydramine"}, "Two sedating allergy medicines can cause extra sleepiness."),
     ({"metformin", "heavy alcohol use"}, "Metformin and heavy alcohol use need professional review."),
 ]
+
+PENICILLIN_FAMILY = {"amoxicillin", "penicillin"}
+NSAID_FAMILY = {"aspirin", "ibuprofen"}
 
 
 def split_medications(value: str | list[str]) -> list[str]:
@@ -54,6 +73,10 @@ def reconcile_medications(medicines: str | list[str], allergies: str = "") -> di
     for item, ingredient in zip(items, canonical):
         if ingredient and ingredient in allergy_text:
             allergy_flags.append(f"Possible allergy match: {item}. Do not take it until a clinician or pharmacist checks this.")
+        elif ingredient in PENICILLIN_FAMILY and "penicillin" in allergy_text:
+            allergy_flags.append(f"Possible penicillin-family allergy match: {item}. Do not take it until a clinician or pharmacist checks this.")
+        elif ingredient in NSAID_FAMILY and any(word in allergy_text for word in ["nsaid", "aspirin allergy", "ibuprofen allergy"]):
+            allergy_flags.append(f"Possible NSAID allergy/sensitivity match: {item}. Ask a clinician or pharmacist before taking it.")
 
     return {
         "medicines": items,

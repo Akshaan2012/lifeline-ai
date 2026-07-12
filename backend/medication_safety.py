@@ -66,6 +66,10 @@ def _text_blob(items: list[str]) -> str:
     return " ".join(items).lower()
 
 
+def _contains_any(text: str, phrases: list[str]) -> bool:
+    return any(phrase in text for phrase in phrases)
+
+
 def _match_medicine(name: str) -> dict[str, object] | None:
     normalized = name.lower()
     for rule in MEDICINE_RULES.values():
@@ -111,8 +115,12 @@ def analyze_medication_safety(
 
     if any(word in context for word in ["blood thinner", "warfarin", "aspirin", "clopidogrel"]):
         caution_flags.append("Possible bleeding-risk medicine: ask before mixing with painkillers or aspirin.")
+    if _contains_any(context, ["apixaban", "eliquis", "rivaroxaban", "xarelto", "dabigatran", "pradaxa", "coumadin", "plavix"]):
+        caution_flags.append("Blood thinner/anti-clotting medicine mentioned: ask a doctor or pharmacist before mixing with painkillers or aspirin.")
     if any(word in context for word in ["kidney", "liver", "heart"]):
         caution_flags.append("Long-term condition mentioned: medicine choice may need professional review.")
+    if _contains_any(context, ["overdose", "too many pills", "too much medicine", "double dose", "extra dose", "much more than advised"]):
+        caution_flags.append("Possible overdose or extra dose mentioned: contact urgent medical help or poison control now.")
     caution_flags.extend(reconciliation["duplicate_flags"])
     caution_flags.extend(reconciliation["interaction_flags"])
     caution_flags.extend(reconciliation["allergy_flags"])
@@ -122,6 +130,8 @@ def analyze_medication_safety(
         level = "Use with caution"
     if not medicine_known or len(caution_flags) >= 4:
         level = "Ask a doctor/pharmacist first"
+    if _contains_any(context, ["overdose", "too many pills", "too much medicine", "much more than advised"]):
+        level = "Get urgent help now"
 
     result = MedicationSafetyResult(
         level=level,
