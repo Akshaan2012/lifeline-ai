@@ -379,6 +379,65 @@ COMMON_TRANSLATION_TEXTS = [
     "Timeline",
     "Health & Medicine Q&A",
     "Health Passport",
+    "Patient-controlled record",
+    "Keep separate patient or caregiver profiles, prepare an emergency card, and track care reminders.",
+    "Profile",
+    "Add another patient or caregiver profile",
+    "Profile label",
+    "Relationship",
+    "Self",
+    "Child",
+    "Parent",
+    "Partner",
+    "Other",
+    "I am authorised to manage health information for this person",
+    "Create profile",
+    "Emergency health passport",
+    "Name or patient ID",
+    "Local patient identifier",
+    "Emergency contact",
+    "Blood group (optional)",
+    "Not known",
+    "Allergies",
+    "Current medicines",
+    "Conditions",
+    "Save passport",
+    "Passport saved for this browser session.",
+    "Download structured passport",
+    "Use this profile in Health Checker",
+    "Care reminders",
+    "Reminder",
+    "Due date",
+    "For profile",
+    "Add reminder",
+    "No reminders yet.",
+    "Doctor follow-up, vaccination, medicine-list review",
+    "Offline mode: local rules only.",
+    "Sign out",
+    "Signed in",
+    "Clinic staff",
+    "Clinic access is unavailable because Supabase has not been configured for this deployment.",
+    "Add the Supabase settings, create the staff account, and assign app_metadata.role = staff using trusted administration tools.",
+    "Clinic email",
+    "Password",
+    "Sign in securely",
+    "Clinic sign-in is not configured on this deployment.",
+    "This account does not have clinic staff access.",
+    "Signed in.",
+    "Sign-in failed. Check the email and password.",
+    "Enter both the clinic email and password.",
+    "Saved checks",
+    "Safety concerns",
+    "Built-in safety controls",
+    "Explicit emergency signs override numeric scoring and model output.",
+    "Unanswered or uncertain red-flag follow-ups fail safely to faster care.",
+    "Medication guidance does not calculate dosage or prescribe treatment.",
+    "Offline mode disables cloud AI, translation, Supabase, and video embeds.",
+    "Clinician evidence traces show the basis of each recommendation.",
+    "Anonymous session feedback",
+    "No feedback or safety concerns recorded in this session.",
+    "This dashboard monitors software behavior; it is not proof of clinical validation. Prospective clinical testing and regulatory review are required before relying on LifeLine AI for real-world medical decisions.",
+    "Example: Mother, Child 1, My profile",
 ]
 
 
@@ -1775,7 +1834,7 @@ def sidebar() -> None:
         unsafe_allow_html=True,
     )
     selected_language = st.sidebar.selectbox(
-        "Language",
+        tr("Language"),
         LANGUAGE_OPTIONS,
         key="language_picker",
     )
@@ -1785,14 +1844,14 @@ def sidebar() -> None:
         prepare_language(st.session_state.language)
         st.rerun()
     offline_mode = st.sidebar.checkbox(
-        "Offline mode",
+        tr("Offline mode"),
         value=bool(st.session_state.offline_mode),
     )
     if offline_mode != st.session_state.offline_mode:
         st.session_state.offline_mode = offline_mode
         st.rerun()
     if st.session_state.offline_mode:
-        st.sidebar.caption("Offline mode: local rules only.")
+        st.sidebar.caption(tr("Offline mode: local rules only."))
     with st.sidebar.expander(tr("Accessibility")):
         large_text = st.checkbox(tr("Larger text"), value=bool(st.session_state.large_text), key="access_large_text")
         high_contrast = st.checkbox(tr("High contrast"), value=bool(st.session_state.high_contrast), key="access_high_contrast")
@@ -1834,8 +1893,8 @@ def sidebar() -> None:
     if page_changed:
         st.session_state.page = selected_page
     if staff_user:
-        st.sidebar.caption(f"Signed in: {staff_user.get('email') or 'Clinic staff'}")
-        if st.sidebar.button("Sign out", width="stretch"):
+        st.sidebar.caption(f"{tr('Signed in')}: {staff_user.get('email') or tr('Clinic staff')}")
+        if st.sidebar.button(tr("Sign out"), width="stretch"):
             sign_out_staff()
             st.session_state.page = "Home"
             st.session_state.page_picker = "Home"
@@ -2704,23 +2763,23 @@ def render_staff_sign_in() -> None:
         "Protected workspace",
     )
     if not supabase_is_configured():
-        st.error("Clinic access is unavailable because Supabase has not been configured for this deployment.")
-        st.info("Add the Supabase settings, create the staff account, and assign app_metadata.role = staff using trusted administration tools.")
+        st.error(tr("Clinic access is unavailable because Supabase has not been configured for this deployment."))
+        st.info(tr("Add the Supabase settings, create the staff account, and assign app_metadata.role = staff using trusted administration tools."))
         return
     with st.form("staff_sign_in_form"):
-        email = st.text_input("Clinic email", autocomplete="email")
-        password = st.text_input("Password", type="password", autocomplete="current-password")
-        submitted = st.form_submit_button("Sign in securely", type="primary", width="stretch")
+        email = st.text_input(tr("Clinic email"), autocomplete="email")
+        password = st.text_input(tr("Password"), type="password", autocomplete="current-password")
+        submitted = st.form_submit_button(tr("Sign in securely"), type="primary", width="stretch")
     if submitted:
         if not email.strip() or not password:
-            st.error("Enter both the clinic email and password.")
+            st.error(tr("Enter both the clinic email and password."))
             return
         ok, message = sign_in_staff(email, password)
         if ok:
-            st.success(message)
+            st.success(tr(message))
             st.rerun()
         else:
-            st.error(message)
+            st.error(tr(message))
 
 
 def patient_form() -> dict[str, Any]:
@@ -3432,30 +3491,36 @@ def render_passport_and_reminders() -> None:
     )
     profiles: dict[str, dict[str, Any]] = st.session_state.care_profiles
     profile_names = list(profiles) or ["My profile"]
-    active = st.selectbox("Profile", profile_names, index=profile_names.index(st.session_state.active_profile) if st.session_state.active_profile in profile_names else 0)
+    active = st.selectbox(tr("Profile"), profile_names, index=profile_names.index(st.session_state.active_profile) if st.session_state.active_profile in profile_names else 0)
     st.session_state.active_profile = active
     profile = dict(profiles.get(active, st.session_state.get("patient_profile", {})))
 
-    with st.expander("Add another patient or caregiver profile"):
-        new_profile_name = st.text_input("Profile label", placeholder="Example: Mother, Child 1, My profile")
-        relationship = st.selectbox("Relationship", ["Self", "Child", "Parent", "Partner", "Other"])
-        consent = st.checkbox("I am authorised to manage health information for this person")
-        if st.button("Create profile", disabled=not (new_profile_name.strip() and consent)):
+    with st.expander(tr("Add another patient or caregiver profile")):
+        new_profile_name = st.text_input(tr("Profile label"), placeholder=tr("Example: Mother, Child 1, My profile"))
+        relationship = st.selectbox(tr("Relationship"), ["Self", "Child", "Parent", "Partner", "Other"], format_func=tr)
+        consent = st.checkbox(tr("I am authorised to manage health information for this person"))
+        if st.button(tr("Create profile"), disabled=not (new_profile_name.strip() and consent)):
             profiles[new_profile_name.strip()] = {"profile_label": new_profile_name.strip(), "relationship": relationship}
             st.session_state.active_profile = new_profile_name.strip()
             st.rerun()
 
     left, right = st.columns(2, gap="large")
     with left:
-        st.markdown("**Emergency health passport**")
-        patient_name = st.text_input("Name or patient ID", value=str(profile.get("patient_name", "")), key="passport_name")
-        patient_id = st.text_input("Local patient identifier", value=str(profile.get("patient_id", "")), key="passport_id")
-        emergency_contact = st.text_input("Emergency contact", value=str(profile.get("emergency_contact", "")), key="passport_emergency")
-        blood_group = st.selectbox("Blood group (optional)", ["Not known", "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"], index=0 if profile.get("blood_group") not in ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"] else ["Not known", "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].index(profile.get("blood_group")))
-        allergies = st.text_area("Allergies", value=str(profile.get("allergies", "")), key="passport_allergies")
-        medications = st.text_area("Current medicines", value=str(profile.get("medications", "")), key="passport_medicines")
-        conditions = st.multiselect("Conditions", CONDITION_OPTIONS, default=[item for item in profile.get("conditions", []) if item in CONDITION_OPTIONS], key="passport_conditions")
-        if st.button("Save passport", type="primary", width="stretch"):
+        st.markdown(f"**{tr('Emergency health passport')}**")
+        patient_name = st.text_input(tr("Name or patient ID"), value=str(profile.get("patient_name", "")), key="passport_name")
+        patient_id = st.text_input(tr("Local patient identifier"), value=str(profile.get("patient_id", "")), key="passport_id")
+        emergency_contact = st.text_input(tr("Emergency contact"), value=str(profile.get("emergency_contact", "")), key="passport_emergency")
+        blood_group_options = ["Not known", "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]
+        blood_group = st.selectbox(
+            tr("Blood group (optional)"),
+            blood_group_options,
+            index=0 if profile.get("blood_group") not in blood_group_options else blood_group_options.index(profile.get("blood_group")),
+            format_func=tr,
+        )
+        allergies = st.text_area(tr("Allergies"), value=str(profile.get("allergies", "")), key="passport_allergies")
+        medications = st.text_area(tr("Current medicines"), value=str(profile.get("medications", "")), key="passport_medicines")
+        conditions = st.multiselect(tr("Conditions"), CONDITION_OPTIONS, default=[item for item in profile.get("conditions", []) if item in CONDITION_OPTIONS], key="passport_conditions", format_func=tr)
+        if st.button(tr("Save passport"), type="primary", width="stretch"):
             saved_profile = {
                 **profile,
                 "patient_name": patient_name,
@@ -3468,25 +3533,25 @@ def render_passport_and_reminders() -> None:
             }
             profiles[active] = saved_profile
             st.session_state.patient_profile = saved_profile
-            st.success("Passport saved for this browser session.")
+            st.success(tr("Passport saved for this browser session."))
         bundle = build_fhir_bundle({**profile, "patient_name": patient_name, "patient_id": patient_id, "emergency_contact": emergency_contact, "blood_group": blood_group, "allergies": allergies, "medications": medications, "conditions": conditions})
-        st.download_button("Download structured passport", json.dumps(bundle, indent=2), "lifeline_ai_passport.json", "application/fhir+json", width="stretch")
-        if st.button("Use this profile in Health Checker", width="stretch"):
+        st.download_button(tr("Download structured passport"), json.dumps(bundle, indent=2), "lifeline_ai_passport.json", "application/fhir+json", width="stretch")
+        if st.button(tr("Use this profile in Health Checker"), width="stretch"):
             selected_profile = profiles.get(active, profile)
             st.session_state.patient_profile = selected_profile
             load_profile_into_form(selected_profile)
             switch_page("Patient Health Checker")
 
     with right:
-        st.markdown("**Care reminders**")
-        reminder_title = st.text_input("Reminder", placeholder="Doctor follow-up, vaccination, medicine-list review")
-        reminder_date = st.date_input("Due date", value=date.today())
-        reminder_profile = st.selectbox("For profile", profile_names, key="reminder_profile")
-        if st.button("Add reminder", disabled=not reminder_title.strip(), width="stretch"):
+        st.markdown(f"**{tr('Care reminders')}**")
+        reminder_title = st.text_input(tr("Reminder"), placeholder=tr("Doctor follow-up, vaccination, medicine-list review"))
+        reminder_date = st.date_input(tr("Due date"), value=date.today())
+        reminder_profile = st.selectbox(tr("For profile"), profile_names, key="reminder_profile")
+        if st.button(tr("Add reminder"), disabled=not reminder_title.strip(), width="stretch"):
             st.session_state.care_reminders.append({"title": reminder_title.strip(), "due_date": reminder_date.isoformat(), "profile": reminder_profile, "completed": False})
             st.rerun()
         if not st.session_state.care_reminders:
-            st.info("No reminders yet.")
+            st.info(tr("No reminders yet."))
         for index, reminder in enumerate(st.session_state.care_reminders):
             status = reminder_status(reminder)
             done = st.checkbox(
@@ -3508,11 +3573,11 @@ def render_safety_quality() -> None:
     urgent = sum(str(case.get("risk_level")) == "Urgent Care" for case in cases)
     concerns = sum(event.get("event") == "Safety concern" for event in st.session_state.safety_events)
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Saved checks", len(cases))
-    c2.metric("Emergency", emergency)
-    c3.metric("Urgent", urgent)
-    c4.metric("Safety concerns", concerns)
-    st.markdown("**Built-in safety controls**")
+    c1.metric(tr("Saved checks"), len(cases))
+    c2.metric(tr("Emergency"), emergency)
+    c3.metric(tr("Urgent"), urgent)
+    c4.metric(tr("Safety concerns"), concerns)
+    st.markdown(f"**{tr('Built-in safety controls')}**")
     controls = [
         "Explicit emergency signs override numeric scoring and model output.",
         "Unanswered or uncertain red-flag follow-ups fail safely to faster care.",
@@ -3521,13 +3586,13 @@ def render_safety_quality() -> None:
         "Clinician evidence traces show the basis of each recommendation.",
     ]
     for control in controls:
-        st.write(f"- {control}")
-    st.markdown("**Anonymous session feedback**")
+        st.write(f"- {tr(control)}")
+    st.markdown(f"**{tr('Anonymous session feedback')}**")
     if st.session_state.safety_events:
         st.dataframe(pd.DataFrame(st.session_state.safety_events), hide_index=True, width="stretch")
     else:
-        st.info("No feedback or safety concerns recorded in this session.")
-    st.warning("This dashboard monitors software behavior; it is not proof of clinical validation. Prospective clinical testing and regulatory review are required before relying on LifeLine AI for real-world medical decisions.")
+        st.info(tr("No feedback or safety concerns recorded in this session."))
+    st.warning(tr("This dashboard monitors software behavior; it is not proof of clinical validation. Prospective clinical testing and regulatory review are required before relying on LifeLine AI for real-world medical decisions."))
 
 
 def render_clinic_pilot_plan() -> None:

@@ -37,6 +37,19 @@ class TriageSafetyTests(unittest.TestCase):
         result = analyze_patient({"symptoms": ["Chest pain"]}, use_ml=False)
         self.assertEqual(result.risk_level, "Urgent Care")
 
+    def test_plain_sentence_with_high_risk_words_is_not_missed(self) -> None:
+        expectations = {
+            "is chest pain normal": "Urgent Care",
+            "my chest pain is normal right": "Urgent Care",
+            "chest pain and confusion is normal": "Emergency",
+            "confused and chest hurts": "Emergency",
+            "breathing bad": "Urgent Care",
+        }
+        for phrase, expected_risk in expectations.items():
+            with self.subTest(phrase=phrase):
+                result = analyze_patient({"symptoms": [phrase]}, use_ml=False)
+                self.assertEqual(result.risk_level, expected_risk)
+
     def test_chest_pain_with_danger_signal_is_emergency(self) -> None:
         result = analyze_patient(
             {"symptoms": ["Chest pain", "Sweating"]}, use_ml=False

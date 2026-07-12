@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from typing import Any
 
@@ -52,7 +53,8 @@ SYMPTOM_ALIASES = {
     ),
     "shortness of breath": (
         "short of breath", "breathless", "trouble breathing", "hard to breathe",
-        "difficulty breathing",
+        "difficulty breathing", "bad breathing", "breathing bad", "breathing is bad",
+        "breathing worse",
     ),
     "severe breathing difficulty": (
         "cannot breathe", "can't breathe", "cant breathe", "gasping for air",
@@ -82,6 +84,18 @@ SYMPTOM_CATEGORIES = {
     "Skin/Allergy": {"rash", "itching", "swelling", "severe allergic reaction"},
 }
 
+KNOWN_SYMPTOMS = set().union(
+    EMERGENCY_SYMPTOMS,
+    AMBIGUOUS_HIGH_RISK_SYMPTOMS,
+    URGENT_SYMPTOMS,
+    *SYMPTOM_CATEGORIES.values(),
+)
+
+SYMPTOM_PRIORITY = {
+    **{symptom: 4 for symptom in EMERGENCY_SYMPTOMS},
+    **{symptom: 3 for symptom in URGENT_SYMPTOMS | AMBIGUOUS_HIGH_RISK_SYMPTOMS},
+}
+
 
 @dataclass(frozen=True)
 class TriageResult:
@@ -96,21 +110,46 @@ class TriageResult:
 
 
 def canonicalize_symptom(value: Any) -> str:
+    matches = extract_symptoms(value)
+    if matches:
+        return sorted(matches, key=lambda item: (SYMPTOM_PRIORITY.get(item, 1), len(item)), reverse=True)[0]
     text = " ".join(str(value).strip().lower().split())
-    if not text:
-        return ""
-    for canonical, aliases in SYMPTOM_ALIASES.items():
-        if text == canonical or any(alias in text for alias in aliases):
-            return canonical
     return text
 
 
+def _contains_phrase(text: str, phrase: str) -> bool:
+    if not phrase:
+        return False
+    if " " in phrase:
+        return phrase in text
+    return re.search(rf"\b{re.escape(phrase)}\b", text) is not None
+
+
+def extract_symptoms(value: Any) -> set[str]:
+    text = " ".join(str(value).strip().lower().split())
+    if not text:
+        return set()
+    matches: set[str] = set()
+    for known in KNOWN_SYMPTOMS:
+        if _contains_phrase(text, known):
+            matches.add(known)
+    for canonical, aliases in SYMPTOM_ALIASES.items():
+        if _contains_phrase(text, canonical) or any(_contains_phrase(text, alias) for alias in aliases):
+            matches.add(canonical)
+    return matches
+
+
 def _selected_symptoms(data: dict[str, Any]) -> set[str]:
-    return {
-        canonicalize_symptom(item)
-        for item in data.get("symptoms", [])
-        if canonicalize_symptom(item)
-    }
+    selected: set[str] = set()
+    for item in data.get("symptoms", []):
+        matches = extract_symptoms(item)
+        if matches:
+            selected.update(matches)
+        else:
+            canonical = canonicalize_symptom(item)
+            if canonical:
+                selected.add(canonical)
+    return selected
 
 
 def _safe_float(value: Any, default: float = 0) -> float:
