@@ -425,6 +425,7 @@ COMMON_TRANSLATION_TEXTS = [
     "Clinic sign-in is not configured on this deployment.",
     "This account does not have clinic staff access.",
     "Signed in.",
+    "Clinic status",
     "Sign-in failed. Check the email and password.",
     "Enter both the clinic email and password.",
     "Saved checks",
@@ -2341,7 +2342,7 @@ def render_clinic_response_lookup() -> None:
         st.caption(tr("Enter the private case code created when you shared your assessment."))
         code = st.text_input(
             tr("Private case code"),
-            placeholder="LL-12AB34",
+            placeholder="LL-1A2B3C4D5E6F",
             key="clinic_response_code",
         )
         if st.button(tr("Check response"), key="check_clinic_response", width="stretch"):
@@ -2351,7 +2352,7 @@ def render_clinic_response_lookup() -> None:
                 st.error(tr("No shared case was found. Check the code and try again."))
         case = st.session_state.get("clinic_response_case")
         if case:
-            st.success(tr(f"Clinic status: {case.get('review_status') or 'New'}"))
+            st.success(f"{tr('Clinic status')}: {tr(str(case.get('review_status') or 'New'))}")
             notes = str(case.get("doctor_notes") or "").strip()
             if notes:
                 st.markdown(f"**{tr('Message from the clinic')}**")

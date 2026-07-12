@@ -212,6 +212,13 @@ def _new_share_code() -> str:
     return f"LL-{secrets.token_hex(6).upper()}"
 
 
+def normalize_share_code(share_code: str) -> str:
+    code = "".join(str(share_code or "").strip().upper().split())
+    if code.startswith("LL") and not code.startswith("LL-") and len(code) > 2:
+        return f"LL-{code[2:]}"
+    return code
+
+
 def save_case(patient_data: dict[str, Any], triage_result: Any) -> str:
     share_code = _new_share_code()
     supabase = _supabase_client()
@@ -281,7 +288,7 @@ def save_case(patient_data: dict[str, Any], triage_result: Any) -> str:
 
 
 def get_case_by_share_code(share_code: str) -> dict[str, Any] | None:
-    code = share_code.strip().upper()
+    code = normalize_share_code(share_code)
     if not code:
         return None
     supabase = _supabase_client()
