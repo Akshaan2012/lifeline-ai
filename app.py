@@ -244,6 +244,7 @@ COMMON_TRANSLATION_TEXTS = [
     "Doctor Visit Recommended",
     "Urgent Care",
     "Emergency",
+    "Get urgent help now",
     "Likely health pattern",
     "Why the app thinks this",
     "What to do now",
@@ -1932,7 +1933,13 @@ def sidebar() -> None:
 
 
 def switch_page(page: str) -> None:
-    if page in PAGES:
+    available_pages = pages_for_current_workspace()
+    if page not in available_pages:
+        if st.session_state.workspace_role == "Patient" and page == "Doctor Dashboard":
+            page = "Health Timeline"
+        else:
+            page = "Home"
+    if page in available_pages:
         st.session_state.page = page
         st.session_state.pending_page = page
         st.rerun()
