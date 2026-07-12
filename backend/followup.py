@@ -15,9 +15,23 @@ DANGER_WORDS = {
     "seizure",
     "stroke",
     "blue lips",
+    "lips turning blue",
+    "blue face",
     "blood",
     "severe",
     "worst headache",
+    "swollen tongue",
+    "tongue swelling",
+    "swollen lips",
+    "throat swelling",
+    "overdose",
+    "too many pills",
+    "weak on one side",
+    "one side weakness",
+    "cannot speak",
+    "can't speak",
+    "speech trouble",
+    "slurred speech",
 }
 
 

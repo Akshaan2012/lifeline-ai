@@ -5,6 +5,7 @@ from datetime import date
 from types import SimpleNamespace
 
 from backend.care_features import build_fhir_bundle, reconcile_medications, reminder_status
+from backend.followup import evaluate_follow_up
 
 
 class CareFeatureTests(unittest.TestCase):
@@ -34,6 +35,19 @@ class CareFeatureTests(unittest.TestCase):
         self.assertIn("Patient", resource_types)
         self.assertIn("RiskAssessment", resource_types)
         self.assertIn("MedicationStatement", resource_types)
+
+    def test_followup_catches_new_danger_words_after_low_risk_check(self) -> None:
+        original = SimpleNamespace(risk_level="Self-Care")
+        for note in (
+            "swollen tongue now",
+            "took too many pills",
+            "lips turning blue",
+            "one side weakness",
+            "cannot speak properly",
+        ):
+            with self.subTest(note=note):
+                result = evaluate_follow_up(original, "Same", note, 1)
+                self.assertEqual(result["level"], "Needs faster care")
 
 
 if __name__ == "__main__":
