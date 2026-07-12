@@ -647,29 +647,33 @@ def inject_css() -> None:
             border-right: 1px solid rgba(255,255,255,.1);
             box-shadow: 18px 0 42px rgba(8, 38, 49, .14);
         }
-        @media (min-width: 900px) {
-            section[data-testid="stSidebar"] {
-                display: block !important;
-                visibility: visible !important;
-                min-width: 300px !important;
-                max-width: 300px !important;
-                width: 300px !important;
-                transform: none !important;
-                margin-left: 0 !important;
-                left: 0 !important;
-            }
-            section[data-testid="stSidebar"][aria-expanded="false"] {
-                min-width: 300px !important;
-                max-width: 300px !important;
-                width: 300px !important;
-                transform: none !important;
-                margin-left: 0 !important;
-                left: 0 !important;
-            }
-            [data-testid="collapsedControl"] {
-                display: none !important;
-                visibility: hidden !important;
-            }
+        [data-testid="collapsedControl"] {
+            display: flex !important;
+            visibility: visible !important;
+            position: fixed !important;
+            top: 14px !important;
+            left: 14px !important;
+            z-index: 100001 !important;
+            background: rgba(6, 30, 39, .96) !important;
+            border: 1px solid rgba(98, 224, 204, .62) !important;
+            border-radius: 12px !important;
+            box-shadow: 0 12px 28px rgba(6, 30, 39, .24), 0 0 0 4px rgba(16, 184, 166, .14) !important;
+            padding: 4px !important;
+        }
+        [data-testid="collapsedControl"] button,
+        [data-testid="stSidebarCollapseButton"] {
+            width: 40px !important;
+            height: 40px !important;
+            border-radius: 10px !important;
+            background: rgba(255, 255, 255, .08) !important;
+            color: #efffff !important;
+        }
+        [data-testid="collapsedControl"] svg,
+        [data-testid="stSidebarCollapseButton"] svg {
+            color: #efffff !important;
+            fill: #efffff !important;
+            width: 22px !important;
+            height: 22px !important;
         }
         [data-testid="stSidebar"] * { color: #efffff; }
         .sidebar-brand {
