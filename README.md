@@ -125,13 +125,19 @@ sudo apt install python3-venv
 
 ## OpenAI Setup
 
-OpenAI enhances Sam, Health & Medicine Q&A, and the Medication Safety Checker. The app continues with local safety rules when OpenAI is unavailable.
+OpenAI enhances Sam, Health & Medicine Q&A, and the Medication Safety Checker. The app continues with local safety rules when OpenAI is unavailable. Do not use the AI provider as the sole emergency detector: LifeLine AI keeps urgent red flags in fixed clinician-reviewed rules and uses AI only for language help, follow-up wording, summarisation, and education.
 
-For a local install, copy `.env.example` to `.env`, replace the placeholder with a valid key, and keep `.env` private:
+For smooth early development, use a project-scoped OpenAI API key on the backend/server side only. Start with a separate development key, add a testing key for automated or staging checks, and keep the production key reserved for real deployments. Do not place provider keys in frontend JavaScript, React/mobile code, public GitHub repositories, or public `.env` files.
+
+For a local install, copy `.env.example` to `.env`, replace only the environment key you are using, and keep `.env` private:
 
 ```text
-OPENAI_API_KEY=sk-proj-your-real-key
+LIFELINE_ENV=development
+OPENAI_API_KEY_DEV=sk-proj-your-development-key
+OPENAI_API_KEY_TEST=sk-proj-your-testing-key
+OPENAI_API_KEY_PROD=sk-proj-your-production-key
 OPENAI_MODEL=gpt-5.4-nano
+OPENAI_RATE_LIMIT_PER_MINUTE=30
 ```
 
 For Streamlit Community Cloud:
@@ -142,13 +148,29 @@ For Streamlit Community Cloud:
 4. Save and reboot the app.
 
 ```toml
-OPENAI_API_KEY = "sk-proj-your-real-key"
+LIFELINE_ENV = "production"
+OPENAI_API_KEY_PROD = "sk-proj-your-production-key"
 OPENAI_MODEL = "gpt-5.4-nano"
 OPENAI_TIMEOUT_SECONDS = "6"
 OPENAI_MAX_OUTPUT_TOKENS = "220"
+OPENAI_RATE_LIMIT_PER_MINUTE = "30"
 ```
 
 Never commit `.env` or `.streamlit/secrets.toml`. Both are excluded by `.gitignore`.
+
+The safe production flow should be:
+
+```text
+Patient/doctor app
+  -> secure backend
+  -> AI provider API
+  -> backend checks and formats the result
+  -> app receives the safe response
+```
+
+The backend should authenticate clinics and users, remove unnecessary direct identifiers before provider calls, rate-limit usage, record audit events without storing sensitive prompt text, verify AI responses before showing clinical alerts, and require doctor approval before content becomes the final clinical record. Immediately revoke and replace any key that has ever been committed to GitHub.
+
+For real patient data, confirm the provider's privacy terms, data-retention controls, regional processing options, and healthcare agreements before enabling cloud AI.
 
 ## Supabase Setup
 

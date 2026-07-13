@@ -3633,7 +3633,10 @@ def render_safety_quality() -> None:
     controls = [
         "Explicit emergency signs override numeric scoring and model output.",
         "Unanswered or uncertain red-flag follow-ups fail safely to faster care.",
+        "AI is used only for language help, summarisation, and education; fixed rules handle urgent red flags.",
         "Medication guidance does not calculate dosage or prescribe treatment.",
+        "Optional AI calls remove common direct identifiers before the provider request.",
+        "AI provider requests are rate-limited and audited without logging the medical prompt text.",
         "Offline mode disables cloud AI, translation, Supabase, and video embeds.",
         "Clinician evidence traces show the basis of each recommendation.",
     ]
@@ -3706,6 +3709,29 @@ def render_clinic_pilot_plan() -> None:
             st.write(f"- {tr(item)}")
 
     st.write("")
+    st.markdown(f'<div class="section-label">{h("Secure AI architecture")}</div>', unsafe_allow_html=True)
+    architecture = pd.DataFrame(
+        [
+            {"Layer": "Patient or clinic app", "Responsibility": "Collect intake answers and show reviewed results.", "Must not do": "Store AI provider keys in frontend, mobile code, public repos, or public env files."},
+            {"Layer": "Secure backend", "Responsibility": "Authenticate clinic users, rate-limit requests, remove unnecessary identifiers, and write audit events.", "Must not do": "Send every raw patient field to the model by default."},
+            {"Layer": "AI provider", "Responsibility": "Help with language understanding, follow-up phrasing, summarisation, and simple education.", "Must not do": "Make final diagnoses, emergency decisions, or approved clinical records."},
+            {"Layer": "Clinician review", "Responsibility": "Check source-linked summaries, approve notes, and decide care.", "Must not do": "Let AI alerts go straight into the record without review."},
+        ]
+    )
+    st.dataframe(architecture, hide_index=True, width="stretch")
+
+    st.markdown(f'<div class="section-label">{h("Country-by-country expansion")}</div>', unsafe_allow_html=True)
+    jurisdiction_col, api_col = st.columns(2, gap="large")
+    with jurisdiction_col:
+        st.write(f"- {tr('Build one global core, then add configurable jurisdiction packs for each country.')}")
+        st.write(f"- {tr('Keep emergency numbers, consent wording, privacy requirements, hosting region, terminology, medication names, referral pathways, and EHR integrations out of hard-coded app logic.')}")
+        st.write(f"- {tr('Start with one market and one narrow outpatient workflow before expanding internationally.')}")
+    with api_col:
+        st.write(f"- {tr('Use separate development, testing, and production AI provider keys.')}")
+        st.write(f"- {tr('Revoke and replace any key that has ever been committed to GitHub.')}")
+        st.write(f"- {tr('Before real patient data, confirm privacy terms, data-retention controls, regional processing, and healthcare agreements with the provider.')}")
+
+    st.write("")
     st.markdown(f'<div class="section-label">{h("Pilot metrics calculator")}</div>', unsafe_allow_html=True)
     metric_col1, metric_col2, metric_col3 = st.columns(3)
     with metric_col1:
@@ -3748,7 +3774,9 @@ def render_clinic_pilot_plan() -> None:
             "Do not market this as AI diagnosis.",
             "Do not say a user does or does not have a specific disease.",
             "Do not recommend prescription medicines or tell someone to stop treatment.",
+            "Do not rely on AI alone for emergency detection; clinician-reviewed rules must make urgent red-flag escalations.",
             "Do not downgrade chest pain, confusion, stroke signs, fainting, severe breathing trouble, or severe allergic reaction.",
+            "Do not expose provider keys outside the secure backend.",
             "Before real clinic use, get adult supervision, clinical review, privacy review, and local regulatory advice.",
         ]
         for item in guardrails:

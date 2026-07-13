@@ -29,13 +29,26 @@ Or download manually:
 
 ## Optional OpenAI Features
 
-Sam, Health & Medicine Q&A, and Medication Safety can use OpenAI. To enable them locally:
+Sam, Health & Medicine Q&A, and Medication Safety can use OpenAI. For early development, use a backend/server-side development key. Do not put the key in frontend JavaScript, mobile app code, public GitHub repositories, or public environment files.
+
+To enable OpenAI locally:
 
 1. Copy `.env.example` to a new file named `.env`.
-2. Replace `sk-proj-your-key-here` with a valid OpenAI API key.
-3. Restart the launcher.
+2. Set `LIFELINE_ENV=development`.
+3. Replace `OPENAI_API_KEY_DEV` with a valid development OpenAI API key.
+4. Restart the launcher.
 
-Do not add the real key to GitHub. For the hosted Streamlit app, put `OPENAI_API_KEY` and `OPENAI_MODEL` in the app's **Settings > Secrets** instead.
+Use separate keys for development, testing, and production:
+
+```text
+OPENAI_API_KEY_DEV=sk-proj-your-development-key
+OPENAI_API_KEY_TEST=sk-proj-your-testing-key
+OPENAI_API_KEY_PROD=sk-proj-your-production-key
+```
+
+Do not add real keys to GitHub. For the hosted Streamlit app, put `LIFELINE_ENV`, `OPENAI_API_KEY_PROD`, and `OPENAI_MODEL` in the app's **Settings > Secrets** instead. Immediately revoke and replace any key that has ever been committed to GitHub.
+
+LifeLine AI uses OpenAI only as an optional assistant for language, summarisation, and education. Emergency red flags stay in local rules, and clinical records still require clinician review.
 
 ## macOS / Linux
 
