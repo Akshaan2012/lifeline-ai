@@ -731,7 +731,8 @@ def inject_css() -> None:
             letter-spacing: .02em !important;
             line-height: 1 !important;
         }
-        [data-testid="collapsedControl"] button {
+        [data-testid="collapsedControl"] button,
+        [data-testid="stSidebarCollapseButton"] {
             width: 44px !important;
             height: 44px !important;
             min-width: 44px !important;
@@ -742,18 +743,21 @@ def inject_css() -> None:
             box-shadow: none !important;
         }
         [data-testid="stSidebarCollapseButton"] {
-            display: none !important;
-            visibility: hidden !important;
+            position: fixed !important;
+            top: 18px !important;
+            left: 252px !important;
+            z-index: 100002 !important;
+            background: rgba(6, 30, 39, .94) !important;
+            border: 1px solid rgba(98, 224, 204, .58) !important;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, .22) !important;
         }
-        [data-testid="collapsedControl"] button:hover {
+        [data-testid="collapsedControl"] button:hover,
+        [data-testid="stSidebarCollapseButton"]:hover {
             background: rgba(16, 184, 166, .24) !important;
             border-color: rgba(134, 255, 235, .86) !important;
             transform: translateY(-1px);
         }
-        [data-testid="collapsedControl"] svg {
-            display: none !important;
-            visibility: hidden !important;
-        }
+        [data-testid="collapsedControl"] svg,
         [data-testid="stSidebarCollapseButton"] svg {
             color: #efffff !important;
             fill: #efffff !important;
