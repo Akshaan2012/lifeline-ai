@@ -374,8 +374,6 @@ COMMON_TRANSLATION_TEXTS = [
     "Larger text",
     "High contrast",
     "Simpler wording",
-    "Open pages",
-    "Use these buttons if the sidebar is hidden.",
     "Health Checker",
     "Timeline",
     "Health & Medicine Q&A",
@@ -1975,17 +1973,6 @@ def render_quick_jumps(prefix: str, exclude: str | None = None) -> None:
                 switch_page(page)
 
 
-def render_page_launcher(prefix: str, pages: list[tuple[str, str]]) -> None:
-    st.markdown(f'<div class="section-label">{h("Open pages")}</div>', unsafe_allow_html=True)
-    st.caption(tr("Use these buttons if the sidebar is hidden."))
-    for row_start in range(0, len(pages), 3):
-        row = pages[row_start:row_start + 3]
-        cols = st.columns(3)
-        for index, (label, page) in enumerate(row):
-            if cols[index].button(tr(label), key=f"{prefix}_{stable_key(page)}", width="stretch"):
-                switch_page(page)
-
-
 def danger_status(risk_level: str) -> dict[str, str]:
     if risk_level == "Self-Care":
         return {
@@ -2673,20 +2660,6 @@ def render_patient_home() -> None:
             switch_page("Medication Safety Checker")
         if action3.button(tr("Timeline & Reminders"), width="stretch"):
             switch_page("Health Passport & Reminders")
-    st.write("")
-    render_page_launcher(
-        "patient_page_launcher",
-        [
-            ("Health Checker", "Patient Health Checker"),
-            ("Timeline", "Health Timeline"),
-            ("Health & Medicine Q&A", "Disease Q&A Assistant"),
-            ("Medication Safety", "Medication Safety Checker"),
-            ("Health Passport", "Health Passport & Reminders"),
-            ("Safety & Quality", "Safety & Quality"),
-            ("Scenario Challenge", "Scenario Challenge"),
-            ("Safety Videos", "Safety Videos"),
-        ],
-    )
 
 
 def render_professional_home() -> None:
@@ -2776,19 +2749,6 @@ def render_professional_home() -> None:
             switch_page("Doctor Dashboard")
         if action4.button(tr("Clinic Pilot Plan"), type="primary", width="stretch"):
             switch_page("Clinic Pilot Plan")
-    st.write("")
-    render_page_launcher(
-        "professional_page_launcher",
-        [
-            ("Doctor Dashboard", "Doctor Dashboard"),
-            ("Clinic Pilot Plan", "Clinic Pilot Plan"),
-            ("Timeline", "Health Timeline"),
-            ("Medication Safety", "Medication Safety Checker"),
-            ("Health & Medicine Q&A", "Disease Q&A Assistant"),
-            ("Safety & Quality", "Safety & Quality"),
-            ("Safety Videos", "Safety Videos"),
-        ],
-    )
 
 
 def render_home() -> None:
