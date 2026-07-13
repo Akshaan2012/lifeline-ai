@@ -848,32 +848,6 @@ def inject_css() -> None:
         p, li, label, .stMarkdown { color: var(--text); }
         .stCaptionContainer, [data-testid="stCaptionContainer"] { color: var(--muted); }
         .muted { color: var(--muted); }
-        .top-menu-label {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            margin: 4px 0 8px;
-            padding: 7px 12px;
-            border: 1px solid rgba(10,168,148,.35);
-            background: rgba(255,255,255,.82);
-            border-radius: 6px;
-            color: var(--text);
-            font-size: .84rem;
-            font-weight: 850;
-            box-shadow: var(--shadow-tight);
-        }
-        .top-menu-label span {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            border-radius: 999px;
-            background: var(--mint);
-        }
-        .st-key-top_menu .stButton>button {
-            min-height: 2.25rem !important;
-            padding: 0 .75rem !important;
-            font-size: .86rem !important;
-        }
         .command-bar {
             display: flex;
             align-items: center;
@@ -2594,31 +2568,6 @@ def render_command_bar() -> None:
     )
 
 
-def render_top_menu() -> None:
-    st.markdown(
-        f'<div class="top-menu-label"><span></span>{h("Menu")}</div>',
-        unsafe_allow_html=True,
-    )
-    menu_pages = [
-        ("Home", "Home"),
-        ("Health Check", "Patient Health Checker"),
-        ("Timeline", "Health Timeline"),
-        ("Medication", "Medication Safety Checker"),
-        ("Passport", "Health Passport & Reminders"),
-        ("Clinic Plan", "Clinic Pilot Plan"),
-        ("Safety", "Safety & Quality"),
-    ]
-    if st.session_state.workspace_role == "Healthcare Professional":
-        menu_pages.insert(4, ("Doctor", "Doctor Dashboard"))
-
-    columns = st.columns(len(menu_pages), gap="small")
-    for column, (label, target) in zip(columns, menu_pages):
-        with column:
-            disabled = st.session_state.page == target
-            if st.button(tr(label), key=f"top_menu_{key_fragment(label)}", disabled=disabled, width="stretch"):
-                switch_page(target)
-
-
 def page_header(title: str, subtitle: str, badge: str) -> None:
     title = h(title)
     subtitle = h(subtitle)
@@ -4052,7 +4001,6 @@ def main() -> None:
     inject_css()
     init_state()
     sidebar()
-    render_top_menu()
 
     if st.session_state.workspace_role == "Healthcare Professional" and not current_staff_user() and st.session_state.page != "Clinic Pilot Plan":
         render_staff_sign_in()
