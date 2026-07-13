@@ -716,31 +716,30 @@ def inject_css() -> None:
             left: 18px !important;
             z-index: 100001 !important;
             align-items: center !important;
-            background: transparent !important;
-            border: 0 !important;
-            box-shadow: none !important;
-            padding: 0 !important;
+            gap: 8px !important;
+            background: rgba(6, 30, 39, .98) !important;
+            border: 1px solid rgba(98, 224, 204, .72) !important;
+            border-radius: 999px !important;
+            box-shadow: 0 16px 36px rgba(6, 30, 39, .30), 0 0 0 5px rgba(16, 184, 166, .16) !important;
+            padding: 5px 12px 5px 5px !important;
         }
         [data-testid="collapsedControl"]::after {
-            content: none !important;
-        }
-        [data-testid="collapsedControl"] button {
-            width: auto !important;
-            height: 38px !important;
-            min-width: 76px !important;
-            border-radius: 6px !important;
-            background: rgba(6, 30, 39, .98) !important;
-            color: #efffff !important;
-            border: 1px solid rgba(98, 224, 204, .72) !important;
-            box-shadow: 0 10px 24px rgba(6, 30, 39, .22) !important;
-            padding: 0 14px !important;
-        }
-        [data-testid="collapsedControl"] button::after {
-            content: "Menu";
+            content: "Open menu";
             color: #efffff !important;
             font-size: .84rem !important;
-            font-weight: 850 !important;
+            font-weight: 800 !important;
+            letter-spacing: .02em !important;
             line-height: 1 !important;
+        }
+        [data-testid="collapsedControl"] button {
+            width: 44px !important;
+            height: 44px !important;
+            min-width: 44px !important;
+            border-radius: 999px !important;
+            background: rgba(255, 255, 255, .10) !important;
+            color: #efffff !important;
+            border: 1px solid rgba(255, 255, 255, .20) !important;
+            box-shadow: none !important;
         }
         [data-testid="stSidebarCollapseButton"] {
             display: none !important;
