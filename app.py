@@ -703,25 +703,22 @@ def inject_css() -> None:
             bottom: 16px !important;
         }
         [data-testid="stSidebar"] {
+            display: block !important;
+            visibility: visible !important;
+            transform: translateX(0) !important;
+            min-width: 300px !important;
+            width: 300px !important;
+            max-width: 300px !important;
+            left: 0 !important;
             background:
                 linear-gradient(180deg, #092d37 0%, #071d25 56%, #041318 100%);
             border-right: 1px solid rgba(255,255,255,.1);
             box-shadow: 18px 0 42px rgba(8, 38, 49, .14);
         }
         [data-testid="collapsedControl"] {
-            display: flex !important;
-            visibility: visible !important;
-            position: fixed !important;
-            top: 18px !important;
-            left: 18px !important;
-            z-index: 100001 !important;
-            align-items: center !important;
-            gap: 8px !important;
-            background: rgba(6, 30, 39, .98) !important;
-            border: 1px solid rgba(98, 224, 204, .72) !important;
-            border-radius: 999px !important;
-            box-shadow: 0 16px 36px rgba(6, 30, 39, .30), 0 0 0 5px rgba(16, 184, 166, .16) !important;
-            padding: 5px 12px 5px 5px !important;
+            display: none !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
         }
         [data-testid="collapsedControl"]::after {
             content: "Open menu";
