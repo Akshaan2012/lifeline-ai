@@ -743,13 +743,9 @@ def inject_css() -> None:
             box-shadow: none !important;
         }
         [data-testid="stSidebarCollapseButton"] {
-            position: fixed !important;
-            top: 18px !important;
-            left: 252px !important;
-            z-index: 100002 !important;
-            background: rgba(6, 30, 39, .94) !important;
-            border: 1px solid rgba(98, 224, 204, .58) !important;
-            box-shadow: 0 12px 28px rgba(0, 0, 0, .22) !important;
+            display: none !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
         }
         [data-testid="collapsedControl"] button:hover,
         [data-testid="stSidebarCollapseButton"]:hover {
