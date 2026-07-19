@@ -668,7 +668,11 @@ def inject_css() -> None:
             color: var(--text);
             font-family: "Noto Sans Devanagari", "Mangal", "Nirmala UI", "Segoe UI", Arial, sans-serif;
         }
-        header[data-testid="stHeader"] { background: rgba(248, 252, 251, .86); backdrop-filter: blur(12px); }
+        header[data-testid="stHeader"] {
+            background: transparent !important;
+            backdrop-filter: none;
+            pointer-events: none;
+        }
         #MainMenu, footer { visibility: hidden; }
         [data-testid="stToolbar"],
         [data-testid="stDecoration"],
@@ -835,10 +839,9 @@ def inject_css() -> None:
             color: #0d8f81 !important;
             fill: #0d8f81 !important;
         }
-        /* Keep the first card below Streamlit's fixed top chrome. The previous
-           1rem override let page content slide underneath and look cropped. */
+        /* Clear Streamlit's top chrome without leaving a large empty band. */
         .block-container {
-            padding-top: 5rem !important;
+            padding-top: 1.5rem !important;
             padding-bottom: 3rem;
             max-width: 1260px;
         }
@@ -1765,7 +1768,7 @@ def inject_css() -> None:
                 linear-gradient(135deg, transparent 0 18%, rgba(16,184,166,.18) 18% 19%, transparent 19% 38%, rgba(16,184,166,.25) 38% 39%, transparent 39% 61%, rgba(201,135,35,.28) 61% 62%, transparent 62% 82%, rgba(184,98,71,.32) 82% 83%, transparent 83%);
         }
         @media (max-width: 720px) {
-            .block-container { padding-top: 4.5rem !important; }
+            .block-container { padding-top: 1.25rem !important; }
             h1 { font-size: 2.35rem; }
             .hero, .page-head, .panel { padding: 18px; }
             .hero-layout { grid-template-columns: 1fr; }
