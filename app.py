@@ -835,7 +835,13 @@ def inject_css() -> None:
             color: #0d8f81 !important;
             fill: #0d8f81 !important;
         }
-        .block-container { padding-top: 1rem; padding-bottom: 3rem; max-width: 1260px; }
+        /* Keep the first card below Streamlit's fixed top chrome. The previous
+           1rem override let page content slide underneath and look cropped. */
+        .block-container {
+            padding-top: 5rem !important;
+            padding-bottom: 3rem;
+            max-width: 1260px;
+        }
         h1, h2, h3 { letter-spacing: 0; color: var(--text); }
         h1 { font-size: clamp(2.25rem, 4vw, 4.25rem); line-height: .98; margin-bottom: .6rem; font-weight: 900; }
         h2 { font-size: 1.38rem; }
@@ -1759,6 +1765,7 @@ def inject_css() -> None:
                 linear-gradient(135deg, transparent 0 18%, rgba(16,184,166,.18) 18% 19%, transparent 19% 38%, rgba(16,184,166,.25) 38% 39%, transparent 39% 61%, rgba(201,135,35,.28) 61% 62%, transparent 62% 82%, rgba(184,98,71,.32) 82% 83%, transparent 83%);
         }
         @media (max-width: 720px) {
+            .block-container { padding-top: 4.5rem !important; }
             h1 { font-size: 2.35rem; }
             .hero, .page-head, .panel { padding: 18px; }
             .hero-layout { grid-template-columns: 1fr; }
