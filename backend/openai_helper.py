@@ -100,14 +100,28 @@ def app_environment() -> str:
 
 
 def provider_api_key() -> str:
+    gemini_key = setting("GEMINI_API_KEY") or setting("GOOGLE_API_KEY")
+    if gemini_key:
+        return gemini_key
     key_name = ENVIRONMENT_KEY_NAMES.get(app_environment(), "OPENAI_API_KEY_DEV")
     return setting(key_name) or setting("OPENAI_API_KEY")
 
 
 def provider_model() -> str:
+    if provider_name() == "gemini":
+        return setting("GEMINI_MODEL", "gemini-3.5-flash")
     env = app_environment().upper()
     specific = setting(f"OPENAI_MODEL_{env}")
     return specific or setting("OPENAI_MODEL", "gpt-5.4-nano")
+
+
+def provider_name() -> str:
+    configured = setting("AI_PROVIDER", "").lower()
+    if configured in {"gemini", "openai"}:
+        return configured
+    if setting("GEMINI_API_KEY") or setting("GOOGLE_API_KEY"):
+        return "gemini"
+    return "openai"
 
 
 def minimize_patient_identifiers(text: str) -> str:
@@ -156,6 +170,33 @@ def openai_text(
         _audit_openai_event("rate_limited", model=provider_model(), user_text=user)
         return None
     try:
+        if provider_name() == "gemini":
+            from urllib.request import Request, urlopen
+
+            model = provider_model()
+            safe_user = minimize_patient_identifiers(user)
+            _audit_openai_event("request_started", model=model, user_text=safe_user)
+            body = json.dumps({
+                "system_instruction": {"parts": [{"text": system}]},
+                "contents": [{"role": "user", "parts": [{"text": safe_user}]}],
+                "generationConfig": {"maxOutputTokens": max(max_output_tokens or int(setting("OPENAI_MAX_OUTPUT_TOKENS", "220")), 256)},
+            }).encode("utf-8")
+            request = Request(
+                f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+                data=body,
+                headers={"x-goog-api-key": provider_api_key(), "Content-Type": "application/json"},
+                method="POST",
+            )
+            with urlopen(
+                request,
+                timeout=timeout_seconds or float(setting("OPENAI_TIMEOUT_SECONDS", "6")),
+            ) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+            parts = payload.get("candidates", [{}])[0].get("content", {}).get("parts", [])
+            output = "".join(str(part.get("text", "")) for part in parts).strip() or None
+            _LAST_OPENAI_ERROR = "" if output else "Gemini returned an empty response."
+            return output
+
         from openai import OpenAI
 
         model = provider_model()
