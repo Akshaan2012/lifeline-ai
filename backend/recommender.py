@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from backend.openai_helper import openai_json
+from backend.ai_helper import ai_json
 
 
 BASE_ADVICE = {
@@ -180,7 +180,7 @@ def _ai_enhanced_recommendations(triage_result: Any, advice: dict[str, Any]) -> 
         f"Possible category: {triage_result.possible_category}\nSignals: {', '.join(triage_result.signals)}\n"
         f"Existing advice: {advice}"
     )
-    data = openai_json(system, user, max_output_tokens=620)
+    data = ai_json(system, user, max_output_tokens=620)
     if not data:
         return advice
 

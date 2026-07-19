@@ -6,7 +6,7 @@ from urllib.parse import quote
 
 import requests
 
-from backend.openai_helper import openai_json
+from backend.ai_helper import ai_json
 
 
 DISEASE_LIBRARY: dict[str, dict[str, Any]] = {
@@ -835,7 +835,7 @@ def _ai_health_answer(question: str, existing_answer: dict[str, Any]) -> dict[st
         "intent string, safety_note string. Do not invent citations or claim a diagnosis. "
         f"Question: {question}\nDraft answer: {existing_answer}"
     )
-    data = openai_json(system, user, max_output_tokens=520)
+    data = ai_json(system, user, max_output_tokens=520)
     if not data:
         return None
 

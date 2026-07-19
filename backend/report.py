@@ -110,7 +110,7 @@ def generate_health_report_pdf(patient_data: dict[str, Any], result: Any, advice
         story.append(Spacer(1, 6))
         story.append(
             Paragraph(
-                "The overview and doctor handoff were written with OpenAI and constrained by LifeLine AI safety rules.",
+                "The overview and doctor handoff were written with Gemini and constrained by LifeLine AI safety rules.",
                 styles["BodyText"],
             )
         )

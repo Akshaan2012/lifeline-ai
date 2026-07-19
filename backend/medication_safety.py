@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from backend.openai_helper import openai_json
+from backend.ai_helper import ai_json
 from backend.care_features import reconcile_medications
 
 
@@ -193,7 +193,7 @@ def _ai_enhanced_safety_result(
         f"Allergies: {allergies or 'none'}\nCurrent medicines: {current_medicines or 'none'}\n"
         f"Existing result: {result}"
     )
-    data = openai_json(system, user, max_output_tokens=520)
+    data = ai_json(system, user, max_output_tokens=520)
     if not data:
         return result
 

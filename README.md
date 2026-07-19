@@ -121,23 +121,24 @@ sudo apt install python3-venv
 - ReportLab
 - SQLite
 - deep-translator
-- OpenAI API (optional AI enhancements)
+- Gemini API (optional AI enhancements)
 
-## OpenAI Setup
+## Gemini Setup
 
-OpenAI enhances Sam, Health & Medicine Q&A, and the Medication Safety Checker. The app continues with local safety rules when OpenAI is unavailable. Do not use the AI provider as the sole emergency detector: LifeLine AI keeps urgent red flags in fixed clinician-reviewed rules and uses AI only for language help, follow-up wording, summarisation, and education.
+Gemini enhances Sam, Patient Health Checker wording, Health & Medicine Q&A, Medication Safety, and Scenario Challenge coaching. The app continues with local safety rules when Gemini is unavailable. Do not use the AI provider as the sole emergency detector: LifeLine AI keeps urgent red flags in fixed clinician-reviewed rules and uses Gemini only for language help, follow-up wording, summarisation, and education.
 
-For smooth early development, use a project-scoped OpenAI API key on the backend/server side only. Start with a separate development key, add a testing key for automated or staging checks, and keep the production key reserved for real deployments. Do not place provider keys in frontend JavaScript, React/mobile code, public GitHub repositories, or public `.env` files.
+Use a project-scoped Gemini API key on the backend/server side only. Do not place provider keys in frontend JavaScript, React/mobile code, public GitHub repositories, or public `.env` files.
 
 For a local install, copy `.env.example` to `.env`, replace only the environment key you are using, and keep `.env` private:
 
 ```text
 LIFELINE_ENV=development
-OPENAI_API_KEY_DEV=sk-proj-your-development-key
-OPENAI_API_KEY_TEST=sk-proj-your-testing-key
-OPENAI_API_KEY_PROD=sk-proj-your-production-key
-OPENAI_MODEL=gpt-5.4-nano
-OPENAI_RATE_LIMIT_PER_MINUTE=30
+AI_PROVIDER=gemini
+GEMINI_API_KEY=your-private-gemini-key
+GEMINI_MODEL=gemini-3.5-flash
+AI_TIMEOUT_SECONDS=10
+AI_MAX_OUTPUT_TOKENS=620
+AI_RATE_LIMIT_PER_MINUTE=30
 ```
 
 For Streamlit Community Cloud:
@@ -149,11 +150,12 @@ For Streamlit Community Cloud:
 
 ```toml
 LIFELINE_ENV = "production"
-OPENAI_API_KEY_PROD = "sk-proj-your-production-key"
-OPENAI_MODEL = "gpt-5.4-nano"
-OPENAI_TIMEOUT_SECONDS = "6"
-OPENAI_MAX_OUTPUT_TOKENS = "220"
-OPENAI_RATE_LIMIT_PER_MINUTE = "30"
+AI_PROVIDER = "gemini"
+GEMINI_API_KEY = "your-private-gemini-key"
+GEMINI_MODEL = "gemini-3.5-flash"
+AI_TIMEOUT_SECONDS = "10"
+AI_MAX_OUTPUT_TOKENS = "620"
+AI_RATE_LIMIT_PER_MINUTE = "30"
 ```
 
 Never commit `.env` or `.streamlit/secrets.toml`. Both are excluded by `.gitignore`.
@@ -210,4 +212,4 @@ Turn on **Offline mode** in the sidebar, or set:
 LIFELINE_OFFLINE_MODE = "true"
 ```
 
-Offline mode disables OpenAI, Supabase, Google Translate, and YouTube embeds. The app still runs with local triage rules, local Q&A fallbacks, PDF generation, and SQLite storage.
+Offline mode disables Gemini, Supabase, Google Translate, and YouTube embeds. The app still runs with local triage rules, local Q&A fallbacks, PDF generation, and SQLite storage.

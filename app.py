@@ -17,7 +17,7 @@ from backend.disease_qa import answer_question
 from backend.doctor_summary import build_doctor_summary
 from backend.followup import evaluate_follow_up
 from backend.medication_safety import analyze_medication_safety
-from backend.openai_helper import openai_text
+from backend.ai_helper import ai_text
 from backend.recommender import build_recommendations
 from backend.report import generate_health_report_pdf
 from backend.sam import answer_message
@@ -2536,7 +2536,7 @@ def render_challenge_feedback(choice: str, result: Any, scenario_data: dict[str,
         st.write(f"- {signal}")
     st.markdown(f"**{tr('Recommended next step')}**")
     st.write(tr(result.recommendation))
-    ai_feedback = openai_text(
+    ai_feedback = ai_text(
         (
             "You are the friendly coach for LifeLine AI's fictional Scenario Challenge. "
             "In 2 or 3 short sentences, explain why the fixed safety-rule result is appropriate and give one memorable lesson. "

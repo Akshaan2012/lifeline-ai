@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, asdict
 from functools import lru_cache
 
-from backend.openai_helper import offline_mode, openai_text, setting
+from backend.ai_helper import ai_text, offline_mode, setting
 
 
 @dataclass(frozen=True)
@@ -159,11 +159,11 @@ def _ai_reply(message: str) -> str | None:
         "You can also guide users to these app pages: Patient Health Checker, Health Timeline, Disease Q&A Assistant, "
         "Medication Safety Checker, Doctor Dashboard, Scenario Challenge, Safety Videos."
     )
-    return openai_text(
+    return ai_text(
         system,
         message,
-        max_output_tokens=int(setting("OPENAI_MAX_OUTPUT_TOKENS", "90")),
-        timeout_seconds=float(setting("OPENAI_TIMEOUT_SECONDS", "3.5")),
+        max_output_tokens=int(setting("AI_MAX_OUTPUT_TOKENS", "90")),
+        timeout_seconds=float(setting("AI_TIMEOUT_SECONDS", "10")),
     )
 
 
