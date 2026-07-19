@@ -18,6 +18,7 @@ class OpenAIHelperSecurityTests(unittest.TestCase):
 
     def test_environment_specific_key_is_preferred(self) -> None:
         env = {
+            "AI_PROVIDER": "openai",
             "LIFELINE_ENV": "production",
             "OPENAI_API_KEY": "fallback-key",
             "OPENAI_API_KEY_DEV": "dev-key",
@@ -26,6 +27,16 @@ class OpenAIHelperSecurityTests(unittest.TestCase):
         with patch.dict(os.environ, env, clear=False):
             openai_helper.setting.cache_clear()
             self.assertEqual(openai_helper.provider_api_key(), "prod-key")
+
+    def test_explicit_gemini_provider_uses_gemini_key(self) -> None:
+        env = {
+            "AI_PROVIDER": "gemini",
+            "GEMINI_API_KEY": "gemini-key",
+            "OPENAI_API_KEY_DEV": "openai-key",
+        }
+        with patch.dict(os.environ, env, clear=False):
+            openai_helper.setting.cache_clear()
+            self.assertEqual(openai_helper.provider_api_key(), "gemini-key")
 
     def test_identifier_minimization_removes_common_direct_identifiers(self) -> None:
         text = (

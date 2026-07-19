@@ -198,5 +198,5 @@ def _ai_enhanced_recommendations(triage_result: Any, advice: dict[str, Any]) -> 
     for key in ["likely_pattern", "simple_explanation", "report_summary", "doctor_handoff"]:
         if str(data.get(key) or "").strip():
             enhanced[key] = str(data[key]).strip()
-    enhanced["source"] = "OpenAI-enhanced guidance with LifeLine AI safety rules."
+    enhanced["source"] = "AI-enhanced guidance with LifeLine AI safety rules."
     return enhanced

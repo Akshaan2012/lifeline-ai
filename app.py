@@ -17,6 +17,7 @@ from backend.disease_qa import answer_question
 from backend.doctor_summary import build_doctor_summary
 from backend.followup import evaluate_follow_up
 from backend.medication_safety import analyze_medication_safety
+from backend.openai_helper import openai_text
 from backend.recommender import build_recommendations
 from backend.report import generate_health_report_pdf
 from backend.sam import answer_message
@@ -2535,6 +2536,22 @@ def render_challenge_feedback(choice: str, result: Any, scenario_data: dict[str,
         st.write(f"- {signal}")
     st.markdown(f"**{tr('Recommended next step')}**")
     st.write(tr(result.recommendation))
+    ai_feedback = openai_text(
+        (
+            "You are the friendly coach for LifeLine AI's fictional Scenario Challenge. "
+            "In 2 or 3 short sentences, explain why the fixed safety-rule result is appropriate and give one memorable lesson. "
+            "Do not change the care level, diagnose, prescribe, or imply this fictional exercise replaces medical care."
+        ),
+        (
+            f"The player chose {choice}. The fixed rule engine chose {result.risk_level}. "
+            f"Symptoms: {', '.join(str(item) for item in scenario_data.get('symptoms', []))}. "
+            f"Safety signals: {', '.join(str(item) for item in result.signals)}."
+        ),
+        max_output_tokens=180,
+    )
+    if ai_feedback:
+        st.markdown(f"**{tr('Gemini coach')}**")
+        st.info(tr(ai_feedback))
 
 
 def render_command_bar() -> None:
@@ -3163,10 +3180,10 @@ def render_checker() -> None:
             if not data["symptoms"]:
                 st.error(tr("Please choose at least one symptom."))
             else:
-                # Keep the primary health-check response local and immediate.
-                # AI rewriting is optional enrichment and must not delay safety guidance.
+                # The risk level stays entirely local and rule-based. Gemini may
+                # improve wording only; a failed provider call falls back locally.
                 result = analyze_patient(data, use_ml=False)
-                advice = build_recommendations(result, enhance=False)
+                advice = build_recommendations(result, enhance=True)
                 if result.risk_level == "Emergency":
                     record_safety_event("Emergency override", "Explicit red flag or emergency score triggered")
                 # Avoid a remote case-history request for anonymous checks. Named

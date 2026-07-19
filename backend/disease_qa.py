@@ -852,7 +852,7 @@ def _ai_health_answer(question: str, existing_answer: dict[str, Any]) -> dict[st
         "emergency": [str(item) for item in data.get("emergency", []) if str(item).strip()][:4],
         "kind": str(existing_answer.get("kind") or data.get("kind") or "general"),
         "intent": str(existing_answer.get("intent") or data.get("intent") or _question_intent(question)),
-        "source": "OpenAI-enhanced health education with LifeLine AI safety rules",
+        "source": "AI-enhanced health education with LifeLine AI safety rules",
     }
     safety_note = str(data.get("safety_note") or "").strip()
     if safety_note:

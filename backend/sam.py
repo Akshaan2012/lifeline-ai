@@ -207,6 +207,6 @@ def answer_message(message: str) -> SamCommand:
         intent="ai_answer",
         target_page=routed.target_page,
         confidence=max(routed.confidence, 0.9),
-        reason="Sam answered with the configured OpenAI model and kept the best app route as an optional next step.",
+        reason="Sam answered with the configured AI model and kept the best app route as an optional next step.",
         message=reply,
     )

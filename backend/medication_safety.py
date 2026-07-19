@@ -212,5 +212,5 @@ def _ai_enhanced_safety_result(
         what_to_do=items("what_to_do", result.what_to_do),
         emergency_signs=items("emergency_signs", result.emergency_signs),
         questions=items("questions", result.questions),
-        source="OpenAI-enhanced medication guidance with LifeLine AI safety rules",
+        source="AI-enhanced medication guidance with LifeLine AI safety rules",
     )

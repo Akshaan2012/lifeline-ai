@@ -100,9 +100,8 @@ def app_environment() -> str:
 
 
 def provider_api_key() -> str:
-    gemini_key = setting("GEMINI_API_KEY") or setting("GOOGLE_API_KEY")
-    if gemini_key:
-        return gemini_key
+    if provider_name() == "gemini":
+        return setting("GEMINI_API_KEY") or setting("GOOGLE_API_KEY")
     key_name = ENVIRONMENT_KEY_NAMES.get(app_environment(), "OPENAI_API_KEY_DEV")
     return setting(key_name) or setting("OPENAI_API_KEY")
 
@@ -163,7 +162,7 @@ def openai_text(
 ) -> str | None:
     global _LAST_OPENAI_ERROR
     if not openai_enabled():
-        _LAST_OPENAI_ERROR = "OpenAI is disabled or OPENAI_API_KEY is not configured."
+        _LAST_OPENAI_ERROR = "AI is disabled or no supported provider API key is configured."
         return None
     if not _rate_limit_allows_call():
         _LAST_OPENAI_ERROR = "OpenAI rate limit reached for this app instance."
@@ -223,7 +222,7 @@ def openai_text(
         error_code = getattr(exc, "code", None) or type(exc).__name__
         status_code = getattr(exc, "status_code", None)
         _LAST_OPENAI_ERROR = f"{error_code} ({status_code})" if status_code else str(error_code)
-        LOGGER.warning("OpenAI enhancement unavailable: %s", _LAST_OPENAI_ERROR)
+        LOGGER.warning("AI enhancement unavailable: %s", _LAST_OPENAI_ERROR)
         return None
 
 
