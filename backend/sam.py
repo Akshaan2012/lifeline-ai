@@ -148,6 +148,30 @@ def route_message(message: str) -> SamCommand:
     )
 
 
+def _fit_command_to_available_pages(
+    command: SamCommand,
+    available_pages: list[str] | None,
+) -> SamCommand:
+    if not available_pages or command.target_page in available_pages:
+        return command
+    fallback_page = "Health Timeline" if command.target_page == "Doctor Dashboard" and "Health Timeline" in available_pages else "Home"
+    if fallback_page not in available_pages:
+        fallback_page = available_pages[0]
+    message = (
+        "That professional page is not available in this workspace. "
+        "Open Health Timeline to review saved checks and patient history."
+        if fallback_page == "Health Timeline"
+        else "That page is not available in this workspace. Open Home to choose an available tool."
+    )
+    return SamCommand(
+        intent=command.intent,
+        target_page=fallback_page,
+        confidence=command.confidence,
+        reason=f"{command.reason} The requested page was outside the current workspace.",
+        message=message,
+    )
+
+
 def _ai_reply(message: str) -> str | None:
     if offline_mode():
         return None
@@ -193,9 +217,10 @@ def _cached_ai_reply(message: str) -> str | None:
     return _ai_reply(message)
 
 
-def answer_message(message: str) -> SamCommand:
+def answer_message(message: str, available_pages: list[str] | None = None) -> SamCommand:
     clean_message = " ".join(message.strip().split())
     routed = route_message(clean_message)
+    routed = _fit_command_to_available_pages(routed, available_pages)
     if _wants_navigation(clean_message) and routed.target_page:
         return routed
     if _is_clear_app_request(clean_message, routed):
@@ -205,7 +230,7 @@ def answer_message(message: str) -> SamCommand:
         return routed
     return SamCommand(
         intent="ai_answer",
-        target_page=routed.target_page,
+        target_page=routed.target_page if not available_pages or routed.target_page in available_pages else None,
         confidence=max(routed.confidence, 0.9),
         reason="Sam answered with the configured AI model and kept the best app route as an optional next step.",
         message=reply,

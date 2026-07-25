@@ -2628,7 +2628,7 @@ def render_sam() -> None:
             submitted = st.form_submit_button(tr("Ask Sam"), width="stretch")
         if submitted and message.strip():
             with st.spinner(tr("Sam is thinking...")):
-                command = answer_message(message.strip())
+                command = answer_message(message.strip(), available_pages=pages_for_current_workspace())
             st.session_state.sam_last_reply = command.to_json()
         last_reply = st.session_state.get("sam_last_reply")
         if last_reply:
