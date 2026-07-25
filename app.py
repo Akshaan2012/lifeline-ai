@@ -575,6 +575,13 @@ def safe_number(value: Any) -> float | None:
     return float(number)
 
 
+def optional_measurement_number(value: Any) -> float | None:
+    number = safe_number(value)
+    if number in (None, 0):
+        return None
+    return number
+
+
 def split_known_conditions(conditions: list[str]) -> tuple[list[str], list[str]]:
     known = [item for item in conditions if item in CONDITION_OPTIONS]
     custom = [item for item in conditions if item not in CONDITION_OPTIONS]
@@ -2129,11 +2136,11 @@ def build_timeline_trend_frame(cases: list[dict[str, Any]]) -> pd.DataFrame:
                 "Created": pd.to_datetime(case.get("created_at"), errors="coerce"),
                 "Risk score": safe_number(case.get("score")) or 0,
                 "Pain level": safe_number(raw.get("pain_level")),
-                "Temperature": safe_number(raw.get("temperature")),
-                "Oxygen": safe_number(raw.get("oxygen")),
-                "Pulse": safe_number(raw.get("heart_rate")),
-                "Systolic BP": safe_number(raw.get("systolic_bp")),
-                "Diastolic BP": safe_number(raw.get("diastolic_bp")),
+                "Temperature": optional_measurement_number(raw.get("temperature")),
+                "Oxygen": optional_measurement_number(raw.get("oxygen")),
+                "Pulse": optional_measurement_number(raw.get("heart_rate")),
+                "Systolic BP": optional_measurement_number(raw.get("systolic_bp")),
+                "Diastolic BP": optional_measurement_number(raw.get("diastolic_bp")),
             }
         )
     frame = pd.DataFrame(rows)
