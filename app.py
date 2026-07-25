@@ -245,7 +245,7 @@ COMMON_TRANSLATION_TEXTS = [
     "Emergency",
     "Get urgent help now",
     "Likely health pattern",
-    "Why the app thinks this",
+    "Signals used for this guidance",
     "What to do now",
     "Home care support",
     "Precautions",
@@ -2658,11 +2658,17 @@ def render_sam() -> None:
                 switch_page(str(target_page))
 
 
+def stored_triage_result(stored: Any) -> Any | None:
+    if isinstance(stored, dict):
+        return stored.get("result")
+    return stored
+
+
 def render_patient_home() -> None:
     profile = st.session_state.get("patient_profile", {})
     reminders = st.session_state.get("care_reminders", [])
     open_reminders = sum(1 for reminder in reminders if not reminder.get("completed"))
-    last_result = st.session_state.get("checker_result")
+    last_result = stored_triage_result(st.session_state.get("checker_result"))
     last_score = getattr(last_result, "score", None) if last_result else None
     last_risk = compact_risk_label(str(getattr(last_result, "risk_level", "Not checked"))) if last_result else "Not checked"
     profile_name = str(profile.get("patient_name") or tr("My health"))
@@ -3096,7 +3102,7 @@ def render_result_panel(
 
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown(f"**{tr('Why the app thinks this')}**")
+        st.markdown(f"**{tr('Signals used for this guidance')}**")
         for signal in translate_items(result.signals, st.session_state.language):
             st.write(f"- {signal}")
         st.markdown(f"**{tr('What to do now')}**")

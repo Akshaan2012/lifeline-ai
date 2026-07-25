@@ -86,7 +86,7 @@ def generate_health_report_pdf(patient_data: dict[str, Any], result: Any, advice
         ("AI-assisted patient overview" if advice.get("source") else "Patient overview", advice["report_summary"]),
         ("Doctor handoff", advice["doctor_handoff"]),
         ("Recommendation", result.recommendation),
-        ("Why LifeLine AI thinks this", _items(result.signals)),
+        ("Signals used for this guidance", _items(result.signals)),
         ("What to do now", _items(advice["care_steps"])),
         ("Home care support", _items(advice["home_care"])),
         ("Precautions", _items(advice["precautions"])),
