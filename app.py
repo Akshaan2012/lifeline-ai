@@ -210,6 +210,7 @@ COMMON_TRANSLATION_TEXTS = [
     "LifeLine AI workspace is ready",
     "Use Sam or the sidebar to move between tools",
     "Smart inside. Simple outside.",
+    "Open",
     "Navigation",
     "Decision support. Not a replacement for doctors.",
     "Doctor-visit preparation",
@@ -234,6 +235,7 @@ COMMON_TRANSLATION_TEXTS = [
     "Clear profile",
     "Save patient profile",
     "Live result",
+    "Shared with the clinic. Keep this private case code",
     "Care Level",
     "Risk Score",
     "Pattern",
@@ -280,6 +282,9 @@ COMMON_TRANSLATION_TEXTS = [
     "How the answer was decided",
     "Selected symptoms",
     "Risk score",
+    "Previous saved check",
+    "Model support signal",
+    "Confidence",
     "Risk score range",
     "Likely pattern",
     "Important measurements",
@@ -350,6 +355,7 @@ COMMON_TRANSLATION_TEXTS = [
     "No urgent queue pressure right now.",
     "Review emergency and urgent cases first.",
     "Review new cases before resolved cases.",
+    "Remove all saved timeline entries for",
     "Using local fallback storage. To use Supabase, run supabase_schema.sql in Supabase SQL Editor and reboot.",
     "The app could not confirm a private case code. If this was meant for clinic review, ask the clinic to check Supabase setup and schema.",
     "Case review could not be saved. Check Supabase schema, staff access, and network connection.",
@@ -2668,7 +2674,7 @@ def render_sam() -> None:
         if last_reply:
             st.write(translate_text(str(last_reply.get("message", "")), st.session_state.language))
             target_page = last_reply.get("target_page")
-            if target_page and st.button(tr(f"Open {target_page}"), key=f"sam_bubble_open_{target_page}", width="stretch"):
+            if target_page and st.button(f"{tr('Open')} {tr(str(target_page))}", key=f"sam_bubble_open_{target_page}", width="stretch"):
                 switch_page(str(target_page))
 
 
@@ -3043,7 +3049,7 @@ def render_previous_check_comparison(comparison: dict[str, Any] | None) -> None:
 
     st.markdown(f"**{tr('Compared with previous check')}**")
     previous_date = str(comparison.get("previous_created_at") or "earlier check")
-    st.caption(tr(f"Previous saved check: {previous_date}"))
+    st.caption(f"{tr('Previous saved check')}: {previous_date}")
     c1, c2 = st.columns(2)
     with c1:
         snapshot_card("Previous", f"{compact_risk_label(str(comparison['previous_risk']))} - {comparison['previous_score']:g}/100")
@@ -3100,7 +3106,7 @@ def render_result_panel(
     render_care_action_plan(result)
     render_previous_check_comparison(comparison)
     if result.model_prediction:
-        st.caption(tr(f"Model support signal: {result.model_prediction} | Confidence: {result.model_confidence}"))
+        st.caption(f"{tr('Model support signal')}: {tr(str(result.model_prediction))} | {tr('Confidence')}: {result.model_confidence}")
     with st.expander(tr("Clinician evidence and rule trace")):
         st.caption(tr("This shows the information used so a clinician can independently review the recommendation."))
         for item in clinician_evidence(patient_data or {}, result):
@@ -3279,7 +3285,7 @@ def render_checker() -> None:
             if stored.get("saved"):
                 share_code = str(stored.get("share_code") or "")
                 if share_code:
-                    st.success(tr(f"Shared with the clinic. Keep this private case code: {share_code}"))
+                    st.success(f"{tr('Shared with the clinic. Keep this private case code')}: {share_code}")
                     st.code(share_code, language=None)
                 else:
                     st.warning(tr("The app could not confirm a private case code. If this was meant for clinic review, ask the clinic to check Supabase setup and schema."))
@@ -3331,7 +3337,7 @@ def render_timeline() -> None:
     patient_cases.sort(key=lambda case: str(case.get("created_at", "")))
     remove_col, action_col = st.columns([0.65, 0.35])
     confirm_patient_reset = remove_col.checkbox(
-        tr(f"Remove all saved timeline entries for {selected_patient}"),
+        f"{tr('Remove all saved timeline entries for')} {selected_patient}",
         key=f"confirm_timeline_reset_{selected_patient}",
     )
     if action_col.button(
