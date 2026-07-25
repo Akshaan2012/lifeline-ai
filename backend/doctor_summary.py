@@ -44,8 +44,9 @@ def build_doctor_summary(patient_data: dict[str, Any], result: Any, advice: dict
         f"Home measurements: {_vitals_text(patient_data)}. Existing conditions: "
         f"{_list_text(patient_data.get('conditions', []))}. Current medicines: "
         f"{patient_data.get('medications') or 'not provided'}. Allergies: "
-        f"{patient_data.get('allergies') or 'not provided'}. LifeLine AI risk level: "
-        f"{result.risk_level} ({result.score}/100), likely pattern: {result.possible_category}. "
+        f"{patient_data.get('allergies') or 'not provided'}. LifeLine AI decision-support risk level: "
+        f"{result.risk_level} ({result.score}/100), possible symptom pattern: {result.possible_category}. "
         f"Recommended timeframe: {_clean_sentence(advice['timeframe'])}. "
-        f"Main advice: {_clean_sentence(result.recommendation)}."
+        f"Main advice: {_clean_sentence(result.recommendation)}. "
+        "This summary is not a diagnosis or prescription."
     )

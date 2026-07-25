@@ -30,6 +30,9 @@ class UserFriendlyOutputTests(unittest.TestCase):
 
         self.assertIn("Current medicines: metformin", summary)
         self.assertIn("Allergies: penicillin", summary)
+        self.assertIn("decision-support risk level", summary)
+        self.assertIn("possible symptom pattern", summary)
+        self.assertIn("not a diagnosis or prescription", summary)
 
     def test_pdf_report_handles_user_text_with_symbols(self) -> None:
         patient = {
