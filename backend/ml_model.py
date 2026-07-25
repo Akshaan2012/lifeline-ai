@@ -10,6 +10,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
+from backend.care_features import split_list_items
+
 
 MODEL_PATH = Path("models/triage_model.joblib")
 MODEL_VERSION = 3
@@ -35,7 +37,7 @@ SYMPTOM_FEATURES = [
 
 
 def _selected_symptoms(data: dict[str, Any]) -> set[str]:
-    return {str(item).strip().lower() for item in data.get("symptoms", [])}
+    return {item.lower() for item in split_list_items(data.get("symptoms", []))}
 
 
 def patient_to_features(data: dict[str, Any]) -> list[float]:
@@ -49,7 +51,7 @@ def patient_to_features(data: dict[str, Any]) -> list[float]:
         float(data.get("systolic_bp") or 120),
         float(data.get("diastolic_bp") or 80),
         float(data.get("oxygen") or 98),
-        float(len(data.get("conditions", []))),
+        float(len(split_list_items(data.get("conditions", [])))),
     ]
     values.extend(1.0 if symptom in symptoms else 0.0 for symptom in SYMPTOM_FEATURES)
     return values

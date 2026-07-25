@@ -4,6 +4,8 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
+from backend.care_features import split_list_items
+
 
 RISK_ORDER = {
     "Self-Care": 1,
@@ -171,7 +173,7 @@ def extract_symptoms(value: Any) -> set[str]:
 
 def _selected_symptoms(data: dict[str, Any]) -> set[str]:
     selected: set[str] = set()
-    for item in data.get("symptoms", []):
+    for item in split_list_items(data.get("symptoms", [])):
         matches = extract_symptoms(item)
         if matches:
             selected.update(matches)
@@ -217,7 +219,7 @@ def analyze_patient(data: dict[str, Any], use_ml: bool = True) -> TriageResult:
     systolic = _safe_int(data.get("systolic_bp"))
     diastolic = _safe_int(data.get("diastolic_bp"))
     oxygen = _safe_int(data.get("oxygen"))
-    conditions = {str(item).strip().lower() for item in data.get("conditions", [])}
+    conditions = {item.lower() for item in split_list_items(data.get("conditions", []))}
 
     score = 0
     signals: list[str] = []

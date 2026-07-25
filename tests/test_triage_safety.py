@@ -50,6 +50,15 @@ class TriageSafetyTests(unittest.TestCase):
                 result = analyze_patient({"symptoms": [phrase]}, use_ml=False)
                 self.assertEqual(result.risk_level, expected_risk)
 
+    def test_saved_text_symptom_list_is_not_read_as_letters(self) -> None:
+        result = analyze_patient(
+            {"symptoms": "chest pain, confusion", "conditions": "asthma, diabetes"},
+            use_ml=False,
+        )
+
+        self.assertEqual(result.risk_level, "Emergency")
+        self.assertIn("Existing health conditions can increase risk.", result.signals)
+
     def test_chest_pain_with_danger_signal_is_emergency(self) -> None:
         result = analyze_patient(
             {"symptoms": ["Chest pain", "Sweating"]}, use_ml=False
