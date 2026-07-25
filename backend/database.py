@@ -397,11 +397,14 @@ def update_case_review(case_id: int | str, review_status: str, doctor_notes: str
     supabase = _supabase_client()
     if supabase:
         try:
-            supabase.table("patient_cases").update(
+            response = supabase.table("patient_cases").update(
                 {"review_status": review_status, "doctor_notes": doctor_notes}
-            ).eq("id", case_id).execute()
-            _set_database_error("")
-            return True
+            ).eq("id", case_id).select("id").execute()
+            if getattr(response, "data", None):
+                _set_database_error("")
+                return True
+            _set_database_error("Supabase case review update did not match a patient case.")
+            return False
         except Exception:
             if _supabase_configured():
                 _set_database_error("Supabase case review update failed. Check the patient_cases table schema and RLS policies.")
@@ -410,7 +413,7 @@ def update_case_review(case_id: int | str, review_status: str, doctor_notes: str
 
     init_db()
     with sqlite3.connect(DB_PATH) as conn:
-        conn.execute(
+        cursor = conn.execute(
             """
             UPDATE patient_cases
             SET review_status = ?, doctor_notes = ?
@@ -418,4 +421,8 @@ def update_case_review(case_id: int | str, review_status: str, doctor_notes: str
             """,
             (review_status, doctor_notes, case_id),
         )
-    return True
+        updated_rows = cursor.rowcount
+    if updated_rows:
+        return True
+    _set_database_error("Local case review update did not match a saved patient case.")
+    return False

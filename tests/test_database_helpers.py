@@ -1,8 +1,13 @@
 from __future__ import annotations
 
+from pathlib import Path
+from tempfile import TemporaryDirectory
 import unittest
+from types import SimpleNamespace
+from unittest.mock import patch
 
-from backend.database import MAX_DOCTOR_NOTE_CHARS, REVIEW_STATUSES, normalize_doctor_notes, normalize_review_status, normalize_share_code
+from backend import database
+from backend.database import MAX_DOCTOR_NOTE_CHARS, REVIEW_STATUSES, database_error_message, init_db, normalize_doctor_notes, normalize_review_status, normalize_share_code, update_case_review
 
 
 class DatabaseHelperTests(unittest.TestCase):
@@ -27,6 +32,38 @@ class DatabaseHelperTests(unittest.TestCase):
         self.assertTrue(clean.startswith("Please book appointment."))
         self.assertLessEqual(len(clean), MAX_DOCTOR_NOTE_CHARS)
         self.assertNotIn("\n", clean)
+
+    def test_local_review_update_reports_missing_case(self) -> None:
+        with TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
+            with patch.object(database, "DB_PATH", Path(tmp) / "cases.db"):
+                with patch("backend.database._supabase_client", return_value=None):
+                    init_db()
+
+                    self.assertFalse(update_case_review(999, "Reviewed", "No matching case."))
+                    self.assertIn("did not match", database_error_message())
+
+    def test_supabase_review_update_requires_matching_row(self) -> None:
+        class FakeUpdate:
+            def eq(self, *_args):
+                return self
+
+            def select(self, *_args):
+                return self
+
+            def execute(self):
+                return SimpleNamespace(data=[])
+
+        class FakeTable:
+            def update(self, *_args):
+                return FakeUpdate()
+
+        class FakeClient:
+            def table(self, *_args):
+                return FakeTable()
+
+        with patch("backend.database._supabase_client", return_value=FakeClient()):
+            self.assertFalse(update_case_review(999, "Reviewed", "No matching case."))
+            self.assertIn("did not match", database_error_message())
 
 
 if __name__ == "__main__":
