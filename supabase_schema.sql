@@ -27,6 +27,20 @@ add column if not exists share_code text unique;
 alter table public.patient_cases
 add column if not exists patient_consent boolean not null default false;
 
+alter table public.patient_cases
+drop constraint if exists patient_cases_review_status_check;
+
+alter table public.patient_cases
+add constraint patient_cases_review_status_check
+check (review_status in ('New', 'Reviewed', 'Book appointment', 'Seek urgent care', 'Resolved'));
+
+alter table public.patient_cases
+drop constraint if exists patient_cases_doctor_notes_length_check;
+
+alter table public.patient_cases
+add constraint patient_cases_doctor_notes_length_check
+check (char_length(doctor_notes) <= 1200);
+
 alter table public.patient_cases enable row level security;
 
 drop policy if exists "Allow app inserts for patient cases" on public.patient_cases;

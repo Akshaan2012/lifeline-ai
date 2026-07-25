@@ -28,6 +28,12 @@ class SupabaseSecurityTests(unittest.TestCase):
         self.assertIn("regexp_replace(coalesce(input_code, ''), '\\s+', '', 'g')", self.schema)
         self.assertIn("'ll-' || substring", self.schema)
 
+    def test_review_status_and_patient_visible_note_constraints_exist(self) -> None:
+        self.assertIn("patient_cases_review_status_check", self.schema)
+        self.assertIn("'seek urgent care'", self.schema)
+        self.assertIn("patient_cases_doctor_notes_length_check", self.schema)
+        self.assertIn("char_length(doctor_notes) <= 1200", self.schema)
+
 
 if __name__ == "__main__":
     unittest.main()
