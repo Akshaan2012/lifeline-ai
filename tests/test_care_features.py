@@ -4,7 +4,7 @@ import unittest
 from datetime import date
 from types import SimpleNamespace
 
-from backend.care_features import build_fhir_bundle, reconcile_medications, reminder_status, safe_fhir_id
+from backend.care_features import build_fhir_bundle, reconcile_medications, reminder_status, safe_fhir_id, split_list_items
 from backend.followup import evaluate_follow_up
 from backend.medication_safety import analyze_medication_safety
 
@@ -124,6 +124,11 @@ class CareFeatureTests(unittest.TestCase):
         ]
 
         self.assertEqual(conditions, ["Asthma", "Diabetes"])
+
+    def test_split_list_items_accepts_saved_text_and_missing_values(self) -> None:
+        self.assertEqual(split_list_items("Fever, cough\nfatigue; chills"), ["Fever", "cough", "fatigue", "chills"])
+        self.assertEqual(split_list_items(("Asthma", " Diabetes ")), ["Asthma", "Diabetes"])
+        self.assertEqual(split_list_items(None), [])
 
     def test_followup_catches_new_danger_words_after_low_risk_check(self) -> None:
         original = SimpleNamespace(risk_level="Self-Care")

@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from typing import Any
 
+from backend.care_features import split_list_items
 
-def _list_text(items: list[str]) -> str:
-    clean = [str(item).strip() for item in items if str(item).strip()]
+
+def _list_text(items: Any) -> str:
+    clean = split_list_items(items)
     return ", ".join(clean) if clean else "not provided"
 
 

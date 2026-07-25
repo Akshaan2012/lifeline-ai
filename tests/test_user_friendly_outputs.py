@@ -97,6 +97,39 @@ class UserFriendlyOutputTests(unittest.TestCase):
         self.assertIn("Recommended timeframe: not provided", summary)
         self.assertIn("not a diagnosis or prescription", summary)
 
+    def test_doctor_summary_accepts_saved_text_lists(self) -> None:
+        patient = {
+            "symptoms": "Fever, cough",
+            "conditions": "Asthma; Diabetes",
+        }
+        result = SimpleNamespace(
+            risk_level="Doctor Visit Recommended",
+            score=30,
+            possible_category="General Health",
+            recommendation="Book a doctor visit.",
+        )
+
+        summary = build_doctor_summary(patient, result, {"timeframe": "Today."})
+
+        self.assertIn("reports symptoms for not provided day(s): Fever, cough.", summary)
+        self.assertIn("Existing conditions: Asthma, Diabetes.", summary)
+        self.assertNotIn("F, e, v, e, r", summary)
+
+    def test_pdf_report_accepts_saved_text_lists(self) -> None:
+        patient = {"symptoms": "Fever, cough", "conditions": "Asthma; Diabetes"}
+        result = SimpleNamespace(
+            risk_level="Doctor Visit Recommended",
+            score=30,
+            possible_category="General Health",
+            recommendation="Book a doctor visit.",
+            signals=["Symptoms should be checked."],
+        )
+
+        pdf = generate_health_report_pdf(patient, result, {})
+
+        self.assertGreater(len(pdf), 1000)
+        self.assertTrue(pdf.startswith(b"%PDF"))
+
 
 if __name__ == "__main__":
     unittest.main()

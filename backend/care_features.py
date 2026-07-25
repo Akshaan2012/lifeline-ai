@@ -41,11 +41,13 @@ PENICILLIN_FAMILY = {"amoxicillin", "penicillin"}
 NSAID_FAMILY = {"aspirin", "ibuprofen"}
 
 
-def split_list_items(value: str | list[str]) -> list[str]:
-    if isinstance(value, list):
+def split_list_items(value: Any) -> list[str]:
+    if isinstance(value, (list, tuple, set)):
         raw = value
+    elif value is None:
+        raw = []
     else:
-        raw = re.split(r"[,;\n]+", value or "")
+        raw = re.split(r"[,;\n]+", str(value))
     return [str(item).strip() for item in raw if str(item).strip()]
 
 

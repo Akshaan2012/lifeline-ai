@@ -11,6 +11,8 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import inch
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
+from backend.care_features import split_list_items
+
 
 def _items(items: list[str]) -> str:
     return "\n".join(f"- {item}" for item in items)
@@ -30,6 +32,10 @@ def _text_value(advice: dict[str, Any], key: str, fallback: str = "Not provided"
 def _short(value: Any) -> str:
     text = str(value or "Not provided")
     return text
+
+
+def _list_text(value: Any) -> str:
+    return _short(", ".join(split_list_items(value)))
 
 
 def _p(text: Any, style: Any) -> Paragraph:
@@ -58,13 +64,13 @@ def generate_health_report_pdf(patient_data: dict[str, Any], result: Any, advice
     story.append(Paragraph(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}", styles["Normal"]))
     story.append(Spacer(1, 10))
 
-    symptoms_text = _short(", ".join(patient_data.get("symptoms", [])))
+    symptoms_text = _list_text(patient_data.get("symptoms", []))
     summary = [
         [_p("Patient", styles["BodyText"]), _p(_short(patient_data.get("patient_name") or "Anonymous"), styles["BodyText"])],
         [_p("Age / Gender", styles["BodyText"]), _p(f"{patient_data.get('age', 'Not provided')} / {patient_data.get('gender', 'Not provided')}", styles["BodyText"])],
         [_p("Symptoms", styles["BodyText"]), ""],
         [_p(symptoms_text, styles["BodyText"]), ""],
-        [_p("Existing conditions", styles["BodyText"]), _p(_short(", ".join(patient_data.get("conditions", []))), styles["BodyText"])],
+        [_p("Existing conditions", styles["BodyText"]), _p(_list_text(patient_data.get("conditions", [])), styles["BodyText"])],
         [_p("Current medicines", styles["BodyText"]), _p(_short(patient_data.get("medications")), styles["BodyText"])],
         [_p("Allergies", styles["BodyText"]), _p(_short(patient_data.get("allergies")), styles["BodyText"])],
         [_p("Risk level", styles["BodyText"]), _p(result.risk_level, styles["BodyText"])],

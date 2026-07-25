@@ -8,6 +8,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from backend.care_features import split_list_items
+
 
 DB_PATH = Path("data/lifeline_cases.db")
 LAST_DATABASE_ERROR = ""
@@ -237,7 +239,7 @@ def save_case(patient_data: dict[str, Any], triage_result: Any) -> str:
         "created_at": datetime.now().isoformat(timespec="minutes"),
         "patient_name": patient_data.get("patient_name") or "Anonymous",
         "age": int(patient_data.get("age") or 0),
-        "symptoms": ", ".join(patient_data.get("symptoms", [])),
+        "symptoms": ", ".join(split_list_items(patient_data.get("symptoms", []))),
         "category": triage_result.possible_category,
         "risk_level": triage_result.risk_level,
         "recommendation": triage_result.recommendation,
