@@ -4,7 +4,7 @@ import unittest
 from datetime import date
 from types import SimpleNamespace
 
-from backend.care_features import build_fhir_bundle, reconcile_medications, reminder_status
+from backend.care_features import build_fhir_bundle, reconcile_medications, reminder_status, safe_fhir_id
 from backend.followup import evaluate_follow_up
 from backend.medication_safety import analyze_medication_safety
 
@@ -70,6 +70,17 @@ class CareFeatureTests(unittest.TestCase):
         self.assertIn("Patient", resource_types)
         self.assertIn("RiskAssessment", resource_types)
         self.assertIn("MedicationStatement", resource_types)
+
+    def test_fhir_patient_id_is_safe_for_names_with_symbols(self) -> None:
+        self.assertEqual(safe_fhir_id("Jane Doe / Child #1"), "Jane-Doe-Child-1")
+        self.assertLessEqual(len(safe_fhir_id("x" * 100)), 64)
+
+        bundle = build_fhir_bundle({"patient_name": "Jane Doe / Child #1", "conditions": ["Asthma"]})
+        patient = bundle["entry"][0]["resource"]
+        condition = bundle["entry"][1]["resource"]
+
+        self.assertEqual(patient["id"], "Jane-Doe-Child-1")
+        self.assertEqual(condition["subject"]["reference"], "Patient/Jane-Doe-Child-1")
 
     def test_followup_catches_new_danger_words_after_low_risk_check(self) -> None:
         original = SimpleNamespace(risk_level="Self-Care")

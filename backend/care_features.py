@@ -131,8 +131,14 @@ def reminder_status(reminder: dict[str, Any], today: date | None = None) -> str:
     return "Upcoming"
 
 
+def safe_fhir_id(value: Any) -> str:
+    raw = str(value or "").strip()
+    safe = re.sub(r"[^A-Za-z0-9.-]+", "-", raw).strip("-")
+    return safe[:64] if safe else uuid4().hex[:12]
+
+
 def build_fhir_bundle(profile: dict[str, Any], result: Any | None = None) -> dict[str, Any]:
-    patient_id = str(profile.get("patient_id") or profile.get("patient_name") or uuid4().hex[:12])
+    patient_id = safe_fhir_id(profile.get("patient_id") or profile.get("patient_name"))
     resources: list[dict[str, Any]] = [
         {
             "fullUrl": f"urn:uuid:{patient_id}",
