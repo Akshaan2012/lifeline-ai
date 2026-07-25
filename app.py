@@ -588,10 +588,18 @@ def split_known_conditions(conditions: list[str]) -> tuple[list[str], list[str]]
     return known, custom
 
 
+def safe_profile_age(value: Any, default: int = 25) -> int:
+    try:
+        age = int(value)
+    except (TypeError, ValueError):
+        return default
+    return min(120, max(0, age))
+
+
 def load_profile_into_form(profile: dict[str, Any]) -> None:
     known_conditions, custom_conditions = split_known_conditions(list(profile.get("conditions", [])))
     st.session_state.patient_name_input = str(profile.get("patient_name", ""))
-    st.session_state.patient_age_input = int(profile.get("age") if profile.get("age") is not None else 25)
+    st.session_state.patient_age_input = safe_profile_age(profile.get("age"))
     st.session_state.patient_gender_input = str(profile.get("gender") or "Prefer not to say")
     st.session_state.patient_conditions_input = known_conditions
     st.session_state.patient_custom_conditions_input = ", ".join(custom_conditions)

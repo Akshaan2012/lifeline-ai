@@ -71,6 +71,24 @@ class CareFeatureTests(unittest.TestCase):
         self.assertIn("RiskAssessment", resource_types)
         self.assertIn("MedicationStatement", resource_types)
 
+    def test_structured_bundle_exports_allergies_separately(self) -> None:
+        bundle = build_fhir_bundle(
+            {
+                "patient_name": "Patient 1",
+                "allergies": "penicillin; peanuts",
+                "conditions": [],
+                "medications": "",
+            }
+        )
+        allergies = [
+            entry["resource"]
+            for entry in bundle["entry"]
+            if entry["resource"]["resourceType"] == "AllergyIntolerance"
+        ]
+
+        self.assertEqual([item["code"]["text"] for item in allergies], ["penicillin", "peanuts"])
+        self.assertTrue(all(item["patient"]["reference"] == "Patient/Patient-1" for item in allergies))
+
     def test_fhir_patient_id_is_safe_for_names_with_symbols(self) -> None:
         self.assertEqual(safe_fhir_id("Jane Doe / Child #1"), "Jane-Doe-Child-1")
         self.assertLessEqual(len(safe_fhir_id("x" * 100)), 64)

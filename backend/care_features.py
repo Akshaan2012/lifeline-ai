@@ -41,12 +41,16 @@ PENICILLIN_FAMILY = {"amoxicillin", "penicillin"}
 NSAID_FAMILY = {"aspirin", "ibuprofen"}
 
 
-def split_medications(value: str | list[str]) -> list[str]:
+def split_list_items(value: str | list[str]) -> list[str]:
     if isinstance(value, list):
         raw = value
     else:
         raw = re.split(r"[,;\n]+", value or "")
     return [str(item).strip() for item in raw if str(item).strip()]
+
+
+def split_medications(value: str | list[str]) -> list[str]:
+    return split_list_items(value)
 
 
 def canonical_ingredient(medicine: str) -> str:
@@ -156,6 +160,18 @@ def build_fhir_bundle(profile: dict[str, Any], result: Any | None = None) -> dic
     ]
     for condition in profile.get("conditions", []):
         resources.append({"resource": {"resourceType": "Condition", "subject": {"reference": f"Patient/{patient_id}"}, "code": {"text": condition}}})
+    for index, allergy in enumerate(split_list_items(profile.get("allergies", "")), start=1):
+        allergy_id = safe_fhir_id(f"{patient_id}-allergy-{index}")
+        resources.append({
+            "fullUrl": f"https://lifeline-ai.local/fhir/AllergyIntolerance/{allergy_id}",
+            "resource": {
+                "resourceType": "AllergyIntolerance",
+                "id": allergy_id,
+                "clinicalStatus": {"coding": [{"system": "http://terminology.hl7.org/CodeSystem/allergyintolerance-clinical", "code": "active"}]},
+                "patient": {"reference": f"Patient/{patient_id}"},
+                "code": {"text": allergy},
+            },
+        })
     for medication in split_medications(profile.get("medications", "")):
         resources.append({"resource": {"resourceType": "MedicationStatement", "status": "recorded", "subject": {"reference": f"Patient/{patient_id}"}, "medicationCodeableConcept": {"text": medication}}})
     if result is not None:
