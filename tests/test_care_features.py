@@ -56,6 +56,21 @@ class CareFeatureTests(unittest.TestCase):
         self.assertEqual(result.level, "Get urgent help now")
         self.assertTrue(any("overdose" in item.lower() or "urgent" in item.lower() for item in result.caution_flags))
 
+    def test_medication_safety_escalates_overdose_wording_in_medicine_name(self) -> None:
+        for medicine_name in ("too much paracetamol", "ibuprofen extra dose"):
+            with self.subTest(medicine_name=medicine_name):
+                result = analyze_medication_safety(
+                    medicine_name,
+                    age=40,
+                    allergies="",
+                    conditions=[],
+                    current_medicines="",
+                    pregnant=False,
+                )
+
+                self.assertEqual(result.level, "Get urgent help now")
+                self.assertTrue(any("overdose" in item.lower() or "urgent" in item.lower() for item in result.caution_flags))
+
     def test_reminder_status(self) -> None:
         self.assertEqual(reminder_status({"due_date": "2026-07-03"}, date(2026, 7, 3)), "Due today")
         self.assertEqual(reminder_status({"due_date": "2026-07-02"}, date(2026, 7, 3)), "Overdue")

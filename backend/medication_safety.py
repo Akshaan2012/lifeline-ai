@@ -87,7 +87,7 @@ def analyze_medication_safety(
     pregnant: bool,
 ) -> MedicationSafetyResult:
     rule = _match_medicine(medicine_name)
-    context = _text_blob([allergies, current_medicines, *conditions])
+    context = _text_blob([medicine_name, allergies, current_medicines, *conditions])
     caution_flags: list[str] = []
     reconciliation = reconcile_medications(
         [medicine_name, *[item for item in current_medicines.replace(";", ",").split(",") if item.strip()]],
@@ -119,7 +119,18 @@ def analyze_medication_safety(
         caution_flags.append("Blood thinner/anti-clotting medicine mentioned: ask a doctor or pharmacist before mixing with painkillers or aspirin.")
     if any(word in context for word in ["kidney", "liver", "heart"]):
         caution_flags.append("Long-term condition mentioned: medicine choice may need professional review.")
-    if _contains_any(context, ["overdose", "too many pills", "too much medicine", "double dose", "extra dose", "much more than advised"]):
+    overdose_phrases = [
+        "overdose",
+        "too many pills",
+        "too much medicine",
+        "too much",
+        "double dose",
+        "extra dose",
+        "much more than advised",
+        "more than the label",
+        "more than prescribed",
+    ]
+    if _contains_any(context, overdose_phrases):
         caution_flags.append("Possible overdose or extra dose mentioned: contact urgent medical help or poison control now.")
     caution_flags.extend(reconciliation["duplicate_flags"])
     caution_flags.extend(reconciliation["interaction_flags"])
@@ -130,7 +141,7 @@ def analyze_medication_safety(
         level = "Use with caution"
     if not medicine_known or len(caution_flags) >= 4:
         level = "Ask a doctor/pharmacist first"
-    if _contains_any(context, ["overdose", "too many pills", "too much medicine", "much more than advised"]):
+    if _contains_any(context, overdose_phrases):
         level = "Get urgent help now"
 
     result = MedicationSafetyResult(
