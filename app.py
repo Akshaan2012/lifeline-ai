@@ -2124,6 +2124,17 @@ def snapshot_card(label: str, value: str) -> None:
     )
 
 
+def medicines_allergies_text(raw_data: dict[str, Any]) -> str:
+    parts: list[str] = []
+    medicines = str(raw_data.get("medications") or "").strip()
+    allergies = str(raw_data.get("allergies") or "").strip()
+    if medicines:
+        parts.append(f"{tr('Medicines')}: {medicines}")
+    if allergies:
+        parts.append(f"{tr('Allergies')}: {allergies}")
+    return " | ".join(parts) if parts else tr("Not provided")
+
+
 def build_timeline_trend_frame(cases: list[dict[str, Any]]) -> pd.DataFrame:
     rows: list[dict[str, Any]] = []
     for index, case in enumerate(cases, start=1):
@@ -3320,7 +3331,7 @@ def render_timeline() -> None:
     st.markdown(f"**{tr('Known conditions')}**")
     st.write(", ".join(raw_latest.get("conditions", [])) or tr("Not provided"))
     st.markdown(f"**{tr('Medicines / allergies')}**")
-    st.write(raw_latest.get("medications") or tr("Not provided"))
+    st.write(medicines_allergies_text(raw_latest))
 
     st.write("")
     st.markdown(f'<div class="section-label">{h("Trend charts")}</div>', unsafe_allow_html=True)
