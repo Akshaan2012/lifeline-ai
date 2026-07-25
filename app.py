@@ -11,7 +11,7 @@ import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 
-from backend.care_features import build_fhir_bundle, clinician_evidence, emergency_action_plan, reconcile_medications, reminder_status
+from backend.care_features import build_fhir_bundle, clinician_evidence, emergency_action_plan, reconcile_medications, reminder_status, split_list_items
 from backend.database import REVIEW_STATUSES as REVIEW_STATUS_OPTIONS, clear_cases, current_staff_user, database_backend, database_error_message, delete_patient_cases, get_case_by_share_code, list_cases, save_case, sign_in_staff, sign_out_staff, supabase_is_configured, update_case_review
 from backend.disease_qa import answer_question
 from backend.doctor_summary import build_doctor_summary
@@ -509,6 +509,11 @@ def unique_items(items: list[str]) -> list[str]:
     return clean_items
 
 
+def display_list_text(value: Any, fallback: str | None = None) -> str:
+    items = split_list_items(value)
+    return ", ".join(items) if items else (fallback or tr("Not provided"))
+
+
 def key_fragment(text: str) -> str:
     cleaned = "".join(char if char.isalnum() else "_" for char in text.lower())
     return "_".join(part for part in cleaned.split("_") if part)
@@ -595,9 +600,7 @@ def split_known_conditions(conditions: list[str]) -> tuple[list[str], list[str]]
 
 
 def profile_conditions_list(value: Any) -> list[str]:
-    if isinstance(value, list):
-        return [str(item).strip() for item in value if str(item).strip()]
-    return split_free_text_items(str(value or ""))
+    return split_list_items(value)
 
 
 def safe_profile_age(value: Any, default: int = 25) -> int:
@@ -2111,8 +2114,8 @@ def build_previous_check_comparison(
         return None
 
     previous_raw = parse_case_raw_data(previous_case.get("raw_data"))
-    previous_symptoms = {str(item).strip().lower() for item in previous_raw.get("symptoms", []) if str(item).strip()}
-    current_symptoms = {str(item).strip().lower() for item in patient_data.get("symptoms", []) if str(item).strip()}
+    previous_symptoms = {item.lower() for item in split_list_items(previous_raw.get("symptoms", []))}
+    current_symptoms = {item.lower() for item in split_list_items(patient_data.get("symptoms", []))}
     new_symptoms = sorted(current_symptoms - previous_symptoms)
     resolved_symptoms = sorted(previous_symptoms - current_symptoms)
 
@@ -3377,7 +3380,7 @@ def render_timeline() -> None:
         snapshot_card("Age", str(latest.get("age") or raw_latest.get("age") or "N/A"))
 
     st.markdown(f"**{tr('Known conditions')}**")
-    st.write(", ".join(raw_latest.get("conditions", [])) or tr("Not provided"))
+    st.write(display_list_text(raw_latest.get("conditions", [])))
     st.markdown(f"**{tr('Medicines / allergies')}**")
     st.write(medicines_allergies_text(raw_latest))
 
@@ -3407,7 +3410,7 @@ def render_timeline() -> None:
     st.markdown(f'<div class="section-label">{h("Timeline")}</div>', unsafe_allow_html=True)
     for index, case in enumerate(patient_cases, start=1):
         raw = parse_case_raw_data(case.get("raw_data"))
-        symptoms = case.get("symptoms") or ", ".join(raw.get("symptoms", [])) or "Not provided"
+        symptoms = str(case.get("symptoms") or "").strip() or display_list_text(raw.get("symptoms", []))
         duration = raw.get("duration_days", "N/A")
         pain = raw.get("pain_level", "N/A")
         vitals = []
@@ -3426,10 +3429,13 @@ def render_timeline() -> None:
             st.write(f"**{tr('Measurements')}:** {', '.join(vitals) if vitals else tr('Not provided')}")
             st.write(f"**{tr('Likely pattern')}:** {tr(str(case.get('category', 'General Health')))}")
             st.write(f"**{tr('Recommendation')}:** {tr(str(case.get('recommendation', '')))}")
-            followup_answers = list(raw.get("followup_answers", []))
+            followup_answers = raw.get("followup_answers", [])
+            followup_answers = followup_answers if isinstance(followup_answers, list) else []
             if followup_answers:
                 st.write(f"**{tr('Smart follow-up answers')}:**")
                 for item in followup_answers:
+                    if not isinstance(item, dict):
+                        continue
                     st.write(f"- {tr(str(item.get('question', '')))}: {tr(str(item.get('answer', '')))}")
 
     st.write("")
@@ -3438,7 +3444,7 @@ def render_timeline() -> None:
             "patient_name": selected_patient,
             "age": safe_profile_age(latest.get("age") if latest.get("age") is not None else raw_latest.get("age"), default=0),
             "gender": raw_latest.get("gender", "Prefer not to say"),
-            "conditions": raw_latest.get("conditions", []),
+            "conditions": split_list_items(raw_latest.get("conditions", [])),
             "medications": raw_latest.get("medications", ""),
         }
         st.session_state.patient_profile = profile
