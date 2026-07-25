@@ -12,7 +12,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 from backend.care_features import build_fhir_bundle, clinician_evidence, emergency_action_plan, reconcile_medications, reminder_status
-from backend.database import clear_cases, current_staff_user, database_backend, database_error_message, delete_patient_cases, get_case_by_share_code, list_cases, save_case, sign_in_staff, sign_out_staff, supabase_is_configured, update_case_review
+from backend.database import REVIEW_STATUSES as REVIEW_STATUS_OPTIONS, clear_cases, current_staff_user, database_backend, database_error_message, delete_patient_cases, get_case_by_share_code, list_cases, save_case, sign_in_staff, sign_out_staff, supabase_is_configured, update_case_review
 from backend.disease_qa import answer_question
 from backend.doctor_summary import build_doctor_summary
 from backend.followup import evaluate_follow_up
@@ -85,8 +85,6 @@ CONDITION_OPTIONS = [
     "Pregnancy",
     "Weak immune system",
 ]
-
-REVIEW_STATUSES = ["New", "Reviewed", "Book appointment", "Seek urgent care", "Resolved"]
 
 FOLLOW_UP_RULES = [
     {
@@ -3831,7 +3829,7 @@ def render_dashboard() -> None:
 
     filter_col1, filter_col2 = st.columns(2)
     selected = filter_col1.selectbox(tr("Filter by risk"), ["All", "Self-Care", "Doctor Visit Recommended", "Urgent Care", "Emergency"], format_func=tr)
-    status_filter = filter_col2.selectbox(tr("Filter by review status"), ["All", *REVIEW_STATUSES], format_func=tr)
+    status_filter = filter_col2.selectbox(tr("Filter by review status"), ["All", *REVIEW_STATUS_OPTIONS], format_func=tr)
     if selected != "All":
         df = df[df["risk_level"] == selected]
     if status_filter != "All":
@@ -3875,13 +3873,13 @@ def render_dashboard() -> None:
     )
     selected_case = next(case for case in review_cases if case.get("id") == selected_case_id)
     status_value = str(selected_case.get("review_status") or "New")
-    if status_value not in REVIEW_STATUSES:
+    if status_value not in REVIEW_STATUS_OPTIONS:
         status_value = "New"
     with st.form(f"case_review_form_{selected_case_id}"):
         new_status = st.selectbox(
             tr("Case status"),
-            REVIEW_STATUSES,
-            index=REVIEW_STATUSES.index(status_value),
+            REVIEW_STATUS_OPTIONS,
+            index=REVIEW_STATUS_OPTIONS.index(status_value),
             format_func=tr,
         )
         new_notes = st.text_area(

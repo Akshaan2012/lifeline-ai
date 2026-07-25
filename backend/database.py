@@ -14,7 +14,7 @@ LAST_DATABASE_ERROR = ""
 _SUPABASE_CLIENT: Any | None = None
 _SUPABASE_CLIENT_READY = False
 _DOTENV_LOADED = False
-REVIEW_STATUSES = {"New", "Reviewed", "Book appointment", "Seek urgent care", "Resolved"}
+REVIEW_STATUSES = ("New", "Reviewed", "Book appointment", "Seek urgent care", "Resolved")
 MAX_DOCTOR_NOTE_CHARS = 1200
 
 
