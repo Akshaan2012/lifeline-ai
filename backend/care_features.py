@@ -158,7 +158,7 @@ def build_fhir_bundle(profile: dict[str, Any], result: Any | None = None) -> dic
             },
         }
     ]
-    for condition in profile.get("conditions", []):
+    for condition in split_list_items(profile.get("conditions", [])):
         resources.append({"resource": {"resourceType": "Condition", "subject": {"reference": f"Patient/{patient_id}"}, "code": {"text": condition}}})
     for index, allergy in enumerate(split_list_items(profile.get("allergies", "")), start=1):
         allergy_id = safe_fhir_id(f"{patient_id}-allergy-{index}")

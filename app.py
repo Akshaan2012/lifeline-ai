@@ -588,6 +588,12 @@ def split_known_conditions(conditions: list[str]) -> tuple[list[str], list[str]]
     return known, custom
 
 
+def profile_conditions_list(value: Any) -> list[str]:
+    if isinstance(value, list):
+        return [str(item).strip() for item in value if str(item).strip()]
+    return split_free_text_items(str(value or ""))
+
+
 def safe_profile_age(value: Any, default: int = 25) -> int:
     try:
         age = int(value)
@@ -597,7 +603,7 @@ def safe_profile_age(value: Any, default: int = 25) -> int:
 
 
 def load_profile_into_form(profile: dict[str, Any]) -> None:
-    known_conditions, custom_conditions = split_known_conditions(list(profile.get("conditions", [])))
+    known_conditions, custom_conditions = split_known_conditions(profile_conditions_list(profile.get("conditions", [])))
     st.session_state.patient_name_input = str(profile.get("patient_name", ""))
     st.session_state.patient_age_input = safe_profile_age(profile.get("age"))
     st.session_state.patient_gender_input = str(profile.get("gender") or "Prefer not to say")
@@ -2869,7 +2875,7 @@ def render_staff_sign_in() -> None:
 
 def patient_form() -> dict[str, Any]:
     profile = st.session_state.get("patient_profile", {})
-    profile_conditions = list(profile.get("conditions", []))
+    profile_conditions = profile_conditions_list(profile.get("conditions", []))
     known_conditions, custom_conditions = split_known_conditions(profile_conditions)
     st.markdown(f"**1. {tr('Basic details')}**")
     st.caption(tr("You can check symptoms without entering a name. Only add details you are comfortable using."))
@@ -2885,7 +2891,7 @@ def patient_form() -> dict[str, Any]:
             tr("Age"),
             min_value=0,
             max_value=120,
-            value=int(profile.get("age") if profile.get("age") is not None else 25),
+            value=safe_profile_age(profile.get("age")),
             key="patient_age_input",
         )
     with b2:
@@ -3413,7 +3419,7 @@ def render_timeline() -> None:
     if st.button(tr("Use latest profile in Health Checker"), width="stretch"):
         profile = {
             "patient_name": selected_patient,
-            "age": int(latest.get("age") if latest.get("age") is not None else raw_latest.get("age") or 0),
+            "age": safe_profile_age(latest.get("age") if latest.get("age") is not None else raw_latest.get("age"), default=0),
             "gender": raw_latest.get("gender", "Prefer not to say"),
             "conditions": raw_latest.get("conditions", []),
             "medications": raw_latest.get("medications", ""),
@@ -3607,7 +3613,8 @@ def render_passport_and_reminders() -> None:
         )
         allergies = st.text_area(tr("Allergies"), value=str(profile.get("allergies", "")), key="passport_allergies")
         medications = st.text_area(tr("Current medicines"), value=str(profile.get("medications", "")), key="passport_medicines")
-        conditions = st.multiselect(tr("Conditions"), CONDITION_OPTIONS, default=[item for item in profile.get("conditions", []) if item in CONDITION_OPTIONS], key="passport_conditions", format_func=tr)
+        passport_profile_conditions = profile_conditions_list(profile.get("conditions", []))
+        conditions = st.multiselect(tr("Conditions"), CONDITION_OPTIONS, default=[item for item in passport_profile_conditions if item in CONDITION_OPTIONS], key="passport_conditions", format_func=tr)
         if st.button(tr("Save passport"), type="primary", width="stretch"):
             saved_profile = {
                 **profile,

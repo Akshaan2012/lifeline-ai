@@ -100,6 +100,16 @@ class CareFeatureTests(unittest.TestCase):
         self.assertEqual(patient["id"], "Jane-Doe-Child-1")
         self.assertEqual(condition["subject"]["reference"], "Patient/Jane-Doe-Child-1")
 
+    def test_structured_bundle_accepts_text_conditions(self) -> None:
+        bundle = build_fhir_bundle({"patient_name": "Patient 1", "conditions": "Asthma, Diabetes"})
+        conditions = [
+            entry["resource"]["code"]["text"]
+            for entry in bundle["entry"]
+            if entry["resource"]["resourceType"] == "Condition"
+        ]
+
+        self.assertEqual(conditions, ["Asthma", "Diabetes"])
+
     def test_followup_catches_new_danger_words_after_low_risk_check(self) -> None:
         original = SimpleNamespace(risk_level="Self-Care")
         for note in (
