@@ -268,7 +268,7 @@ def _translate_batch_cached(items: tuple[str, ...], selected_language: str) -> t
             translated[index] = memory[item]
             continue
         if target == "hi" and item in HINDI_FALLBACKS:
-            translated[index] = HINDI_FALLBACKS[item]
+            translated[index] = _fallback_text(item, selected_language)
             _remember(selected_language, item, translated[index])
             continue
         pending.append(item)
@@ -298,8 +298,9 @@ def translate_text(text: str, selected_language: str) -> str:
     if text in memory:
         return memory[text]
     if target == "hi" and text in HINDI_FALLBACKS:
-        _remember(selected_language, text, HINDI_FALLBACKS[text])
-        return HINDI_FALLBACKS[text]
+        fallback = _fallback_text(text, selected_language)
+        _remember(selected_language, text, fallback)
+        return fallback
     if _should_skip_translation(text, target):
         return text
     if _offline_mode():
