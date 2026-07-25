@@ -68,6 +68,35 @@ class UserFriendlyOutputTests(unittest.TestCase):
         self.assertGreater(len(pdf), 1000)
         self.assertTrue(pdf.startswith(b"%PDF"))
 
+    def test_pdf_report_tolerates_partial_advice(self) -> None:
+        patient = {"symptoms": ["Fever"], "conditions": []}
+        result = SimpleNamespace(
+            risk_level="Doctor Visit Recommended",
+            score=30,
+            possible_category="General Health",
+            recommendation="Book a doctor visit.",
+            signals=["Symptoms should be checked."],
+        )
+
+        pdf = generate_health_report_pdf(patient, result, {})
+
+        self.assertGreater(len(pdf), 1000)
+        self.assertTrue(pdf.startswith(b"%PDF"))
+
+    def test_doctor_summary_tolerates_partial_advice(self) -> None:
+        patient = {"symptoms": ["Fever"], "conditions": []}
+        result = SimpleNamespace(
+            risk_level="Doctor Visit Recommended",
+            score=30,
+            possible_category="General Health",
+            recommendation="Book a doctor visit.",
+        )
+
+        summary = build_doctor_summary(patient, result, {})
+
+        self.assertIn("Recommended timeframe: not provided", summary)
+        self.assertIn("not a diagnosis or prescription", summary)
+
 
 if __name__ == "__main__":
     unittest.main()

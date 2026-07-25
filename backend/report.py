@@ -16,6 +16,17 @@ def _items(items: list[str]) -> str:
     return "\n".join(f"- {item}" for item in items)
 
 
+def _list_value(advice: dict[str, Any], key: str) -> list[str]:
+    value = advice.get(key, [])
+    if not isinstance(value, list):
+        return [str(value)] if str(value or "").strip() else []
+    return [str(item) for item in value if str(item).strip()]
+
+
+def _text_value(advice: dict[str, Any], key: str, fallback: str = "Not provided") -> str:
+    return str(advice.get(key) or fallback)
+
+
 def _short(value: Any) -> str:
     text = str(value or "Not provided")
     return text
@@ -59,7 +70,7 @@ def generate_health_report_pdf(patient_data: dict[str, Any], result: Any, advice
         [_p("Risk level", styles["BodyText"]), _p(result.risk_level, styles["BodyText"])],
         [_p("Risk score", styles["BodyText"]), _p(f"{result.score}/100", styles["BodyText"])],
         [_p("Likely pattern", styles["BodyText"]), _p(result.possible_category, styles["BodyText"])],
-        [_p("Recommended timeframe", styles["BodyText"]), _p(advice["timeframe"], styles["BodyText"])],
+        [_p("Recommended timeframe", styles["BodyText"]), _p(_text_value(advice, "timeframe"), styles["BodyText"])],
     ]
     table = Table(summary, colWidths=[1.8 * inch, 4.65 * inch])
     table.setStyle(
@@ -83,16 +94,16 @@ def generate_health_report_pdf(patient_data: dict[str, Any], result: Any, advice
     story.append(Spacer(1, 12))
 
     sections = [
-        ("AI-assisted patient overview" if advice.get("source") else "Patient overview", advice["report_summary"]),
-        ("Doctor handoff", advice["doctor_handoff"]),
+        ("AI-assisted patient overview" if advice.get("source") else "Patient overview", _text_value(advice, "report_summary")),
+        ("Doctor handoff", _text_value(advice, "doctor_handoff")),
         ("Recommendation", result.recommendation),
         ("Signals used for this guidance", _items(result.signals)),
-        ("What to do now", _items(advice["care_steps"])),
-        ("Home care support", _items(advice["home_care"])),
-        ("Precautions", _items(advice["precautions"])),
-        ("What to avoid", _items(advice["avoid"])),
-        ("Red flags", _items(advice["red_flags"])),
-        ("Questions to ask a doctor", _items(advice["doctor_questions"])),
+        ("What to do now", _items(_list_value(advice, "care_steps"))),
+        ("Home care support", _items(_list_value(advice, "home_care"))),
+        ("Precautions", _items(_list_value(advice, "precautions"))),
+        ("What to avoid", _items(_list_value(advice, "avoid"))),
+        ("Red flags", _items(_list_value(advice, "red_flags"))),
+        ("Questions to ask a doctor", _items(_list_value(advice, "doctor_questions"))),
     ]
     for title, body in sections:
         story.append(Paragraph(f"<b>{escape(str(title))}</b>", styles["Heading3"]))
