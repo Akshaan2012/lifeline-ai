@@ -188,6 +188,18 @@ def _should_skip_translation(text: str, target: str) -> bool:
     return target == "en" or not text.strip() or not any(char.isalpha() for char in text)
 
 
+def _fallback_text(original: str, selected_language: str) -> str:
+    target = _target_code(selected_language)
+    if target != "hi":
+        return original
+    fallback = HINDI_FALLBACKS.get(original, original)
+    # Some older cached/static Hindi strings were saved with mojibake such as
+    # "à¤". English is safer and clearer than displaying corrupted text.
+    if "à" in fallback or "Â" in fallback or "\ufffd" in fallback:
+        return original
+    return fallback
+
+
 @lru_cache(maxsize=64)
 def _translator(target: str) -> Any:
     from deep_translator import GoogleTranslator
@@ -238,9 +250,7 @@ def _translate_batch_cached(items: tuple[str, ...], selected_language: str) -> t
     target = _target_code(selected_language)
     memory = _memory().get(selected_language, {})
     if _offline_mode():
-        if target == "hi":
-            return tuple(HINDI_FALLBACKS.get(item, item) for item in items)
-        return items
+        return tuple(_fallback_text(item, selected_language) for item in items)
 
     translated: list[str] = list(items)
     pending: list[str] = []
@@ -269,7 +279,7 @@ def _translate_batch_cached(items: tuple[str, ...], selected_language: str) -> t
         _save_memory()
     except Exception:
         for index in pending_indexes:
-            translated[index] = HINDI_FALLBACKS.get(items[index], items[index]) if target == "hi" else items[index]
+            translated[index] = _fallback_text(items[index], selected_language)
     return tuple(translated)
 
 
@@ -287,16 +297,14 @@ def translate_text(text: str, selected_language: str) -> str:
     if _should_skip_translation(text, target):
         return text
     if _offline_mode():
-        return HINDI_FALLBACKS.get(text, text) if target == "hi" else text
+        return _fallback_text(text, selected_language)
     try:
         translated = _translator(target).translate(text)
         _remember(selected_language, text, translated or text)
         _save_memory()
         return translated or text
     except Exception:
-        if target == "hi":
-            return HINDI_FALLBACKS.get(text, text)
-        return text
+        return _fallback_text(text, selected_language)
 
 
 def translate_text_cached(text: str, selected_language: str) -> str:
@@ -307,9 +315,9 @@ def translate_text_cached(text: str, selected_language: str) -> str:
     if text in memory:
         return memory[text]
     if target == "hi" and text in HINDI_FALLBACKS:
-        return HINDI_FALLBACKS[text]
+        return _fallback_text(text, selected_language)
     if _offline_mode():
-        return HINDI_FALLBACKS.get(text, text) if target == "hi" else text
+        return _fallback_text(text, selected_language)
     return text
 
 
