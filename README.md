@@ -133,7 +133,6 @@ For a local install, copy `.env.example` to `.env`, replace only the environment
 
 ```text
 LIFELINE_ENV=development
-AI_PROVIDER=gemini
 GEMINI_API_KEY=your-private-gemini-key
 GEMINI_MODEL=gemini-3.5-flash
 AI_TIMEOUT_SECONDS=10
@@ -150,7 +149,6 @@ For Streamlit Community Cloud:
 
 ```toml
 LIFELINE_ENV = "production"
-AI_PROVIDER = "gemini"
 GEMINI_API_KEY = "your-private-gemini-key"
 GEMINI_MODEL = "gemini-3.5-flash"
 AI_TIMEOUT_SECONDS = "10"

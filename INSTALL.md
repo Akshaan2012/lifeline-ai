@@ -39,12 +39,11 @@ To enable Gemini locally:
 4. Restart the launcher.
 
 ```text
-AI_PROVIDER=gemini
 GEMINI_API_KEY=your-private-gemini-key
 GEMINI_MODEL=gemini-3.5-flash
 ```
 
-Do not add real keys to GitHub. For the hosted Streamlit app, put `AI_PROVIDER`, `GEMINI_API_KEY`, and `GEMINI_MODEL` in the app's **Settings > Secrets** instead. Immediately revoke and replace any key that has ever been committed or shared publicly.
+Do not add real keys to GitHub. For the hosted Streamlit app, put `GEMINI_API_KEY` and `GEMINI_MODEL` in the app's **Settings > Secrets** instead. Immediately revoke and replace any key that has ever been committed or shared publicly.
 
 LifeLine AI uses Gemini only as an optional assistant for language, summarisation, and education. Emergency red flags stay in local rules, and clinical records still require clinician review.
 
