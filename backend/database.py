@@ -14,6 +14,8 @@ LAST_DATABASE_ERROR = ""
 _SUPABASE_CLIENT: Any | None = None
 _SUPABASE_CLIENT_READY = False
 _DOTENV_LOADED = False
+REVIEW_STATUSES = {"New", "Reviewed", "Book appointment", "Seek urgent care", "Resolved"}
+MAX_DOCTOR_NOTE_CHARS = 1200
 
 
 def _set_database_error(message: str) -> None:
@@ -212,6 +214,15 @@ def _new_share_code() -> str:
     return f"LL-{secrets.token_hex(6).upper()}"
 
 
+def normalize_review_status(review_status: str) -> str:
+    clean = str(review_status or "New").strip()
+    return clean if clean in REVIEW_STATUSES else "New"
+
+
+def normalize_doctor_notes(doctor_notes: str) -> str:
+    return " ".join(str(doctor_notes or "").split())[:MAX_DOCTOR_NOTE_CHARS]
+
+
 def normalize_share_code(share_code: str) -> str:
     code = "".join(str(share_code or "").strip().upper().split())
     if code.startswith("LL") and not code.startswith("LL-") and len(code) > 2:
@@ -381,12 +392,15 @@ def delete_patient_cases(patient_name: str) -> None:
 
 
 def update_case_review(case_id: int | str, review_status: str, doctor_notes: str) -> bool:
+    review_status = normalize_review_status(review_status)
+    doctor_notes = normalize_doctor_notes(doctor_notes)
     supabase = _supabase_client()
     if supabase:
         try:
             supabase.table("patient_cases").update(
                 {"review_status": review_status, "doctor_notes": doctor_notes}
             ).eq("id", case_id).execute()
+            _set_database_error("")
             return True
         except Exception:
             if _supabase_configured():
