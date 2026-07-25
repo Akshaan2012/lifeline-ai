@@ -88,7 +88,12 @@ SYMPTOM_ALIASES = {
         "face swelling with rash", "swollen lips and rash",
     ),
     "blue lips": ("lips are blue", "bluish lips", "lips turning blue", "blue face"),
-    "overdose": ("overdose", "medicine overdose", "took too many pills", "too many pills", "accidental overdose"),
+    "overdose": (
+        "overdose", "medicine overdose", "took too many pills", "too many pills",
+        "accidental overdose", "too much medicine", "too much paracetamol",
+        "too much acetaminophen", "too much ibuprofen", "extra dose",
+        "double dose", "more than prescribed", "more than the label",
+    ),
     "severe headache": ("worst headache", "extreme headache"),
     "persistent vomiting": ("cannot stop vomiting", "keeps vomiting", "repeated vomiting"),
     "blood in stool": ("bloody stool", "blood in poo", "blood in poop"),

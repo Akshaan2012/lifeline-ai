@@ -84,6 +84,9 @@ class TriageSafetyTests(unittest.TestCase):
             "swollen lips and rash": "Skin/Allergy",
             "medicine overdose": "Medication Emergency",
             "took too many pills": "Medication Emergency",
+            "i took too much paracetamol": "Medication Emergency",
+            "extra dose of medicine": "Medication Emergency",
+            "more than prescribed": "Medication Emergency",
         }
         for phrase, category in expectations.items():
             with self.subTest(phrase=phrase):
