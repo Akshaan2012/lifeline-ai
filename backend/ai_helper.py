@@ -19,8 +19,10 @@ _AI_CALL_TIMES: deque[float] = deque()
 IDENTIFIER_PATTERNS = [
     (re.compile(r"\b[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}\b"), "[email removed]"),
     (re.compile(r"\b(?:\+?\d[\d\s().-]{7,}\d)\b"), "[phone or id removed]"),
+    (re.compile(r"(?im)\b(?:my name is|name is)\s+[^,\n;.]+"), "name is [removed]"),
     (re.compile(r"(?im)\b(patient\s*(?:name|id)|mrn|medical record number|address|contact)\s*[:=]\s*[^,\n;]+"), r"\1: [removed]"),
     (re.compile(r"(?im)\b(?:dob|date of birth)\s*[:=]\s*[^,\n;]+"), "date of birth: [removed]"),
+    (re.compile(r"(?im)\b(?:born on|born)\s+[A-Za-z0-9,/-]+(?:\s+[A-Za-z0-9,/-]+){0,3}"), "born [removed]"),
 ]
 
 

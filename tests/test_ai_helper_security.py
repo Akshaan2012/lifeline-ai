@@ -45,6 +45,15 @@ class AIHelperSecurityTests(unittest.TestCase):
         self.assertNotIn("+91 98765 43210", minimized)
         self.assertIn("Symptoms: cough and fever.", minimized)
 
+    def test_identifier_minimization_removes_casual_name_and_birth_date(self) -> None:
+        text = "My name is Asha Mehta. I was born on July 4 2010. Symptoms: chest pain."
+
+        minimized = ai_helper.minimize_patient_identifiers(text)
+
+        self.assertNotIn("Asha Mehta", minimized)
+        self.assertNotIn("July 4 2010", minimized)
+        self.assertIn("Symptoms: chest pain.", minimized)
+
     def test_rate_limit_blocks_after_configured_limit(self) -> None:
         env = {"AI_RATE_LIMIT_PER_MINUTE": "1"}
         with patch.dict(os.environ, env, clear=False):
