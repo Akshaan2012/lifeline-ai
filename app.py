@@ -285,6 +285,17 @@ COMMON_TRANSLATION_TEXTS = [
     "Risk score range",
     "Likely pattern",
     "Important measurements",
+    "Optional measurements",
+    "Add temperature, pulse, blood pressure, or oxygen",
+    "I know my temperature",
+    "Temperature in Celsius",
+    "I know my heart rate / pulse",
+    "Heart rate / pulse per minute",
+    "I know my blood pressure numbers",
+    "Blood pressure top number",
+    "Blood pressure bottom number",
+    "I know my oxygen level",
+    "Oxygen level from pulse oximeter",
     "Existing conditions",
     "This score falls in the range for",
     "That is why the safest answer is",
@@ -590,6 +601,7 @@ def clear_profile_form() -> None:
         "patient_custom_symptoms_input",
         "patient_duration_input",
         "patient_pain_input",
+        "patient_know_temperature_input",
         "patient_temperature_input",
         "patient_know_heart_rate_input",
         "patient_heart_rate_input",
@@ -2877,14 +2889,17 @@ def patient_form() -> dict[str, Any]:
     st.markdown(f"**3. {tr('Optional measurements')}**")
     st.caption(tr("Skip these if you do not have a thermometer, blood-pressure monitor, or pulse oximeter."))
     with st.expander(tr("Add temperature, pulse, blood pressure, or oxygen"), expanded=False):
-        temperature = st.number_input(
-            tr("Temperature in Celsius"),
-            min_value=32.0,
-            max_value=43.0,
-            value=37.0,
-            step=0.1,
-            key="patient_temperature_input",
-        )
+        know_temperature = st.checkbox(tr("I know my temperature"), value=False, key="patient_know_temperature_input")
+        temperature = 0.0
+        if know_temperature:
+            temperature = st.number_input(
+                tr("Temperature in Celsius"),
+                min_value=32.0,
+                max_value=43.0,
+                value=37.0,
+                step=0.1,
+                key="patient_temperature_input",
+            )
         know_heart_rate = st.checkbox(tr("I know my heart rate / pulse"), value=False, key="patient_know_heart_rate_input")
         heart_rate = 0
         if know_heart_rate:
