@@ -4,7 +4,10 @@ import re
 from typing import Any
 from urllib.parse import quote
 
-import requests
+try:
+    import requests
+except ModuleNotFoundError:  # pragma: no cover - depends on deployment packages
+    requests = None
 
 from backend.ai_helper import ai_json
 
@@ -395,6 +398,21 @@ CATEGORY_GUIDANCE = {
     },
 }
 
+DANGER_QUESTION_PHRASES = {
+    "chest pain": "Chest pain should not be treated as normal without medical review, especially if it is new, strong, or happening with sweating, breathlessness, fainting, nausea, or pain spreading to the arm/jaw/back.",
+    "chest hurts": "Chest pain should not be treated as normal without medical review, especially if it is new, strong, or happening with sweating, breathlessness, fainting, nausea, or pain spreading to the arm/jaw/back.",
+    "trouble breathing": "Breathing trouble can become serious quickly and should not be watched casually if it is severe, worsening, or happening at rest.",
+    "hard to breathe": "Breathing trouble can become serious quickly and should not be watched casually if it is severe, worsening, or happening at rest.",
+    "can't breathe": "Breathing trouble can become serious quickly and should not be watched casually if it is severe, worsening, or happening at rest.",
+    "cant breathe": "Breathing trouble can become serious quickly and should not be watched casually if it is severe, worsening, or happening at rest.",
+    "confusion": "New confusion can be a danger sign, especially with infection, head injury, stroke symptoms, low sugar, overdose, or breathing problems.",
+    "confused": "New confusion can be a danger sign, especially with infection, head injury, stroke symptoms, low sugar, overdose, or breathing problems.",
+    "fainting": "Fainting or passing out can be a danger sign and should be checked urgently if it is new, repeated, or happens with chest pain, breathlessness, weakness, or injury.",
+    "passed out": "Fainting or passing out can be a danger sign and should be checked urgently if it is new, repeated, or happens with chest pain, breathlessness, weakness, or injury.",
+    "too many pills": "Taking too many pills can be an overdose. Do not wait for online advice; contact urgent medical help or poison control now.",
+    "overdose": "Taking too much medicine can be an overdose. Do not wait for online advice; contact urgent medical help or poison control now.",
+}
+
 
 def _normalize(text: str) -> str:
     return re.sub(r"[^a-z0-9 ]+", " ", text.lower()).strip()
@@ -521,6 +539,7 @@ def _general_health_answer(question: str) -> dict[str, Any]:
         "side_effects": f"Side effects and safety depend on the medicine, dose, person, and other health conditions.",
         "overview": f"Here is a simple health answer about {topic}.",
     }
+
     symptoms_by_intent = {
         "emergency": guidance["emergency"],
         "tests": ["A doctor may ask about symptoms and medical history.", "They may check vital signs and examine the affected area.", "Tests may include blood, urine, imaging, or swabs depending on the problem."],
@@ -555,6 +574,45 @@ def _general_health_answer(question: str) -> dict[str, Any]:
         "kind": "general",
         "intent": intent,
         "source": "LifeLine AI general health safety guide. For exact diagnosis or treatment, use a clinician or verified medical source.",
+    }
+
+
+def _danger_question_answer(question: str) -> dict[str, Any] | None:
+    normalized = _normalize(question)
+    matched_message = ""
+    for phrase, message in DANGER_QUESTION_PHRASES.items():
+        if phrase in normalized:
+            matched_message = message
+            break
+    if not matched_message:
+        return None
+    return {
+        "title": "Possible warning sign",
+        "meaning": matched_message,
+        "symptoms": [
+            "This may need faster care if it is new, strong, worsening, or happening with other warning signs.",
+            "Use the Patient Health Checker for symptom-specific guidance if you are not already seeking help.",
+            "If the person looks very unwell, do not wait for this app.",
+        ],
+        "precautions": [
+            "Do not assume the symptom is normal.",
+            "Avoid heavy activity and keep someone nearby if the person feels weak, faint, confused, or breathless.",
+            "Keep medicines, allergies, timing, and measurements ready for clinicians.",
+        ],
+        "prevention": [
+            "Track when symptoms started and what changed.",
+            "Manage known conditions with a clinician's plan.",
+            "Know emergency warning signs before symptoms become severe.",
+        ],
+        "doctor": "Get urgent medical help now if any emergency warning sign is present. If you are unsure, choose faster care.",
+        "emergency": [
+            "Chest pain with sweating, breathlessness, fainting, or pain spreading to arm/jaw/back.",
+            "Severe breathing trouble, blue lips, or confusion.",
+            "Stroke signs, seizure, severe allergy, or possible overdose.",
+        ],
+        "kind": "general",
+        "intent": "emergency",
+        "source": "LifeLine AI danger-question safety rules.",
     }
 
 
@@ -757,6 +815,8 @@ def _detect_category(text: str) -> str:
 
 
 def _wiki_summary(topic: str) -> dict[str, str] | None:
+    if requests is None:
+        return None
     url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{quote(topic)}"
     headers = {"User-Agent": "LifeLineAIStudentProject/1.0"}
     try:
@@ -863,34 +923,38 @@ def _ai_health_answer(question: str, existing_answer: dict[str, Any]) -> dict[st
 
 
 def answer_question(question: str) -> dict[str, Any]:
-    relationship_answer = _medicine_relationship_answer(question)
-    if relationship_answer:
-        draft = relationship_answer
+    danger_answer = _danger_question_answer(question)
+    if danger_answer:
+        draft = danger_answer
     else:
-        medicine_answer = _medicine_answer(question)
-        if medicine_answer:
-            draft = medicine_answer
+        relationship_answer = _medicine_relationship_answer(question)
+        if relationship_answer:
+            draft = relationship_answer
         else:
-            key = _find_local_key(question)
-            if key:
-                draft = dict(DISEASE_LIBRARY[key])
-                draft["kind"] = "disease"
-                draft["source"] = "LifeLine AI local knowledge base"
-                draft = _adapt_known_disease_answer(draft, question)
-            elif _looks_like_medicine_question(question):
-                draft = _safe_unknown_medicine_answer(question)
-                draft["kind"] = "medicine"
-                draft["safety_note"] = (
-                    "This is general medicine information. It cannot tell you the exact dose or confirm "
-                    "if this medicine is safe for you personally."
-                )
+            medicine_answer = _medicine_answer(question)
+            if medicine_answer:
+                draft = medicine_answer
             else:
-                internet_answer = _internet_answer(question)
-                if internet_answer:
-                    draft = internet_answer
+                key = _find_local_key(question)
+                if key:
+                    draft = dict(DISEASE_LIBRARY[key])
                     draft["kind"] = "disease"
+                    draft["source"] = "LifeLine AI local knowledge base"
+                    draft = _adapt_known_disease_answer(draft, question)
+                elif _looks_like_medicine_question(question):
+                    draft = _safe_unknown_medicine_answer(question)
+                    draft["kind"] = "medicine"
+                    draft["safety_note"] = (
+                        "This is general medicine information. It cannot tell you the exact dose or confirm "
+                        "if this medicine is safe for you personally."
+                    )
                 else:
-                    draft = _general_health_answer(question)
+                    internet_answer = _internet_answer(question)
+                    if internet_answer:
+                        draft = internet_answer
+                        draft["kind"] = "disease"
+                    else:
+                        draft = _general_health_answer(question)
 
     enhanced = _ai_health_answer(question, draft)
     if enhanced:
