@@ -725,23 +725,32 @@ def inject_css() -> None:
         [data-testid="stSidebar"] {
             display: block !important;
             visibility: visible !important;
-            transform: translateX(0) !important;
             min-width: 300px !important;
             width: 300px !important;
             max-width: 300px !important;
-            left: 0 !important;
             background:
                 linear-gradient(180deg, #092d37 0%, #071d25 56%, #041318 100%);
             border-right: 1px solid rgba(255,255,255,.1);
             box-shadow: 18px 0 42px rgba(8, 38, 49, .14);
         }
         [data-testid="collapsedControl"] {
-            display: none !important;
-            visibility: hidden !important;
-            pointer-events: none !important;
+            display: flex !important;
+            visibility: visible !important;
+            pointer-events: auto !important;
+            align-items: center !important;
+            gap: 8px !important;
+            position: fixed !important;
+            top: 18px !important;
+            left: 14px !important;
+            z-index: 999999 !important;
+            border-radius: 999px !important;
+            padding: 6px 10px 6px 6px !important;
+            background: rgba(7, 29, 37, .94) !important;
+            border: 1px solid rgba(134, 255, 235, .28) !important;
+            box-shadow: 0 12px 28px rgba(8, 38, 49, .18) !important;
         }
         [data-testid="collapsedControl"]::after {
-            content: "Open menu";
+            content: "Open menu →";
             color: #efffff !important;
             font-size: .84rem !important;
             font-weight: 800 !important;
@@ -760,9 +769,9 @@ def inject_css() -> None:
             box-shadow: none !important;
         }
         [data-testid="stSidebarCollapseButton"] {
-            display: none !important;
-            visibility: hidden !important;
-            pointer-events: none !important;
+            display: inline-flex !important;
+            visibility: visible !important;
+            pointer-events: auto !important;
         }
         [data-testid="collapsedControl"] button:hover,
         [data-testid="stSidebarCollapseButton"]:hover {
