@@ -351,6 +351,8 @@ COMMON_TRANSLATION_TEXTS = [
     "Review emergency and urgent cases first.",
     "Review new cases before resolved cases.",
     "Using local fallback storage. To use Supabase, run supabase_schema.sql in Supabase SQL Editor and reboot.",
+    "The app could not confirm a private case code. If this was meant for clinic review, ask the clinic to check Supabase setup and schema.",
+    "Case review could not be saved. Check Supabase schema, staff access, and network connection.",
     "Clinic Pilot Plan",
     "Doctor-visit preparation",
     "Digital intake",
@@ -3260,7 +3262,7 @@ def render_checker() -> None:
                     st.success(tr(f"Shared with the clinic. Keep this private case code: {share_code}"))
                     st.code(share_code, language=None)
                 else:
-                    st.warning(tr("The case was saved, but a private code could not be created. Ask the clinic to update its database schema."))
+                    st.warning(tr("The app could not confirm a private case code. If this was meant for clinic review, ask the clinic to check Supabase setup and schema."))
             patient_data = st.session_state.get("checker_patient_data") or {}
             render_result_panel(stored["result"], stored["advice"], patient_data, stored.get("comparison"))
             pdf_bytes = generate_health_report_pdf(patient_data, stored["result"], stored["advice"])
@@ -3914,7 +3916,7 @@ def render_dashboard() -> None:
                 st.success(tr("Case review saved."))
                 st.rerun()
             else:
-                st.error(tr("Case review could not be saved. Apply the updated Supabase schema first."))
+                st.error(tr("Case review could not be saved. Check Supabase schema, staff access, and network connection."))
 
     chart_col1, chart_col2 = st.columns(2)
     with chart_col1:

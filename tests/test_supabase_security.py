@@ -34,6 +34,15 @@ class SupabaseSecurityTests(unittest.TestCase):
         self.assertIn("patient_cases_doctor_notes_length_check", self.schema)
         self.assertIn("char_length(doctor_notes) <= 1200", self.schema)
 
+    def test_review_migration_cleans_existing_rows_before_constraints(self) -> None:
+        self.assertIn("set review_status = 'new'", self.schema)
+        self.assertIn("review_status not in", self.schema)
+        self.assertIn("set doctor_notes = left(coalesce(doctor_notes, ''), 1200)", self.schema)
+        self.assertIn("set patient_consent = false", self.schema)
+        self.assertIn("alter column review_status set not null", self.schema)
+        self.assertIn("alter column doctor_notes set not null", self.schema)
+        self.assertIn("alter column patient_consent set not null", self.schema)
+
 
 if __name__ == "__main__":
     unittest.main()

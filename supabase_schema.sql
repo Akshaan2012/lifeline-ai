@@ -27,6 +27,28 @@ add column if not exists share_code text unique;
 alter table public.patient_cases
 add column if not exists patient_consent boolean not null default false;
 
+update public.patient_cases
+set review_status = 'New'
+where review_status is null
+   or review_status not in ('New', 'Reviewed', 'Book appointment', 'Seek urgent care', 'Resolved');
+
+update public.patient_cases
+set doctor_notes = left(coalesce(doctor_notes, ''), 1200)
+where doctor_notes is null
+   or char_length(doctor_notes) > 1200;
+
+update public.patient_cases
+set patient_consent = false
+where patient_consent is null;
+
+alter table public.patient_cases
+alter column review_status set default 'New',
+alter column review_status set not null,
+alter column doctor_notes set default '',
+alter column doctor_notes set not null,
+alter column patient_consent set default false,
+alter column patient_consent set not null;
+
 alter table public.patient_cases
 drop constraint if exists patient_cases_review_status_check;
 
