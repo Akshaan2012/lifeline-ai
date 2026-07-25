@@ -24,6 +24,10 @@ class SupabaseSecurityTests(unittest.TestCase):
         self.assertIn("security definer", self.schema)
         self.assertIn("grant execute", self.schema)
 
+    def test_private_code_lookup_normalizes_spaces_and_missing_dash(self) -> None:
+        self.assertIn("regexp_replace(coalesce(input_code, ''), '\\s+', '', 'g')", self.schema)
+        self.assertIn("'ll-' || substring", self.schema)
+
 
 if __name__ == "__main__":
     unittest.main()

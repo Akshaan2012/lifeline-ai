@@ -80,7 +80,13 @@ as $$
   select p.created_at, p.patient_name, p.risk_level, p.review_status,
          p.doctor_notes, p.share_code
   from public.patient_cases p
-  where p.share_code = upper(trim(input_code))
+  where p.share_code = case
+      when upper(regexp_replace(coalesce(input_code, ''), '\s+', '', 'g')) like 'LL-%'
+        then upper(regexp_replace(coalesce(input_code, ''), '\s+', '', 'g'))
+      when upper(regexp_replace(coalesce(input_code, ''), '\s+', '', 'g')) like 'LL%'
+        then 'LL-' || substring(upper(regexp_replace(coalesce(input_code, ''), '\s+', '', 'g')) from 3)
+      else upper(regexp_replace(coalesce(input_code, ''), '\s+', '', 'g'))
+    end
     and p.patient_consent = true
   limit 1;
 $$;
