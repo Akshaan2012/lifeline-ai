@@ -745,15 +745,23 @@ def inject_css() -> None:
             bottom: 16px !important;
         }
         [data-testid="stSidebar"] {
-            display: block !important;
-            visibility: visible !important;
-            min-width: 300px !important;
-            width: 300px !important;
-            max-width: 300px !important;
             background:
                 linear-gradient(180deg, #092d37 0%, #071d25 56%, #041318 100%);
             border-right: 1px solid rgba(255,255,255,.1);
             box-shadow: 18px 0 42px rgba(8, 38, 49, .14);
+        }
+        [data-testid="stSidebar"][aria-expanded="true"],
+        [data-testid="stSidebar"]:not([aria-expanded="false"]) {
+            min-width: 300px !important;
+            width: 300px !important;
+            max-width: 300px !important;
+        }
+        [data-testid="stSidebar"][aria-expanded="false"] {
+            min-width: 0 !important;
+            width: 0 !important;
+            max-width: 0 !important;
+            border-right: 0 !important;
+            box-shadow: none !important;
         }
         [data-testid="collapsedControl"] {
             display: flex !important;
@@ -762,19 +770,19 @@ def inject_css() -> None:
             align-items: center !important;
             gap: 8px !important;
             position: fixed !important;
-            top: 18px !important;
-            left: 14px !important;
+            top: 20px !important;
+            left: 18px !important;
             z-index: 999999 !important;
             border-radius: 999px !important;
-            padding: 6px 10px 6px 6px !important;
-            background: rgba(7, 29, 37, .94) !important;
-            border: 1px solid rgba(134, 255, 235, .28) !important;
-            box-shadow: 0 12px 28px rgba(8, 38, 49, .18) !important;
+            padding: 8px 14px 8px 8px !important;
+            background: linear-gradient(135deg, rgba(7, 29, 37, .98), rgba(11, 66, 73, .98)) !important;
+            border: 1px solid rgba(134, 255, 235, .62) !important;
+            box-shadow: 0 16px 34px rgba(8, 38, 49, .24) !important;
         }
         [data-testid="collapsedControl"]::after {
-            content: "Open menu →";
+            content: "Menu →";
             color: #efffff !important;
-            font-size: .84rem !important;
+            font-size: .92rem !important;
             font-weight: 800 !important;
             letter-spacing: .02em !important;
             line-height: 1 !important;
@@ -785,15 +793,18 @@ def inject_css() -> None:
             height: 44px !important;
             min-width: 44px !important;
             border-radius: 999px !important;
-            background: rgba(255, 255, 255, .10) !important;
+            background: rgba(255, 255, 255, .14) !important;
             color: #efffff !important;
-            border: 1px solid rgba(255, 255, 255, .20) !important;
+            border: 1px solid rgba(255, 255, 255, .30) !important;
             box-shadow: none !important;
         }
         [data-testid="stSidebarCollapseButton"] {
             display: inline-flex !important;
             visibility: visible !important;
             pointer-events: auto !important;
+            position: sticky !important;
+            top: 12px !important;
+            z-index: 9999 !important;
         }
         [data-testid="collapsedControl"] button:hover,
         [data-testid="stSidebarCollapseButton"]:hover {
