@@ -232,13 +232,20 @@ def normalize_share_code(share_code: str) -> str:
     return code
 
 
+def safe_case_age(value: Any) -> int:
+    try:
+        return max(0, min(120, int(float(value or 0))))
+    except (TypeError, ValueError):
+        return 0
+
+
 def save_case(patient_data: dict[str, Any], triage_result: Any) -> str:
     share_code = _new_share_code()
     supabase = _supabase_client()
     row = {
         "created_at": datetime.now().isoformat(timespec="minutes"),
         "patient_name": patient_data.get("patient_name") or "Anonymous",
-        "age": int(patient_data.get("age") or 0),
+        "age": safe_case_age(patient_data.get("age")),
         "symptoms": ", ".join(split_list_items(patient_data.get("symptoms", []))),
         "category": triage_result.possible_category,
         "risk_level": triage_result.risk_level,

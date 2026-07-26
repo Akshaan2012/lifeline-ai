@@ -7,7 +7,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from backend import database
-from backend.database import MAX_DOCTOR_NOTE_CHARS, REVIEW_STATUSES, database_error_message, init_db, normalize_doctor_notes, normalize_review_status, normalize_share_code, update_case_review
+from backend.database import MAX_DOCTOR_NOTE_CHARS, REVIEW_STATUSES, database_error_message, init_db, normalize_doctor_notes, normalize_review_status, normalize_share_code, safe_case_age, update_case_review
 
 
 class DatabaseHelperTests(unittest.TestCase):
@@ -24,6 +24,12 @@ class DatabaseHelperTests(unittest.TestCase):
             REVIEW_STATUSES,
             ("New", "Reviewed", "Book appointment", "Seek urgent care", "Resolved"),
         )
+
+    def test_case_age_is_safe_for_saved_or_imported_values(self) -> None:
+        self.assertEqual(safe_case_age("42"), 42)
+        self.assertEqual(safe_case_age("not entered"), 0)
+        self.assertEqual(safe_case_age(-5), 0)
+        self.assertEqual(safe_case_age(150), 120)
 
     def test_doctor_notes_are_patient_visible_and_kept_short(self) -> None:
         messy = "  Please   book\n\nappointment.  " + ("x" * 2000)

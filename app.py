@@ -2513,8 +2513,8 @@ def risk_score_range(risk_level: str) -> str:
 
 def challenge_measurement_summary(data: dict[str, Any]) -> list[str]:
     measurements: list[str] = []
-    if data.get("temperature"):
-        temperature = float(data["temperature"])
+    temperature = safe_number(data.get("temperature"))
+    if temperature:
         if temperature >= 39.4:
             note = "very high fever"
         elif temperature >= 38:
@@ -2522,8 +2522,9 @@ def challenge_measurement_summary(data: dict[str, Any]) -> list[str]:
         else:
             note = "normal temperature"
         measurements.append(f"Temperature {temperature:g} C ({note})")
-    if data.get("pain_level") is not None:
-        pain = int(data["pain_level"])
+    pain_value = safe_number(data.get("pain_level"))
+    if pain_value is not None:
+        pain = int(pain_value)
         if pain >= 8:
             note = "severe pain"
         elif pain >= 5:
@@ -2531,8 +2532,9 @@ def challenge_measurement_summary(data: dict[str, Any]) -> list[str]:
         else:
             note = "mild pain"
         measurements.append(f"Pain {pain}/10 ({note})")
-    if data.get("oxygen"):
-        oxygen = int(data["oxygen"])
+    oxygen_value = safe_number(data.get("oxygen"))
+    if oxygen_value:
+        oxygen = int(oxygen_value)
         if oxygen < 90:
             note = "dangerously low"
         elif oxygen < 94:
@@ -2540,13 +2542,16 @@ def challenge_measurement_summary(data: dict[str, Any]) -> list[str]:
         else:
             note = "normal"
         measurements.append(f"Oxygen {oxygen}% ({note})")
-    if data.get("heart_rate"):
-        heart_rate = int(data["heart_rate"])
+    heart_rate_value = safe_number(data.get("heart_rate"))
+    if heart_rate_value:
+        heart_rate = int(heart_rate_value)
         note = "outside usual resting range" if heart_rate < 50 or heart_rate > 120 else "usual resting range"
         measurements.append(f"Pulse {heart_rate}/min ({note})")
-    if data.get("systolic_bp") and data.get("diastolic_bp"):
-        systolic = int(data["systolic_bp"])
-        diastolic = int(data["diastolic_bp"])
+    systolic_value = safe_number(data.get("systolic_bp"))
+    diastolic_value = safe_number(data.get("diastolic_bp"))
+    if systolic_value and diastolic_value:
+        systolic = int(systolic_value)
+        diastolic = int(diastolic_value)
         if systolic >= 180 or diastolic >= 120:
             note = "danger range"
         elif systolic >= 140 or diastolic >= 90:
@@ -2554,8 +2559,9 @@ def challenge_measurement_summary(data: dict[str, Any]) -> list[str]:
         else:
             note = "not high"
         measurements.append(f"Blood pressure {systolic}/{diastolic} ({note})")
-    if data.get("duration_days") is not None:
-        days = int(data["duration_days"])
+    duration_value = safe_number(data.get("duration_days"))
+    if duration_value is not None:
+        days = int(duration_value)
         note = "needs checking if not improving" if days >= 3 else "short duration"
         measurements.append(f"Duration {days} day(s) ({note})")
     return measurements
