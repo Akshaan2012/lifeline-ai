@@ -120,7 +120,7 @@ def reconcile_medications(medicines: str | list[str], allergies: str = "") -> di
 
 def clinician_evidence(patient_data: dict[str, Any], result: Any) -> list[dict[str, str]]:
     evidence: list[dict[str, str]] = []
-    for symptom in patient_data.get("symptoms", []):
+    for symptom in split_list_items(patient_data.get("symptoms", [])):
         evidence.append({"input": str(symptom), "effect": "Included in symptom and red-flag matching."})
     measurements = {
         "Temperature": patient_data.get("temperature"),
@@ -133,7 +133,7 @@ def clinician_evidence(patient_data: dict[str, Any], result: Any) -> list[dict[s
     for label, value in measurements.items():
         if value not in (None, "", 0, 0.0):
             evidence.append({"input": f"{label}: {value}", "effect": "Included in the rule-based risk score."})
-    for signal in split_list_items(getattr(result, "signals", [])):
+    for signal in split_list_items(result_value(result, "signals", [])):
         evidence.append({"input": "Rule outcome", "effect": str(signal)})
     return evidence
 

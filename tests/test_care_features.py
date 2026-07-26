@@ -5,7 +5,7 @@ from datetime import date
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from backend.care_features import build_fhir_bundle, reconcile_medications, reminder_status, safe_fhir_id, split_list_items
+from backend.care_features import build_fhir_bundle, clinician_evidence, reconcile_medications, reminder_status, safe_fhir_id, split_list_items
 from backend.followup import evaluate_follow_up
 from backend.medication_safety import analyze_medication_safety
 
@@ -171,6 +171,20 @@ class CareFeatureTests(unittest.TestCase):
         self.assertEqual(split_list_items("Fever, cough\nfatigue; chills"), ["Fever", "cough", "fatigue", "chills"])
         self.assertEqual(split_list_items(("Asthma", " Diabetes ")), ["Asthma", "Diabetes"])
         self.assertEqual(split_list_items(None), [])
+
+    def test_clinician_evidence_accepts_saved_text_and_restored_result(self) -> None:
+        evidence = clinician_evidence(
+            {"symptoms": "Fever, cough", "oxygen": "96"},
+            {"signals": "Fever should be watched, cough should be checked"},
+        )
+        inputs = [item["input"] for item in evidence]
+        effects = [item["effect"] for item in evidence]
+
+        self.assertIn("Fever", inputs)
+        self.assertIn("cough", inputs)
+        self.assertNotIn("F", inputs)
+        self.assertIn("Fever should be watched", effects)
+        self.assertIn("cough should be checked", effects)
 
     def test_followup_catches_new_danger_words_after_low_risk_check(self) -> None:
         original = SimpleNamespace(risk_level="Self-Care")
