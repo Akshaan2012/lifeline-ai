@@ -11,7 +11,7 @@ import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 
-from backend.care_features import build_fhir_bundle, clinician_evidence, emergency_action_plan, reconcile_medications, reminder_status, split_list_items
+from backend.care_features import build_fhir_bundle, clinician_evidence, emergency_action_plan, parse_case_raw_data, reconcile_medications, reminder_status, split_list_items
 from backend.database import REVIEW_STATUSES as REVIEW_STATUS_OPTIONS, clear_cases, current_staff_user, database_backend, database_error_message, delete_patient_cases, get_case_by_share_code, list_cases, normalize_patient_name, save_case, sign_in_staff, sign_out_staff, supabase_is_configured, update_case_review
 from backend.disease_qa import answer_question
 from backend.doctor_summary import build_doctor_summary
@@ -570,18 +570,6 @@ def render_adaptive_followups(symptoms: list[str]) -> tuple[list[dict[str, str]]
             st.warning(tr("If you are unsure or cannot answer, treat this as a possible danger sign and choose faster medical care."))
 
     return answers, safety_signals
-
-
-def parse_case_raw_data(raw_data: Any) -> dict[str, Any]:
-    if isinstance(raw_data, dict):
-        return raw_data
-    if isinstance(raw_data, str) and raw_data.strip():
-        try:
-            parsed = json.loads(raw_data)
-            return parsed if isinstance(parsed, dict) else {}
-        except json.JSONDecodeError:
-            return {}
-    return {}
 
 
 def safe_number(value: Any) -> float | None:

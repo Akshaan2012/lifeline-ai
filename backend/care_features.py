@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 from datetime import date, datetime
 from typing import Any
@@ -55,6 +56,25 @@ def result_value(result: Any, key: str, default: Any = None) -> Any:
     if isinstance(result, dict):
         return result.get(key, default)
     return getattr(result, key, default)
+
+
+def parse_case_raw_data(raw_data: Any) -> dict[str, Any]:
+    if isinstance(raw_data, dict):
+        return raw_data
+    if isinstance(raw_data, bytes):
+        try:
+            raw_data = raw_data.decode("utf-8")
+        except UnicodeDecodeError:
+            return {}
+    if isinstance(raw_data, str) and raw_data.strip():
+        try:
+            parsed = json.loads(raw_data)
+            if isinstance(parsed, str) and parsed.strip():
+                parsed = json.loads(parsed)
+            return parsed if isinstance(parsed, dict) else {}
+        except json.JSONDecodeError:
+            return {}
+    return {}
 
 
 def split_medications(value: str | list[str]) -> list[str]:
