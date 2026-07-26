@@ -593,6 +593,13 @@ def optional_measurement_number(value: Any) -> float | None:
     return number
 
 
+def saved_number_text(value: Any, suffix: str = "", *, treat_zero_as_missing: bool = False) -> str:
+    number = safe_number(value)
+    if number is None or (treat_zero_as_missing and number == 0):
+        return tr("Not provided")
+    return f"{number:g}{suffix}"
+
+
 def split_known_conditions(conditions: list[str]) -> tuple[list[str], list[str]]:
     known = [item for item in conditions if item in CONDITION_OPTIONS]
     custom = [item for item in conditions if item not in CONDITION_OPTIONS]
@@ -3383,7 +3390,7 @@ def render_timeline() -> None:
     with c3:
         snapshot_card("Latest score", f"{latest.get('score', 0)}/100")
     with c4:
-        snapshot_card("Age", str(latest.get("age") or raw_latest.get("age") or "N/A"))
+        snapshot_card("Age", saved_number_text(latest.get("age") if latest.get("age") is not None else raw_latest.get("age"), treat_zero_as_missing=True))
 
     st.markdown(f"**{tr('Known conditions')}**")
     st.write(display_list_text(raw_latest.get("conditions", [])))
@@ -3417,21 +3424,26 @@ def render_timeline() -> None:
     for index, case in enumerate(patient_cases, start=1):
         raw = parse_case_raw_data(case.get("raw_data"))
         symptoms = str(case.get("symptoms") or "").strip() or display_list_text(raw.get("symptoms", []))
-        duration = raw.get("duration_days", "N/A")
-        pain = raw.get("pain_level", "N/A")
+        duration = saved_number_text(raw.get("duration_days"), f" {tr('day(s)')}")
+        pain = saved_number_text(raw.get("pain_level"), "/10")
         vitals = []
-        if raw.get("temperature"):
-            vitals.append(f"{raw['temperature']} C")
-        if raw.get("oxygen"):
-            vitals.append(f"O2 {raw['oxygen']}%")
-        if raw.get("heart_rate"):
-            vitals.append(f"pulse {raw['heart_rate']}")
-        if raw.get("systolic_bp") and raw.get("diastolic_bp"):
-            vitals.append(f"BP {raw['systolic_bp']}/{raw['diastolic_bp']}")
+        temperature = optional_measurement_number(raw.get("temperature"))
+        oxygen = optional_measurement_number(raw.get("oxygen"))
+        heart_rate = optional_measurement_number(raw.get("heart_rate"))
+        systolic_bp = optional_measurement_number(raw.get("systolic_bp"))
+        diastolic_bp = optional_measurement_number(raw.get("diastolic_bp"))
+        if temperature is not None:
+            vitals.append(f"{temperature:g} C")
+        if oxygen is not None:
+            vitals.append(f"O2 {oxygen:g}%")
+        if heart_rate is not None:
+            vitals.append(f"pulse {heart_rate:g}")
+        if systolic_bp is not None and diastolic_bp is not None:
+            vitals.append(f"BP {systolic_bp:g}/{diastolic_bp:g}")
         risk_label = tr(compact_risk_label(str(case.get("risk_level", "Unknown"))))
         with st.expander(f"{index}. {case.get('created_at', '')} - {risk_label} - {case.get('score', 0)}/100", expanded=index == len(patient_cases)):
             st.write(f"**{tr('Symptoms')}:** {symptoms}")
-            st.write(f"**{tr('Duration')}:** {duration} {tr('day(s)')} | **{tr('Pain')}:** {pain}/10")
+            st.write(f"**{tr('Duration')}:** {duration} | **{tr('Pain')}:** {pain}")
             st.write(f"**{tr('Measurements')}:** {', '.join(vitals) if vitals else tr('Not provided')}")
             st.write(f"**{tr('Likely pattern')}:** {tr(str(case.get('category', 'General Health')))}")
             st.write(f"**{tr('Recommendation')}:** {tr(str(case.get('recommendation', '')))}")
