@@ -21,6 +21,15 @@ if [ ! -f "app.py" ]; then
   exit 1
 fi
 
+FREE_KB="$(df -Pk . | awk 'NR==2 {print $4}')"
+if [ -n "$FREE_KB" ] && [ "$FREE_KB" -lt 1048576 ]; then
+  echo
+  echo "WARNING: Less than 1 GB of disk space is free."
+  echo "Dependency installation may fail. Free some disk space, then run this script again."
+  echo
+  read -r -p "Press Enter to continue anyway, or press Ctrl+C to stop. "
+fi
+
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
   echo "Python 3.10 or newer is required."

@@ -24,6 +24,15 @@ if not exist "app.py" (
   exit /b 1
 )
 
+powershell -NoProfile -Command "if ((Get-PSDrive -Name C).Free -lt 1GB) { exit 7 }" 2>NUL
+if errorlevel 7 (
+  echo.
+  echo WARNING: Your C: drive has less than 1 GB free.
+  echo Dependency installation may fail. Free some disk space, then run this file again.
+  echo.
+  pause
+)
+
 py -3 -m venv .venv 2>NUL
 if errorlevel 1 python -m venv .venv
 

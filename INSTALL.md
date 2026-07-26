@@ -82,6 +82,7 @@ Then run the launcher for their operating system.
 ## Notes
 
 - The app opens in your browser at `http://localhost:8501`.
+- Keep at least 1 GB of free disk space before running the launcher. Python packages and the local `.venv` folder need temporary install space.
 - If Supabase settings are missing, the app uses local SQLite fallback.
 - If Gemini is missing or unavailable, AI-enhanced pages use their built-in local fallback.
 - LifeLine AI is general health education and decision support. It does not diagnose, prescribe, or replace medical care.
