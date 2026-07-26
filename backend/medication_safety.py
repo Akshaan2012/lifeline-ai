@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 from backend.ai_helper import ai_json
-from backend.care_features import reconcile_medications
+from backend.care_features import reconcile_medications, split_list_items
 
 
 @dataclass(frozen=True)
@@ -62,8 +63,15 @@ MEDICINE_RULES = {
 }
 
 
-def _text_blob(items: list[str]) -> str:
-    return " ".join(items).lower()
+def _text_blob(items: Any) -> str:
+    return " ".join(split_list_items(items)).lower()
+
+
+def _safe_age(value: Any) -> int:
+    try:
+        return max(0, min(120, int(float(value or 0))))
+    except (TypeError, ValueError):
+        return 0
 
 
 def _contains_any(text: str, phrases: list[str]) -> bool:
@@ -86,8 +94,10 @@ def analyze_medication_safety(
     current_medicines: str,
     pregnant: bool,
 ) -> MedicationSafetyResult:
-    rule = _match_medicine(medicine_name)
-    context = _text_blob([medicine_name, allergies, current_medicines, *conditions])
+    age = _safe_age(age)
+    condition_items = split_list_items(conditions)
+    rule = _match_medicine(str(medicine_name or ""))
+    context = _text_blob([medicine_name, allergies, current_medicines, *condition_items])
     caution_flags: list[str] = []
     reconciliation = reconcile_medications(
         [medicine_name, *[item for item in current_medicines.replace(";", ",").split(",") if item.strip()]],
@@ -176,7 +186,7 @@ def analyze_medication_safety(
         medicine_name=medicine_name,
         age=age,
         allergies=allergies,
-        conditions=conditions,
+        conditions=condition_items,
         current_medicines=current_medicines,
         pregnant=pregnant,
     )
@@ -200,7 +210,7 @@ def _ai_enhanced_safety_result(
         "Improve this medicine safety result as JSON with exact keys: summary string, key_points array, "
         "caution_flags array, what_to_do array, emergency_signs array, questions array. "
         "Keep each array to 3-5 short strings. Be conservative and mention pharmacist/doctor review for interactions. "
-        f"Medicine: {medicine_name}\nAge: {age}\nPregnant: {pregnant}\nConditions: {', '.join(conditions) or 'none'}\n"
+        f"Medicine: {medicine_name}\nAge: {age}\nPregnant: {pregnant}\nConditions: {', '.join(split_list_items(conditions)) or 'none'}\n"
         f"Allergies: {allergies or 'none'}\nCurrent medicines: {current_medicines or 'none'}\n"
         f"Existing result: {result}"
     )

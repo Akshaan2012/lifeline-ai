@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from backend.ai_helper import ai_json
+from backend.care_features import split_list_items
 
 
 BASE_ADVICE = {
@@ -127,12 +128,19 @@ def _risk_summary(risk_level: str) -> str:
         "Urgent Care": "High risk. The symptoms or vitals suggest care should not be delayed.",
         "Emergency": "Critical risk. The entered details include danger signs that need immediate help.",
     }
-    return summaries[risk_level]
+    return summaries.get(risk_level, summaries["Doctor Visit Recommended"])
 
 
 def build_recommendations(triage_result: Any, enhance: bool = True) -> dict[str, Any]:
-    base = BASE_ADVICE[triage_result.risk_level]
-    category = CATEGORY_GUIDANCE.get(triage_result.possible_category, CATEGORY_GUIDANCE["General Health"])
+    risk_level = str(getattr(triage_result, "risk_level", "") or "Doctor Visit Recommended")
+    if risk_level not in BASE_ADVICE:
+        risk_level = "Doctor Visit Recommended"
+    possible_category = str(getattr(triage_result, "possible_category", "") or "General Health")
+    score = getattr(triage_result, "score", "not scored")
+    explanation = str(getattr(triage_result, "explanation", "") or "The app reviewed the entered details and suggested a care level.")
+
+    base = BASE_ADVICE[risk_level]
+    category = CATEGORY_GUIDANCE.get(possible_category, CATEGORY_GUIDANCE["General Health"])
 
     advice = {
         "doctor_visit": base["doctor_visit"],
@@ -145,15 +153,15 @@ def build_recommendations(triage_result: Any, enhance: bool = True) -> dict[str,
         "prevention": category["prevention"],
         "red_flags": category["red_flags"],
         "doctor_questions": category["doctor_questions"],
-        "risk_summary": _risk_summary(triage_result.risk_level),
-        "simple_explanation": triage_result.explanation,
+        "risk_summary": _risk_summary(risk_level),
+        "simple_explanation": explanation,
         "report_summary": (
-            f"LifeLine AI classified this check as {triage_result.risk_level} with a risk score of "
-            f"{triage_result.score}/100 and a possible {triage_result.possible_category} pattern."
+            f"LifeLine AI classified this check as {risk_level} with a risk score of "
+            f"{score}/100 and a possible {possible_category} pattern."
         ),
         "doctor_handoff": (
             f"Review the reported symptoms, measured vital signs, and the signals that produced a "
-            f"{triage_result.risk_level} result."
+            f"{risk_level} result."
         ),
         "disclaimer": "This is general guidance only. It does not replace a doctor, diagnosis, prescription, or emergency service.",
     }
@@ -168,6 +176,10 @@ def _ai_enhanced_recommendations(triage_result: Any, advice: dict[str, Any]) -> 
         "Improve patient-friendly wording while preserving the risk level and safety intent. "
         "Do not diagnose, prescribe, or replace emergency care."
     )
+    signals = split_list_items(getattr(triage_result, "signals", []))
+    risk_level = str(getattr(triage_result, "risk_level", "") or "Doctor Visit Recommended")
+    score = getattr(triage_result, "score", "not scored")
+    possible_category = str(getattr(triage_result, "possible_category", "") or "General Health")
     user = (
         "Enhance these recommendation fields as JSON with exact keys: likely_pattern string, "
         "care_steps array, home_care array, avoid array, precautions array, prevention array, "
@@ -176,8 +188,8 @@ def _ai_enhanced_recommendations(triage_result: Any, advice: dict[str, Any]) -> 
         "The doctor_handoff must be a concise factual clinical handoff that clearly separates reported "
         "details from the app's decision-support result. "
         "Keep arrays to 3-5 short strings. "
-        f"Risk level: {triage_result.risk_level}\nScore: {triage_result.score}\n"
-        f"Possible category: {triage_result.possible_category}\nSignals: {', '.join(triage_result.signals)}\n"
+        f"Risk level: {risk_level}\nScore: {score}\n"
+        f"Possible category: {possible_category}\nSignals: {', '.join(signals) or 'none'}\n"
         f"Existing advice: {advice}"
     )
     data = ai_json(system, user, max_output_tokens=620)

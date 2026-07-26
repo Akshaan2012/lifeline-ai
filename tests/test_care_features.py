@@ -44,6 +44,19 @@ class CareFeatureTests(unittest.TestCase):
         self.assertNotEqual(result.level, "Low caution")
         self.assertTrue(any("blood thinner" in item.lower() or "bleeding" in item.lower() for item in result.caution_flags))
 
+    def test_medication_safety_accepts_text_conditions_and_age(self) -> None:
+        result = analyze_medication_safety(
+            "ibuprofen",
+            age="not entered",
+            allergies="",
+            conditions="kidney disease, high blood pressure",
+            current_medicines="",
+            pregnant=False,
+        )
+
+        self.assertNotEqual(result.level, "Low caution")
+        self.assertTrue(any("kidney" in item.lower() or "blood pressure" in item.lower() for item in result.caution_flags))
+
     def test_medication_safety_escalates_possible_overdose_wording(self) -> None:
         result = analyze_medication_safety(
             "paracetamol",
