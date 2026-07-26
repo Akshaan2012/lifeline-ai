@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+from unittest.mock import patch
 
 from backend.sam import answer_message
 
@@ -45,6 +46,46 @@ class SamRoutingTests(unittest.TestCase):
         self.assertEqual(command.intent, "safety_route")
         self.assertEqual(command.target_page, "Patient Health Checker")
         self.assertIn("overdose", command.message.lower())
+
+    def test_patient_ai_prompt_omits_clinic_only_pages(self) -> None:
+        captured = {}
+
+        def fake_ai_text(system, *_args, **_kwargs):
+            captured["system"] = system
+            return "Here are the patient tools you can use."
+
+        with patch("backend.sam.offline_mode", return_value=False):
+            with patch("backend.sam.ai_text", side_effect=fake_ai_text):
+                answer_message(
+                    "what tools are available for me",
+                    available_pages=[
+                        "Home",
+                        "Patient Health Checker",
+                        "Health Timeline",
+                        "Disease Q&A Assistant",
+                    ],
+                )
+
+        self.assertIn("Patient Health Checker", captured["system"])
+        self.assertNotIn("Doctor Dashboard", captured["system"])
+        self.assertNotIn("Clinic Pilot Plan", captured["system"])
+
+    def test_professional_ai_prompt_can_include_staff_pages(self) -> None:
+        captured = {}
+
+        def fake_ai_text(system, *_args, **_kwargs):
+            captured["system"] = system
+            return "Here are the clinic tools you can use."
+
+        with patch("backend.sam.offline_mode", return_value=False):
+            with patch("backend.sam.ai_text", side_effect=fake_ai_text):
+                answer_message(
+                    "what tools are available for clinic work",
+                    available_pages=["Home", "Doctor Dashboard", "Clinic Pilot Plan"],
+                )
+
+        self.assertIn("Doctor Dashboard", captured["system"])
+        self.assertIn("Clinic Pilot Plan", captured["system"])
 
 
 if __name__ == "__main__":

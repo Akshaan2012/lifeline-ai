@@ -6,6 +6,16 @@ from functools import lru_cache
 from backend.ai_helper import ai_text, offline_mode, setting_float, setting_int
 
 
+DEFAULT_SAM_PAGES = (
+    "Patient Health Checker",
+    "Health Timeline",
+    "Disease Q&A Assistant",
+    "Medication Safety Checker",
+    "Scenario Challenge",
+    "Safety Videos",
+)
+
+
 SAM_DANGER_PHRASES = {
     "chest pain",
     "chest hurts",
@@ -213,16 +223,21 @@ def _fit_command_to_available_pages(
     )
 
 
-def _ai_reply(message: str) -> str | None:
+def _page_context(available_pages: list[str] | tuple[str, ...] | None) -> tuple[str, ...]:
+    pages = tuple(page for page in (available_pages or DEFAULT_SAM_PAGES) if page != "Home")
+    return pages or DEFAULT_SAM_PAGES
+
+
+def _ai_reply(message: str, available_pages: tuple[str, ...] | None = None) -> str | None:
     if offline_mode():
         return None
+    page_list = ", ".join(_page_context(available_pages))
     system = (
         "You are Sam, the friendly AI assistant inside LifeLine AI. "
         "Answer any normal question clearly in 2 to 5 short sentences. For health questions, use simple patient-friendly language, "
         "give safe general education, mention red flags when relevant, and never claim to diagnose, prescribe, or replace a doctor. "
         "If emergency symptoms are mentioned, advise urgent local medical help. "
-        "You can also guide users to these app pages: Patient Health Checker, Health Timeline, Disease Q&A Assistant, "
-        "Medication Safety Checker, Doctor Dashboard, Scenario Challenge, Safety Videos."
+        f"You can also guide users only to these currently available app pages: {page_list}."
     )
     return ai_text(
         system,
@@ -256,19 +271,20 @@ def _is_clear_app_request(message: str, command: SamCommand) -> bool:
 
 
 @lru_cache(maxsize=256)
-def _cached_ai_reply(message: str) -> str | None:
-    return _ai_reply(message)
+def _cached_ai_reply(message: str, available_pages: tuple[str, ...] | None = None) -> str | None:
+    return _ai_reply(message, available_pages)
 
 
 def answer_message(message: str, available_pages: list[str] | None = None) -> SamCommand:
     clean_message = " ".join(message.strip().split())
+    page_context = tuple(available_pages) if available_pages else None
     routed = route_message(clean_message)
     routed = _fit_command_to_available_pages(routed, available_pages)
     if _wants_navigation(clean_message) and routed.target_page:
         return routed
     if _is_clear_app_request(clean_message, routed):
         return routed
-    reply = _cached_ai_reply(clean_message.lower())
+    reply = _cached_ai_reply(clean_message.lower(), page_context)
     if not reply:
         return routed
     return SamCommand(
