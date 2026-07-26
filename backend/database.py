@@ -253,12 +253,17 @@ def safe_case_score(value: Any) -> int:
         return 0
 
 
+def normalize_patient_name(value: Any) -> str:
+    clean = " ".join(str(value or "").split())
+    return clean[:120] if clean else "Anonymous"
+
+
 def save_case(patient_data: dict[str, Any], triage_result: Any) -> str:
     share_code = _new_share_code()
     supabase = _supabase_client()
     row = {
         "created_at": datetime.now().isoformat(timespec="minutes"),
-        "patient_name": patient_data.get("patient_name") or "Anonymous",
+        "patient_name": normalize_patient_name(patient_data.get("patient_name")),
         "age": safe_case_age(patient_data.get("age")),
         "symptoms": ", ".join(split_list_items(patient_data.get("symptoms", []))),
         "category": triage_result.possible_category,

@@ -12,7 +12,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 from backend.care_features import build_fhir_bundle, clinician_evidence, emergency_action_plan, reconcile_medications, reminder_status, split_list_items
-from backend.database import REVIEW_STATUSES as REVIEW_STATUS_OPTIONS, clear_cases, current_staff_user, database_backend, database_error_message, delete_patient_cases, get_case_by_share_code, list_cases, save_case, sign_in_staff, sign_out_staff, supabase_is_configured, update_case_review
+from backend.database import REVIEW_STATUSES as REVIEW_STATUS_OPTIONS, clear_cases, current_staff_user, database_backend, database_error_message, delete_patient_cases, get_case_by_share_code, list_cases, normalize_patient_name, save_case, sign_in_staff, sign_out_staff, supabase_is_configured, update_case_review
 from backend.disease_qa import answer_question
 from backend.doctor_summary import build_doctor_summary
 from backend.followup import evaluate_follow_up
@@ -3353,7 +3353,7 @@ def render_checker() -> None:
         if p1.button(tr("Save patient profile"), width="stretch"):
             st.session_state.patient_profile = {
                 **st.session_state.get("patient_profile", {}),
-                "patient_name": data["patient_name"],
+                "patient_name": "" if not str(data["patient_name"] or "").strip() else normalize_patient_name(data["patient_name"]),
                 "age": int(data["age"] or 0),
                 "gender": data["gender"],
                 "conditions": data["conditions"],
