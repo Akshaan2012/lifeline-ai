@@ -31,6 +31,7 @@ if errorlevel 7 (
   echo Dependency installation may fail. Free some disk space, then run this file again.
   echo.
   pause
+  exit /b 1
 )
 
 py -3 -m venv .venv 2>NUL
