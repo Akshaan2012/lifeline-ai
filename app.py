@@ -2175,9 +2175,9 @@ def build_previous_check_comparison(
     resolved_symptoms = sorted(previous_symptoms - current_symptoms)
 
     previous_risk = str(previous_case.get("risk_level") or "Unknown")
-    current_risk = str(result.risk_level)
+    current_risk = result_risk_level(result)
     previous_score = safe_number(previous_case.get("score")) or 0
-    current_score = safe_number(result.score) or 0
+    current_score = result_score(result)
     previous_pain = safe_number(previous_raw.get("pain_level"))
     current_pain = safe_number(patient_data.get("pain_level"))
     previous_rank = RISK_ORDER.get(previous_risk, 0)
@@ -2634,34 +2634,39 @@ def care_level_explanation(level: str) -> str:
 
 
 def symptom_clue_summary(result: Any) -> list[str]:
-    clues = [str(signal) for signal in result.signals if str(signal).strip()]
+    clues = result_signals(result)
     if not clues:
         return ["The app did not find major danger signs from the symptoms shown."]
     return clues
 
 
 def render_challenge_feedback(choice: str, result: Any, scenario_data: dict[str, Any]) -> None:
-    correct = choice == result.risk_level
+    risk_level = result_risk_level(result)
+    score = result_score(result)
+    category = result_category(result)
+    signals = result_signals(result)
+    recommendation = result_recommendation(result)
+    correct = choice == risk_level
     if correct:
         st.success(tr("Correct choice"))
     else:
         st.warning(tr("Needs review"))
         st.write(f"**{tr('Your choice')}:** {tr(choice)}")
-        if RISK_ORDER.get(choice, 0) < RISK_ORDER.get(result.risk_level, 0):
+        if RISK_ORDER.get(choice, 0) < RISK_ORDER.get(risk_level, 0):
             st.write(tr("Your answer was too low for the warning signs in this case."))
         else:
             st.write(tr("Your answer was more urgent than the case needs based on the details shown."))
         st.write(tr(care_level_explanation(choice)))
-    st.write(f"**{tr('Safest care level')}:** {tr(result.risk_level)}")
-    st.write(tr(care_level_explanation(result.risk_level)))
+    st.write(f"**{tr('Safest care level')}:** {tr(risk_level)}")
+    st.write(tr(care_level_explanation(risk_level)))
     st.markdown(f"**{tr('How the answer was decided')}**")
     st.write(f"**{tr('Selected symptoms')}:** {', '.join(translate_items(list(scenario_data.get('symptoms', [])), st.session_state.language))}")
     st.markdown(f"**{tr('Clues anyone can notice')}**")
     for clue in translate_items(symptom_clue_summary(result), st.session_state.language):
         st.write(f"- {clue}")
-    st.write(f"**{tr('Risk score')}:** {result.score}/100")
-    st.write(f"**{tr('Risk score range')}:** {risk_score_range(result.risk_level)}")
-    st.write(f"**{tr('Likely pattern')}:** {tr(result.possible_category)}")
+    st.write(f"**{tr('Risk score')}:** {score:g}/100")
+    st.write(f"**{tr('Risk score range')}:** {risk_score_range(risk_level)}")
+    st.write(f"**{tr('Likely pattern')}:** {tr(category)}")
     measurements = challenge_measurement_summary(scenario_data)
     if measurements:
         st.markdown(f"**{tr('Optional measurements')}**")
@@ -2675,12 +2680,12 @@ def render_challenge_feedback(choice: str, result: Any, scenario_data: dict[str,
         st.write(f"**{tr('Existing conditions')}:** {', '.join(translate_items(conditions, st.session_state.language))}")
     else:
         st.write(f"**{tr('Existing conditions')}:** {tr('No existing conditions were provided.')}")
-    st.write(f"{tr('This score falls in the range for')} {tr(result.risk_level)}. {tr('That is why the safest answer is')} {tr(result.risk_level)}.")
+    st.write(f"{tr('This score falls in the range for')} {tr(risk_level)}. {tr('That is why the safest answer is')} {tr(risk_level)}.")
     st.markdown(f"**{tr('Key reasons')}**")
-    for signal in translate_items(result.signals, st.session_state.language):
+    for signal in translate_items(signals, st.session_state.language):
         st.write(f"- {signal}")
     st.markdown(f"**{tr('Recommended next step')}**")
-    st.write(tr(result.recommendation))
+    st.write(tr(recommendation))
     ai_feedback = ai_text(
         (
             "You are the friendly coach for LifeLine AI's fictional Scenario Challenge. "
@@ -2688,9 +2693,9 @@ def render_challenge_feedback(choice: str, result: Any, scenario_data: dict[str,
             "Do not change the care level, diagnose, prescribe, or imply this fictional exercise replaces medical care."
         ),
         (
-            f"The player chose {choice}. The fixed rule engine chose {result.risk_level}. "
+            f"The player chose {choice}. The fixed rule engine chose {risk_level}. "
             f"Symptoms: {', '.join(str(item) for item in scenario_data.get('symptoms', []))}. "
-            f"Safety signals: {', '.join(str(item) for item in result.signals)}."
+            f"Safety signals: {', '.join(str(item) for item in signals)}."
         ),
         max_output_tokens=180,
     )
@@ -3252,10 +3257,10 @@ def render_result_panel(
     st.caption(tr("Standards-ready export for clinician review; it is not automatically sent to any health system."))
     feedback1, feedback2 = st.columns(2)
     if feedback1.button(tr("This guidance was helpful"), key="result_helpful", width="stretch"):
-        record_safety_event("Guidance feedback", f"Helpful: {result.risk_level}")
+        record_safety_event("Guidance feedback", f"Helpful: {result_risk_level(result)}")
         st.success(tr("Thank you. No identifying details were added to this feedback."))
     if feedback2.button(tr("This guidance may be wrong"), key="result_concern", width="stretch"):
-        record_safety_event("Safety concern", f"Review requested: {result.risk_level}")
+        record_safety_event("Safety concern", f"Review requested: {result_risk_level(result)}")
         st.warning(tr("Thank you. Seek professional care if the result does not match how serious the situation feels."))
 
 
@@ -3355,7 +3360,7 @@ def render_checker() -> None:
                 # improve wording only; a failed provider call falls back locally.
                 result = analyze_patient(data, use_ml=False)
                 advice = build_recommendations(result, enhance=True)
-                if result.risk_level == "Emergency":
+                if result_risk_level(result) == "Emergency":
                     record_safety_event("Emergency override", "Explicit red flag or emergency score triggered")
                 # Avoid a remote case-history request for anonymous checks. Named
                 # patients still receive the previous-check comparison.
@@ -4103,7 +4108,7 @@ def render_challenge() -> None:
     )
     if st.button(tr("Check My Answer")):
         result = fast_analyze_patient(scenario["data"])
-        if choice == result.risk_level:
+        if choice == result_risk_level(result):
             st.session_state.score += 10
         render_challenge_feedback(choice, result, scenario["data"])
     if st.button(tr("Next Scenario")):

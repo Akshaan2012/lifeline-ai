@@ -2,6 +2,7 @@ from types import SimpleNamespace
 import unittest
 
 from backend.doctor_summary import build_doctor_summary
+from backend.followup import evaluate_follow_up
 from backend.report import generate_health_report_pdf
 
 
@@ -129,6 +130,24 @@ class UserFriendlyOutputTests(unittest.TestCase):
 
         self.assertGreater(len(pdf), 1000)
         self.assertTrue(pdf.startswith(b"%PDF"))
+
+    def test_outputs_accept_restored_result_dicts(self) -> None:
+        patient = {"symptoms": "Fever, cough", "conditions": "Asthma"}
+        result = {
+            "risk_level": "Doctor Visit Recommended",
+            "score": 30,
+            "possible_category": "General Health",
+            "recommendation": "Book a doctor visit.",
+            "signals": "Fever should be watched, cough should be checked",
+        }
+
+        summary = build_doctor_summary(patient, result, {"timeframe": "Today."})
+        pdf = generate_health_report_pdf(patient, result, {})
+        followup = evaluate_follow_up(result, "Same", "No new danger signs", 24)
+
+        self.assertIn("Doctor Visit Recommended (30/100)", summary)
+        self.assertTrue(pdf.startswith(b"%PDF"))
+        self.assertEqual(followup["level"], "Doctor review is safer")
 
 
 if __name__ == "__main__":

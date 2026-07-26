@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from backend.care_features import split_list_items
+from backend.care_features import result_value, split_list_items
 
 
 def _list_text(items: Any) -> str:
@@ -47,8 +47,9 @@ def build_doctor_summary(patient_data: dict[str, Any], result: Any, advice: dict
         f"{_list_text(patient_data.get('conditions', []))}. Current medicines: "
         f"{patient_data.get('medications') or 'not provided'}. Allergies: "
         f"{patient_data.get('allergies') or 'not provided'}. LifeLine AI decision-support risk level: "
-        f"{result.risk_level} ({result.score}/100), possible symptom pattern: {result.possible_category}. "
+        f"{result_value(result, 'risk_level', 'Doctor Visit Recommended')} ({result_value(result, 'score', 0)}/100), "
+        f"possible symptom pattern: {result_value(result, 'possible_category', 'General Health')}. "
         f"Recommended timeframe: {_clean_sentence(advice.get('timeframe'))}. "
-        f"Main advice: {_clean_sentence(result.recommendation)}. "
+        f"Main advice: {_clean_sentence(result_value(result, 'recommendation', 'Review with a medical professional if symptoms continue or worsen.'))}. "
         "This summary is not a diagnosis or prescription."
     )

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from backend.care_features import result_value
 from backend.triage_engine import RISK_ORDER
 
 
@@ -43,7 +44,7 @@ def evaluate_follow_up(
 ) -> dict[str, Any]:
     notes = new_notes.lower()
     danger_found = any(word in notes for word in DANGER_WORDS)
-    risk_rank = RISK_ORDER.get(original_result.risk_level, 1)
+    risk_rank = RISK_ORDER.get(str(result_value(original_result, "risk_level", "Doctor Visit Recommended")), 1)
 
     if danger_found or status == "Worse" or risk_rank >= RISK_ORDER["Urgent Care"]:
         level = "Needs faster care"

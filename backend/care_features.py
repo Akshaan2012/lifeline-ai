@@ -51,6 +51,12 @@ def split_list_items(value: Any) -> list[str]:
     return [str(item).strip() for item in raw if str(item).strip()]
 
 
+def result_value(result: Any, key: str, default: Any = None) -> Any:
+    if isinstance(result, dict):
+        return result.get(key, default)
+    return getattr(result, key, default)
+
+
 def split_medications(value: str | list[str]) -> list[str]:
     return split_list_items(value)
 
@@ -183,7 +189,12 @@ def build_fhir_bundle(profile: dict[str, Any], result: Any | None = None) -> dic
                 "status": "final",
                 "subject": {"reference": f"Patient/{patient_id}"},
                 "occurrenceDateTime": datetime.now().isoformat(timespec="seconds"),
-                "prediction": [{"qualitativeRisk": {"text": result.risk_level}, "rationale": result.explanation}],
+                "prediction": [
+                    {
+                        "qualitativeRisk": {"text": str(result_value(result, "risk_level", "Doctor Visit Recommended"))},
+                        "rationale": str(result_value(result, "explanation", "Decision-support result restored without a detailed explanation.")),
+                    }
+                ],
                 "note": [{"text": "Educational decision support; not a diagnosis or prescription."}],
             }
         })

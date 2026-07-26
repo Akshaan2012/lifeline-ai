@@ -11,7 +11,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import inch
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
-from backend.care_features import split_list_items
+from backend.care_features import result_value, split_list_items
 
 
 def _items(items: list[str]) -> str:
@@ -36,6 +36,10 @@ def _short(value: Any) -> str:
 
 def _list_text(value: Any) -> str:
     return _short(", ".join(split_list_items(value)))
+
+
+def _result_text(result: Any, key: str, fallback: str) -> str:
+    return _short(result_value(result, key, fallback))
 
 
 def _p(text: Any, style: Any) -> Paragraph:
@@ -73,9 +77,9 @@ def generate_health_report_pdf(patient_data: dict[str, Any], result: Any, advice
         [_p("Existing conditions", styles["BodyText"]), _p(_list_text(patient_data.get("conditions", [])), styles["BodyText"])],
         [_p("Current medicines", styles["BodyText"]), _p(_short(patient_data.get("medications")), styles["BodyText"])],
         [_p("Allergies", styles["BodyText"]), _p(_short(patient_data.get("allergies")), styles["BodyText"])],
-        [_p("Risk level", styles["BodyText"]), _p(result.risk_level, styles["BodyText"])],
-        [_p("Risk score", styles["BodyText"]), _p(f"{result.score}/100", styles["BodyText"])],
-        [_p("Likely pattern", styles["BodyText"]), _p(result.possible_category, styles["BodyText"])],
+        [_p("Risk level", styles["BodyText"]), _p(_result_text(result, "risk_level", "Doctor Visit Recommended"), styles["BodyText"])],
+        [_p("Risk score", styles["BodyText"]), _p(f"{result_value(result, 'score', 0)}/100", styles["BodyText"])],
+        [_p("Likely pattern", styles["BodyText"]), _p(_result_text(result, "possible_category", "General Health"), styles["BodyText"])],
         [_p("Recommended timeframe", styles["BodyText"]), _p(_text_value(advice, "timeframe"), styles["BodyText"])],
     ]
     table = Table(summary, colWidths=[1.8 * inch, 4.65 * inch])
@@ -102,8 +106,8 @@ def generate_health_report_pdf(patient_data: dict[str, Any], result: Any, advice
     sections = [
         ("AI-assisted patient overview" if advice.get("source") else "Patient overview", _text_value(advice, "report_summary")),
         ("Doctor handoff", _text_value(advice, "doctor_handoff")),
-        ("Recommendation", result.recommendation),
-        ("Signals used for this guidance", _items(result.signals)),
+        ("Recommendation", _result_text(result, "recommendation", "Review with a medical professional if symptoms continue or worsen.")),
+        ("Signals used for this guidance", _items(split_list_items(result_value(result, "signals", [])))),
         ("What to do now", _items(_list_value(advice, "care_steps"))),
         ("Home care support", _items(_list_value(advice, "home_care"))),
         ("Precautions", _items(_list_value(advice, "precautions"))),
