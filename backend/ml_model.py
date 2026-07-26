@@ -4,12 +4,6 @@ import random
 from pathlib import Path
 from typing import Any
 
-import joblib
-import numpy as np
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
-
 from backend.care_features import split_list_items
 
 
@@ -40,17 +34,26 @@ def _selected_symptoms(data: dict[str, Any]) -> set[str]:
     return {item.lower() for item in split_list_items(data.get("symptoms", []))}
 
 
+def _safe_float(value: Any, default: float) -> float:
+    try:
+        if value in ("", None):
+            return default
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
 def patient_to_features(data: dict[str, Any]) -> list[float]:
     symptoms = _selected_symptoms(data)
     values: list[float] = [
-        float(data.get("age") or 0),
-        float(data.get("duration_days") or 0),
-        float(data.get("pain_level") or 0),
-        float(data.get("temperature") or 37.0),
-        float(data.get("heart_rate") or 80),
-        float(data.get("systolic_bp") or 120),
-        float(data.get("diastolic_bp") or 80),
-        float(data.get("oxygen") or 98),
+        _safe_float(data.get("age"), 0),
+        _safe_float(data.get("duration_days"), 0),
+        _safe_float(data.get("pain_level"), 0),
+        _safe_float(data.get("temperature"), 37.0),
+        _safe_float(data.get("heart_rate"), 80),
+        _safe_float(data.get("systolic_bp"), 120),
+        _safe_float(data.get("diastolic_bp"), 80),
+        _safe_float(data.get("oxygen"), 98),
         float(len(split_list_items(data.get("conditions", [])))),
     ]
     values.extend(1.0 if symptom in symptoms else 0.0 for symptom in SYMPTOM_FEATURES)
@@ -84,7 +87,9 @@ def _synthetic_score(data: dict[str, Any]) -> int:
     return min(score, 100)
 
 
-def _generate_training_data(rows: int = 900) -> tuple[np.ndarray, np.ndarray]:
+def _generate_training_data(rows: int = 900) -> tuple[Any, Any]:
+    import numpy as np
+
     random.seed(42)
     x_rows: list[list[float]] = []
     y_rows: list[str] = []
@@ -108,7 +113,12 @@ def _generate_training_data(rows: int = 900) -> tuple[np.ndarray, np.ndarray]:
     return np.array(x_rows), np.array(y_rows)
 
 
-def train_or_load_model() -> Pipeline:
+def train_or_load_model() -> Any:
+    import joblib
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.pipeline import Pipeline
+    from sklearn.preprocessing import StandardScaler
+
     MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
     if MODEL_PATH.exists():
         artifact = joblib.load(MODEL_PATH)
