@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import patch
 
 from backend import translator
-from backend.translator import _fallback_text, translate_items, translate_text
+from backend.translator import _fallback_text, translate_items, translate_items_cached, translate_text
 
 
 class TranslatorFallbackTests(unittest.TestCase):
@@ -40,6 +40,11 @@ class TranslatorFallbackTests(unittest.TestCase):
             translated = translate_items(["Broken Label"], "Hindi")
 
         self.assertEqual(translated, ["Broken Label"])
+
+
+    def test_translate_items_accepts_plain_text_without_character_split(self) -> None:
+        self.assertEqual(translate_items("Chest pain, confusion", "English"), ["Chest pain, confusion"])
+        self.assertEqual(translate_items_cached("Chest pain, confusion", "English"), ["Chest pain, confusion"])
 
 
 if __name__ == "__main__":

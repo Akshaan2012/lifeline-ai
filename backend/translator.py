@@ -328,12 +328,20 @@ def translate_text_cached(text: str, selected_language: str) -> str:
     return text
 
 
-def translate_items(items: list[str], selected_language: str) -> list[str]:
-    return list(_translate_batch_cached(tuple(items), selected_language))
+def _coerce_text_items(items: Any) -> list[str]:
+    if isinstance(items, str):
+        return [items] if items.strip() else []
+    if isinstance(items, (list, tuple, set)):
+        return [str(item) for item in items if str(item).strip()]
+    return [str(items)] if str(items or "").strip() else []
 
 
-def translate_items_cached(items: list[str], selected_language: str) -> list[str]:
-    return [translate_text_cached(item, selected_language) for item in items]
+def translate_items(items: Any, selected_language: str) -> list[str]:
+    return list(_translate_batch_cached(tuple(_coerce_text_items(items)), selected_language))
+
+
+def translate_items_cached(items: Any, selected_language: str) -> list[str]:
+    return [translate_text_cached(item, selected_language) for item in _coerce_text_items(items)]
 
 
 def preload_translations(items: list[str], selected_language: str) -> None:
