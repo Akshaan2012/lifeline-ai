@@ -3089,6 +3089,16 @@ def render_previous_check_comparison(comparison: dict[str, Any] | None) -> None:
         st.write(f"- {tr(str(item))}")
 
 
+def advice_text(advice: dict[str, Any], key: str, fallback: str) -> str:
+    value = advice.get(key)
+    return str(value).strip() if str(value or "").strip() else fallback
+
+
+def advice_items(advice: dict[str, Any], key: str, fallback: list[str]) -> list[str]:
+    items = split_list_items(advice.get(key, []))
+    return items if items else fallback
+
+
 def render_result_panel(
     result: Any,
     advice: dict[str, Any],
@@ -3109,8 +3119,8 @@ def render_result_panel(
     # urgent situation, users should not need to interpret the dashboard first.
     render_emergency_actions(patient_data or {}, result)
     st.subheader(tr(result.recommendation))
-    st.info(tr(advice["risk_summary"]))
-    st.write(tr(advice["simple_explanation"]))
+    st.info(tr(advice_text(advice, "risk_summary", "Review the care level and warning signs before deciding next steps.")))
+    st.write(tr(advice_text(advice, "simple_explanation", str(getattr(result, "explanation", "The app reviewed the entered details.")))))
     recommendation_label = "AI-enhanced recommendation" if advice.get("source") else "Safety recommendation"
     st.markdown(f'<div class="section-label">{h(recommendation_label)}</div>', unsafe_allow_html=True)
     st.markdown(
@@ -3119,7 +3129,7 @@ def render_result_panel(
             <div class="summary-item"><span>{h('Care Level')}</span>{h(result.risk_level)}</div>
             <div class="summary-item"><span>{h('Risk Score')}</span>{result.score}/100</div>
             <div class="summary-item"><span>{h('Pattern')}</span>{h(result.possible_category)}</div>
-            <div class="summary-item"><span>{h('Timeframe')}</span>{h(advice['timeframe'])}</div>
+            <div class="summary-item"><span>{h('Timeframe')}</span>{h(advice_text(advice, 'timeframe', 'Not provided'))}</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -3146,9 +3156,9 @@ def render_result_panel(
     if positive_followups:
         st.markdown(f"**{tr('Smart follow-up answers')}**")
         for item in positive_followups:
-            st.write(f"- {tr(item['question'])}: {tr(item['answer'])}")
+            st.write(f"- {tr(str(item.get('question', '')))}: {tr(str(item.get('answer', '')))}")
     st.markdown(f"**{tr('Likely health pattern')}**")
-    st.write(tr(advice["likely_pattern"]))
+    st.write(tr(advice_text(advice, "likely_pattern", "The pattern needs review with the entered symptoms and measurements.")))
 
     col1, col2 = st.columns(2)
     with col1:
@@ -3156,28 +3166,28 @@ def render_result_panel(
         for signal in translate_items(result.signals, st.session_state.language):
             st.write(f"- {signal}")
         st.markdown(f"**{tr('What to do now')}**")
-        for step in translate_items(advice["care_steps"], st.session_state.language):
+        for step in translate_items(advice_items(advice, "care_steps", ["Follow the safest care level shown above."]), st.session_state.language):
             st.write(f"- {step}")
         st.markdown(f"**{tr('Home care support')}**")
-        for step in translate_items(advice["home_care"], st.session_state.language):
+        for step in translate_items(advice_items(advice, "home_care", ["Rest and monitor symptoms if it is safe to wait."]), st.session_state.language):
             st.write(f"- {step}")
     with col2:
         st.markdown(f"**{tr('Precautions')}**")
-        for item in translate_items(advice["precautions"], st.session_state.language):
+        for item in translate_items(advice_items(advice, "precautions", ["Watch for worsening symptoms or red flags."]), st.session_state.language):
             st.write(f"- {item}")
         st.markdown(f"**{tr('What to avoid')}**")
-        for item in translate_items(advice["avoid"], st.session_state.language):
+        for item in translate_items(advice_items(advice, "avoid", ["Do not ignore severe or worsening symptoms."]), st.session_state.language):
             st.write(f"- {item}")
         st.markdown(f"**{tr('Prevention tips')}**")
-        for item in translate_items(advice["prevention"], st.session_state.language):
+        for item in translate_items(advice_items(advice, "prevention", ["Keep routine health checks and medicine lists updated."]), st.session_state.language):
             st.write(f"- {item}")
         st.markdown(f"**{tr('Red Flags')}**")
-        for item in translate_items(advice["red_flags"], st.session_state.language):
+        for item in translate_items(advice_items(advice, "red_flags", ["Chest pain, trouble breathing, fainting, confusion, seizure, or stroke signs."]), st.session_state.language):
             st.write(f"- {item}")
     st.markdown(f"**{tr('Questions to ask a doctor')}**")
-    for item in translate_items(advice["doctor_questions"], st.session_state.language):
+    for item in translate_items(advice_items(advice, "doctor_questions", ["What should I do if symptoms continue or worsen?"]), st.session_state.language):
         st.write(f"- {item}")
-    st.warning(tr(advice["disclaimer"]))
+    st.warning(tr(advice_text(advice, "disclaimer", "This is general guidance only. It does not replace a doctor, diagnosis, prescription, or emergency service.")))
     export_bundle = build_fhir_bundle(patient_data or {}, result)
     st.download_button(
         tr("Download structured health bundle"),
@@ -3317,11 +3327,16 @@ def render_checker() -> None:
                 if share_code:
                     st.success(f"{tr('Shared with the clinic. Keep this private case code')}: {share_code}")
                     st.code(share_code, language=None)
-                else:
-                    st.warning(tr("The app could not confirm a private case code. If this was meant for clinic review, ask the clinic to check Supabase setup and schema."))
+            else:
+                st.warning(tr("The app could not confirm a private case code. If this was meant for clinic review, ask the clinic to check Supabase setup and schema."))
             patient_data = st.session_state.get("checker_patient_data") or {}
-            render_result_panel(stored["result"], stored["advice"], patient_data, stored.get("comparison"))
-            pdf_bytes = generate_health_report_pdf(patient_data, stored["result"], stored["advice"])
+            result = stored.get("result")
+            advice = stored.get("advice") if isinstance(stored.get("advice"), dict) else {}
+            if result is None:
+                st.warning(tr("The previous result could not be restored. Please run the health check again."))
+                return
+            render_result_panel(result, advice, patient_data, stored.get("comparison"))
+            pdf_bytes = generate_health_report_pdf(patient_data, result, advice)
             st.download_button(
                 tr("Download Health Report PDF"),
                 data=pdf_bytes,
