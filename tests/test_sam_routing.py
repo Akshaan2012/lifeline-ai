@@ -28,6 +28,24 @@ class SamRoutingTests(unittest.TestCase):
 
         self.assertEqual(command.target_page, "Doctor Dashboard")
 
+    def test_danger_question_uses_local_safety_route(self) -> None:
+        command = answer_message(
+            "is chest pain and confusion normal",
+            available_pages=["Home", "Patient Health Checker", "Disease Q&A Assistant"],
+        )
+
+        self.assertEqual(command.intent, "safety_route")
+        self.assertEqual(command.target_page, "Patient Health Checker")
+        self.assertIn("warning sign", command.message.lower())
+        self.assertIn("emergency", command.message.lower())
+
+    def test_overdose_wording_uses_local_safety_route(self) -> None:
+        command = answer_message("i took too many pills what should i do")
+
+        self.assertEqual(command.intent, "safety_route")
+        self.assertEqual(command.target_page, "Patient Health Checker")
+        self.assertIn("overdose", command.message.lower())
+
 
 if __name__ == "__main__":
     unittest.main()

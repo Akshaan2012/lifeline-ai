@@ -6,6 +6,33 @@ from functools import lru_cache
 from backend.ai_helper import ai_text, offline_mode, setting_float, setting_int
 
 
+SAM_DANGER_PHRASES = {
+    "chest pain",
+    "chest hurts",
+    "hard to breathe",
+    "trouble breathing",
+    "can't breathe",
+    "cant breathe",
+    "confusion",
+    "confused",
+    "fainting",
+    "fainted",
+    "passed out",
+    "stroke",
+    "face drooping",
+    "arm weakness",
+    "speech trouble",
+    "seizure",
+    "swollen tongue",
+    "throat swelling",
+    "severe allergy",
+    "anaphylaxis",
+    "overdose",
+    "too many pills",
+    "more than prescribed",
+}
+
+
 @dataclass(frozen=True)
 class SamCommand:
     intent: str
@@ -21,6 +48,20 @@ class SamCommand:
 def route_message(message: str) -> SamCommand:
     text = message.lower().strip()
     navigation_words = ["open", "go to", "take me", "show me", "switch", "page"]
+
+    if any(phrase in text for phrase in SAM_DANGER_PHRASES):
+        return SamCommand(
+            intent="safety_route",
+            target_page="Patient Health Checker",
+            confidence=0.99,
+            reason="The user mentioned a possible emergency warning sign.",
+            message=(
+                "That can be a warning sign. Do not treat chest pain, severe breathing trouble, "
+                "confusion, fainting, stroke signs, seizure, severe allergy, or possible overdose as normal. "
+                "If it is severe, sudden, worsening, or happening now, call local emergency services or go to emergency care. "
+                "You can also open Patient Health Checker for symptom-specific guidance."
+            ),
+        )
 
     if (
         text in {"home"}
@@ -203,6 +244,8 @@ def _wants_explanation(message: str) -> bool:
 
 
 def _is_clear_app_request(message: str, command: SamCommand) -> bool:
+    if command.intent == "safety_route":
+        return True
     if _wants_explanation(message) and command.intent != "explain_app":
         return False
     return command.confidence >= 0.86 and command.intent in {
