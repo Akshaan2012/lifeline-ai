@@ -107,7 +107,7 @@ def clinician_evidence(patient_data: dict[str, Any], result: Any) -> list[dict[s
     for label, value in measurements.items():
         if value not in (None, "", 0, 0.0):
             evidence.append({"input": f"{label}: {value}", "effect": "Included in the rule-based risk score."})
-    for signal in getattr(result, "signals", []):
+    for signal in split_list_items(getattr(result, "signals", [])):
         evidence.append({"input": "Rule outcome", "effect": str(signal)})
     return evidence
 

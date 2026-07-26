@@ -783,28 +783,29 @@ def inject_css() -> None:
             align-items: center !important;
             gap: 8px !important;
             position: fixed !important;
-            top: 20px !important;
-            left: 18px !important;
+            top: 92px !important;
+            left: 12px !important;
             z-index: 999999 !important;
             border-radius: 999px !important;
-            padding: 8px 14px 8px 8px !important;
-            background: linear-gradient(135deg, rgba(7, 29, 37, .98), rgba(11, 66, 73, .98)) !important;
-            border: 1px solid rgba(134, 255, 235, .62) !important;
-            box-shadow: 0 16px 34px rgba(8, 38, 49, .24) !important;
+            padding: 10px 16px 10px 10px !important;
+            background: linear-gradient(135deg, #06242d, #0f8d83) !important;
+            border: 2px solid rgba(167, 255, 241, .92) !important;
+            box-shadow: 0 18px 42px rgba(8, 38, 49, .34), 0 0 0 4px rgba(16, 184, 166, .15) !important;
         }
         [data-testid="collapsedControl"]::after {
-            content: "Menu →";
+            content: "Open menu →";
             color: #efffff !important;
-            font-size: .92rem !important;
+            font-size: 1rem !important;
             font-weight: 800 !important;
             letter-spacing: .02em !important;
             line-height: 1 !important;
+            white-space: nowrap !important;
         }
         [data-testid="collapsedControl"] button,
         [data-testid="stSidebarCollapseButton"] {
-            width: 44px !important;
-            height: 44px !important;
-            min-width: 44px !important;
+            width: 48px !important;
+            height: 48px !important;
+            min-width: 48px !important;
             border-radius: 999px !important;
             background: rgba(255, 255, 255, .14) !important;
             color: #efffff !important;
@@ -815,9 +816,26 @@ def inject_css() -> None:
             display: inline-flex !important;
             visibility: visible !important;
             pointer-events: auto !important;
-            position: sticky !important;
-            top: 12px !important;
-            z-index: 9999 !important;
+            position: fixed !important;
+            top: 18px !important;
+            left: 244px !important;
+            z-index: 999999 !important;
+            background: linear-gradient(135deg, rgba(7, 29, 37, .98), rgba(11, 66, 73, .98)) !important;
+            border: 2px solid rgba(167, 255, 241, .72) !important;
+            box-shadow: 0 12px 26px rgba(2, 20, 26, .28) !important;
+        }
+        [data-testid="stSidebarCollapseButton"]::after {
+            content: "Hide";
+            position: absolute;
+            left: 56px;
+            color: #efffff;
+            font-size: .85rem;
+            font-weight: 800;
+            letter-spacing: .02em;
+            text-shadow: 0 1px 2px rgba(0,0,0,.22);
+        }
+        [data-testid="stSidebar"][aria-expanded="false"] [data-testid="stSidebarCollapseButton"]::after {
+            content: "";
         }
         [data-testid="collapsedControl"] button:hover,
         [data-testid="stSidebarCollapseButton"]:hover {
@@ -2076,6 +2094,33 @@ def danger_status(risk_level: str) -> dict[str, str]:
     }
 
 
+def result_value(result: Any, key: str, default: Any = None) -> Any:
+    if isinstance(result, dict):
+        return result.get(key, default)
+    return getattr(result, key, default)
+
+
+def result_risk_level(result: Any) -> str:
+    value = str(result_value(result, "risk_level", "") or "").strip()
+    return value if value in RISK_ORDER else "Doctor Visit Recommended"
+
+
+def result_score(result: Any) -> float:
+    return safe_number(result_value(result, "score")) or 0
+
+
+def result_recommendation(result: Any) -> str:
+    return str(result_value(result, "recommendation", "") or "Review the result and seek medical advice if symptoms continue or worsen.")
+
+
+def result_category(result: Any) -> str:
+    return str(result_value(result, "possible_category", "") or "General Health")
+
+
+def result_signals(result: Any) -> list[str]:
+    return split_list_items(result_value(result, "signals", [])) or ["No additional rule signal was restored for this result."]
+
+
 def compact_risk_label(risk_level: str) -> str:
     if risk_level == "Emergency":
         return "Critical"
@@ -2269,7 +2314,8 @@ def case_queue_summary(cases: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def action_plan_for_result(result: Any) -> dict[str, Any]:
-    if result.risk_level == "Emergency":
+    risk_level = result_risk_level(result)
+    if risk_level == "Emergency":
         return {
             "class": "care-emergency",
             "badge": "Immediate safety steps",
@@ -2282,7 +2328,7 @@ def action_plan_for_result(result: Any) -> dict[str, Any]:
                 "Have medicines, allergies, symptoms, and recent measurements ready for clinicians.",
             ],
         }
-    if result.risk_level == "Urgent Care":
+    if risk_level == "Urgent Care":
         return {
             "class": "care-urgent",
             "badge": "Care action plan",
@@ -2295,7 +2341,7 @@ def action_plan_for_result(result: Any) -> dict[str, Any]:
                 "Use the doctor summary when speaking with the care team.",
             ],
         }
-    if result.risk_level == "Doctor Visit Recommended":
+    if risk_level == "Doctor Visit Recommended":
         return {
             "class": "care-doctor",
             "badge": "Care action plan",
@@ -2371,7 +2417,7 @@ def record_safety_event(event_type: str, details: str, *, anonymous: bool = True
 
 
 def render_emergency_actions(patient_data: dict[str, Any], result: Any) -> None:
-    if result.risk_level != "Emergency":
+    if result_risk_level(result) != "Emergency":
         return
     st.error(tr("Possible emergency: act now and do not wait for an online reply."))
     for step in emergency_action_plan(patient_data):
@@ -2385,7 +2431,7 @@ def render_emergency_actions(patient_data: dict[str, Any], result: Any) -> None:
 
 
 def render_voice_summary(result: Any) -> None:
-    spoken = escape(f"LifeLine AI result. Care level: {result.risk_level}. {result.recommendation}")
+    spoken = escape(f"LifeLine AI result. Care level: {result_risk_level(result)}. {result_recommendation(result)}")
     components.html(
         f"""
         <button aria-label="Read result aloud" onclick="speechSynthesis.cancel();speechSynthesis.speak(new SpeechSynthesisUtterance(document.getElementById('speech').textContent));"
@@ -3105,7 +3151,12 @@ def render_result_panel(
     patient_data: dict[str, Any] | None = None,
     comparison: dict[str, Any] | None = None,
 ) -> None:
-    danger = danger_status(result.risk_level)
+    risk_level = result_risk_level(result)
+    score = result_score(result)
+    recommendation = result_recommendation(result)
+    category = result_category(result)
+    signals = result_signals(result)
+    danger = danger_status(risk_level)
     st.markdown(
         f"""
         <div class="danger-banner {danger['class']}">
@@ -3118,7 +3169,7 @@ def render_result_panel(
     # Put the safest next action before scores and technical detail. In an
     # urgent situation, users should not need to interpret the dashboard first.
     render_emergency_actions(patient_data or {}, result)
-    st.subheader(tr(result.recommendation))
+    st.subheader(tr(recommendation))
     st.info(tr(advice_text(advice, "risk_summary", "Review the care level and warning signs before deciding next steps.")))
     st.write(tr(advice_text(advice, "simple_explanation", str(getattr(result, "explanation", "The app reviewed the entered details.")))))
     recommendation_label = "AI-enhanced recommendation" if advice.get("source") else "Safety recommendation"
@@ -3126,9 +3177,9 @@ def render_result_panel(
     st.markdown(
         f"""
         <div class="summary-grid">
-            <div class="summary-item"><span>{h('Care Level')}</span>{h(result.risk_level)}</div>
-            <div class="summary-item"><span>{h('Risk Score')}</span>{result.score}/100</div>
-            <div class="summary-item"><span>{h('Pattern')}</span>{h(result.possible_category)}</div>
+            <div class="summary-item"><span>{h('Care Level')}</span>{h(risk_level)}</div>
+            <div class="summary-item"><span>{h('Risk Score')}</span>{score:g}/100</div>
+            <div class="summary-item"><span>{h('Pattern')}</span>{h(category)}</div>
             <div class="summary-item"><span>{h('Timeframe')}</span>{h(advice_text(advice, 'timeframe', 'Not provided'))}</div>
         </div>
         """,
@@ -3145,14 +3196,16 @@ def render_result_panel(
         st.caption(tr(str(advice["source"])))
     render_care_action_plan(result)
     render_previous_check_comparison(comparison)
-    if result.model_prediction:
-        st.caption(f"{tr('Model support signal')}: {tr(str(result.model_prediction))} | {tr('Confidence')}: {result.model_confidence}")
+    model_prediction = result_value(result, "model_prediction")
+    if model_prediction:
+        st.caption(f"{tr('Model support signal')}: {tr(str(model_prediction))} | {tr('Confidence')}: {result_value(result, 'model_confidence', 'Not provided')}")
     with st.expander(tr("Clinician evidence and rule trace")):
         st.caption(tr("This shows the information used so a clinician can independently review the recommendation."))
         for item in clinician_evidence(patient_data or {}, result):
-            st.write(f"- **{item['input']}** — {item['effect']}")
-    followup_answers = list((patient_data or {}).get("followup_answers", []))
-    positive_followups = [item for item in followup_answers if item.get("answer") in {"Yes", "Not sure"}]
+            st.write(f"- **{item.get('input', 'Input')}** — {item.get('effect', 'Reviewed')}")
+    followup_raw = (patient_data or {}).get("followup_answers", [])
+    followup_answers = followup_raw if isinstance(followup_raw, list) else []
+    positive_followups = [item for item in followup_answers if isinstance(item, dict) and item.get("answer") in {"Yes", "Not sure"}]
     if positive_followups:
         st.markdown(f"**{tr('Smart follow-up answers')}**")
         for item in positive_followups:
@@ -3163,7 +3216,7 @@ def render_result_panel(
     col1, col2 = st.columns(2)
     with col1:
         st.markdown(f"**{tr('Signals used for this guidance')}**")
-        for signal in translate_items(result.signals, st.session_state.language):
+        for signal in translate_items(signals, st.session_state.language):
             st.write(f"- {signal}")
         st.markdown(f"**{tr('What to do now')}**")
         for step in translate_items(advice_items(advice, "care_steps", ["Follow the safest care level shown above."]), st.session_state.language):
