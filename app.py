@@ -3543,6 +3543,7 @@ def render_timeline() -> None:
             "gender": raw_latest.get("gender", "Prefer not to say"),
             "conditions": split_list_items(raw_latest.get("conditions", [])),
             "medications": raw_latest.get("medications", ""),
+            "allergies": raw_latest.get("allergies", ""),
         }
         st.session_state.patient_profile = profile
         load_profile_into_form(profile)
@@ -3743,26 +3744,26 @@ def render_passport_and_reminders() -> None:
             key="passport_custom_conditions",
         )
         conditions = unique_items(selected_conditions + split_free_text_items(custom_conditions))
+        displayed_profile = {
+            **profile,
+            "patient_name": patient_name,
+            "patient_id": patient_id,
+            "emergency_contact": emergency_contact,
+            "blood_group": "" if blood_group == "Not known" else blood_group,
+            "allergies": allergies,
+            "medications": medications,
+            "conditions": conditions,
+        }
         if st.button(tr("Save passport"), type="primary", width="stretch"):
-            saved_profile = {
-                **profile,
-                "patient_name": patient_name,
-                "patient_id": patient_id,
-                "emergency_contact": emergency_contact,
-                "blood_group": "" if blood_group == "Not known" else blood_group,
-                "allergies": allergies,
-                "medications": medications,
-                "conditions": conditions,
-            }
+            saved_profile = displayed_profile
             profiles[active] = saved_profile
             st.session_state.patient_profile = saved_profile
             st.success(tr("Passport saved for this browser session."))
-        bundle = build_fhir_bundle({**profile, "patient_name": patient_name, "patient_id": patient_id, "emergency_contact": emergency_contact, "blood_group": blood_group, "allergies": allergies, "medications": medications, "conditions": conditions})
+        bundle = build_fhir_bundle(displayed_profile)
         st.download_button(tr("Download structured passport"), json.dumps(bundle, indent=2), "lifeline_ai_passport.json", "application/fhir+json", width="stretch")
         if st.button(tr("Use this profile in Health Checker"), width="stretch"):
-            selected_profile = profiles.get(active, profile)
-            st.session_state.patient_profile = selected_profile
-            load_profile_into_form(selected_profile)
+            st.session_state.patient_profile = displayed_profile
+            load_profile_into_form(displayed_profile)
             switch_page("Patient Health Checker")
 
     with right:

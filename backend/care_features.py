@@ -130,12 +130,12 @@ def emergency_action_plan(patient_data: dict[str, Any]) -> list[str]:
 
 def reminder_status(reminder: dict[str, Any], today: date | None = None) -> str:
     today = today or date.today()
+    if reminder.get("completed"):
+        return "Completed"
     try:
         due = date.fromisoformat(str(reminder.get("due_date")))
     except (TypeError, ValueError):
         return "Unscheduled"
-    if reminder.get("completed"):
-        return "Completed"
     if due < today:
         return "Overdue"
     if due == today:

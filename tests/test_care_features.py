@@ -89,6 +89,7 @@ class CareFeatureTests(unittest.TestCase):
         self.assertEqual(reminder_status({"due_date": "2026-07-02"}, date(2026, 7, 3)), "Overdue")
         self.assertEqual(reminder_status({"due_date": "not a date"}, date(2026, 7, 3)), "Unscheduled")
         self.assertEqual(reminder_status({"due_date": "2026-07-02", "completed": True}, date(2026, 7, 3)), "Completed")
+        self.assertEqual(reminder_status({"due_date": "not a date", "completed": True}, date(2026, 7, 3)), "Completed")
 
     def test_structured_bundle_contains_patient_and_risk(self) -> None:
         result = SimpleNamespace(risk_level="Urgent Care", explanation="Rule explanation")
