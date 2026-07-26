@@ -723,7 +723,7 @@ def inject_css() -> None:
         header[data-testid="stHeader"] {
             background: transparent !important;
             backdrop-filter: none;
-            pointer-events: none;
+            pointer-events: auto;
         }
         #MainMenu, footer { visibility: hidden; }
         [data-testid="stToolbar"],
@@ -748,6 +748,7 @@ def inject_css() -> None:
         .stDeployButton {
             display: none !important;
             visibility: hidden !important;
+            pointer-events: none !important;
         }
         div:has(> [aria-label*="Manage app"]),
         div:has(> [title*="Manage app"]),
@@ -791,6 +792,7 @@ def inject_css() -> None:
             background: linear-gradient(135deg, #06242d, #0f8d83) !important;
             border: 2px solid rgba(167, 255, 241, .92) !important;
             box-shadow: 0 18px 42px rgba(8, 38, 49, .34), 0 0 0 4px rgba(16, 184, 166, .15) !important;
+            cursor: pointer !important;
         }
         [data-testid="collapsedControl"]::after {
             content: "Open menu →";
@@ -811,6 +813,7 @@ def inject_css() -> None:
             color: #efffff !important;
             border: 1px solid rgba(255, 255, 255, .30) !important;
             box-shadow: none !important;
+            cursor: pointer !important;
         }
         [data-testid="stSidebarCollapseButton"] {
             display: inline-flex !important;
@@ -825,14 +828,15 @@ def inject_css() -> None:
             box-shadow: 0 12px 26px rgba(2, 20, 26, .28) !important;
         }
         [data-testid="stSidebarCollapseButton"]::after {
-            content: "Hide";
+            content: "Hide sidebar";
             position: absolute;
-            left: 56px;
+            right: 56px;
             color: #efffff;
             font-size: .85rem;
             font-weight: 800;
             letter-spacing: .02em;
             text-shadow: 0 1px 2px rgba(0,0,0,.22);
+            white-space: nowrap;
         }
         [data-testid="stSidebar"][aria-expanded="false"] [data-testid="stSidebarCollapseButton"]::after {
             content: "";
