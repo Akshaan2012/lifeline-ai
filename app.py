@@ -2121,6 +2121,26 @@ def result_signals(result: Any) -> list[str]:
     return split_list_items(result_value(result, "signals", [])) or ["No additional rule signal was restored for this result."]
 
 
+def normalized_case_risk(case: dict[str, Any]) -> str:
+    risk = str(case.get("risk_level") or "").strip()
+    return risk if risk in RISK_ORDER else "Doctor Visit Recommended"
+
+
+def normalized_case_score(case: dict[str, Any]) -> int:
+    return int(max(0, min(100, safe_number(case.get("score")) or 0)))
+
+
+def normalized_case_status(case: dict[str, Any]) -> str:
+    status = str(case.get("review_status") or "New").strip()
+    return status if status in REVIEW_STATUS_OPTIONS else "New"
+
+
+def normalized_result_score_text(result: Any) -> str:
+    if result is None:
+        return "—"
+    return f"{int(max(0, min(100, result_score(result))))}/100"
+
+
 def compact_risk_label(risk_level: str) -> str:
     if risk_level == "Emergency":
         return "Critical"
@@ -2288,17 +2308,17 @@ def case_queue_summary(cases: list[dict[str, Any]]) -> dict[str, Any]:
     high_priority = [
         case
         for case in cases
-        if str(case.get("risk_level")) in {"Emergency", "Urgent Care"}
+        if normalized_case_risk(case) in {"Emergency", "Urgent Care"}
     ]
     new_reviews = [
         case
         for case in cases
-        if str(case.get("review_status") or "New") == "New"
+        if normalized_case_status(case) == "New"
     ]
     resolved = [
         case
         for case in cases
-        if str(case.get("review_status") or "") == "Resolved"
+        if normalized_case_status(case) == "Resolved"
     ]
     categories = [str(case.get("category") or "General Health") for case in cases]
     most_common = "N/A"
@@ -2770,8 +2790,7 @@ def render_patient_home() -> None:
     reminders = st.session_state.get("care_reminders", [])
     open_reminders = sum(1 for reminder in reminders if isinstance(reminder, dict) and not reminder.get("completed"))
     last_result = stored_triage_result(st.session_state.get("checker_result"))
-    last_score = getattr(last_result, "score", None) if last_result else None
-    last_risk = compact_risk_label(str(getattr(last_result, "risk_level", "Not checked"))) if last_result else "Not checked"
+    last_risk = compact_risk_label(result_risk_level(last_result)) if last_result else "Not checked"
     profile_name = str(profile.get("patient_name") or tr("My health"))
 
     st.markdown(
@@ -2797,7 +2816,7 @@ def render_patient_home() -> None:
         [
             ("Profile", profile_name, "Your saved health details"),
             ("Last risk level", last_risk, "Most recent check"),
-            ("Last score", f"{last_score}/100" if last_score is not None else "—", "Risk guidance"),
+            ("Last score", normalized_result_score_text(last_result), "Risk guidance"),
             ("Reminders", str(open_reminders), "Still to complete"),
         ]
     )
@@ -2843,9 +2862,9 @@ def render_professional_home() -> None:
         f"""
         <tr>
             <td>{h(str(case.get('patient_name') or 'Anonymous'))}</td>
-            <td><span class="clinical-chip">{h(compact_risk_label(str(case.get('risk_level', 'Unknown'))))}</span></td>
-            <td>{h(str(case.get('review_status') or 'New'))}</td>
-            <td>{h(str(case.get('score', 0)))}/100</td>
+            <td><span class="clinical-chip">{h(compact_risk_label(normalized_case_risk(case)))}</span></td>
+            <td>{h(normalized_case_status(case))}</td>
+            <td>{h(str(normalized_case_score(case)))}/100</td>
         </tr>
         """
         for case in recent_cases
@@ -3519,8 +3538,9 @@ def render_timeline() -> None:
             vitals.append(f"pulse {heart_rate:g}")
         if systolic_bp is not None and diastolic_bp is not None:
             vitals.append(f"BP {systolic_bp:g}/{diastolic_bp:g}")
-        risk_label = tr(compact_risk_label(str(case.get("risk_level", "Unknown"))))
-        with st.expander(f"{index}. {case.get('created_at', '')} - {risk_label} - {case.get('score', 0)}/100", expanded=index == len(patient_cases)):
+        risk_label = tr(compact_risk_label(normalized_case_risk(case)))
+        score_label = normalized_case_score(case)
+        with st.expander(f"{index}. {case.get('created_at', '')} - {risk_label} - {score_label}/100", expanded=index == len(patient_cases)):
             st.write(f"**{tr('Symptoms')}:** {symptoms}")
             st.write(f"**{tr('Duration')}:** {duration} | **{tr('Pain')}:** {pain}")
             st.write(f"**{tr('Measurements')}:** {', '.join(vitals) if vitals else tr('Not provided')}")
@@ -3798,8 +3818,8 @@ def render_safety_quality() -> None:
         "Clinical safety monitoring",
     )
     cases = list_cases()
-    emergency = sum(str(case.get("risk_level")) == "Emergency" for case in cases)
-    urgent = sum(str(case.get("risk_level")) == "Urgent Care" for case in cases)
+    emergency = sum(normalized_case_risk(case) == "Emergency" for case in cases)
+    urgent = sum(normalized_case_risk(case) == "Urgent Care" for case in cases)
     concerns = sum(event.get("event") == "Safety concern" for event in st.session_state.safety_events)
     c1, c2, c3, c4 = st.columns(4)
     c1.metric(tr("Saved checks"), len(cases))
@@ -3835,8 +3855,8 @@ def render_clinic_pilot_plan() -> None:
     )
     cases = list_cases()
     shared_cases = len(cases)
-    priority_cases = sum(str(case.get("risk_level")) in {"Emergency", "Urgent Care"} for case in cases)
-    reviewed_cases = sum(str(case.get("review_status") or "New") != "New" for case in cases)
+    priority_cases = sum(normalized_case_risk(case) in {"Emergency", "Urgent Care"} for case in cases)
+    reviewed_cases = sum(normalized_case_status(case) != "New" for case in cases)
     unique_patients = len({str(case.get("patient_name") or "Anonymous") for case in cases}) if cases else 0
 
     st.info(
