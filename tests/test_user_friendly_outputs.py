@@ -149,6 +149,34 @@ class UserFriendlyOutputTests(unittest.TestCase):
         self.assertTrue(pdf.startswith(b"%PDF"))
         self.assertEqual(followup["level"], "Doctor review is safer")
 
+    def test_summary_preserves_zero_duration_and_clamps_score(self) -> None:
+        patient = {
+            "age": None,
+            "gender": None,
+            "duration_days": 0,
+            "pain_level": 0,
+            "symptoms": ["COPD flare"],
+            "conditions": ["COPD"],
+            "medications": None,
+            "allergies": None,
+        }
+        result = {
+            "risk_level": "",
+            "score": 150,
+            "possible_category": "",
+            "recommendation": "",
+        }
+
+        summary = build_doctor_summary(patient, result, {})
+        pdf = generate_health_report_pdf(patient, result, {})
+
+        self.assertIn("age not provided years old", summary)
+        self.assertIn("reports symptoms for 0 day(s): COPD flare", summary)
+        self.assertIn("Pain level: 0/10", summary)
+        self.assertIn("(100/100)", summary)
+        self.assertNotIn("None", summary)
+        self.assertTrue(pdf.startswith(b"%PDF"))
+
 
 if __name__ == "__main__":
     unittest.main()

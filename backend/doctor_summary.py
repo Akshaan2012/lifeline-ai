@@ -32,11 +32,24 @@ def _clean_sentence(text: Any) -> str:
     return str(text or "not provided").strip().rstrip(".")
 
 
+def _present_text(value: Any, fallback: str = "not provided") -> str:
+    text = str(value).strip() if value is not None else ""
+    return text if text else fallback
+
+
+def _score_text(value: Any) -> str:
+    try:
+        score = max(0, min(100, int(float(value or 0))))
+    except (TypeError, ValueError):
+        score = 0
+    return f"{score}/100"
+
+
 def build_doctor_summary(patient_data: dict[str, Any], result: Any, advice: dict[str, Any]) -> str:
-    name = patient_data.get("patient_name") or "Anonymous patient"
-    age = patient_data.get("age") or "age not provided"
-    gender = patient_data.get("gender") or "gender not provided"
-    duration = patient_data.get("duration_days") or "not provided"
+    name = _present_text(patient_data.get("patient_name"), "Anonymous patient")
+    age = _present_text(patient_data.get("age"), "age not provided")
+    gender = _present_text(patient_data.get("gender"), "gender not provided")
+    duration = _present_text(patient_data.get("duration_days"))
     pain = patient_data.get("pain_level")
     pain_text = f"{pain}/10" if pain is not None else "not provided"
 
@@ -45,10 +58,10 @@ def build_doctor_summary(patient_data: dict[str, Any], result: Any, advice: dict
         f"{_list_text(patient_data.get('symptoms', []))}. Pain level: {pain_text}. "
         f"Home measurements: {_vitals_text(patient_data)}. Existing conditions: "
         f"{_list_text(patient_data.get('conditions', []))}. Current medicines: "
-        f"{patient_data.get('medications') or 'not provided'}. Allergies: "
-        f"{patient_data.get('allergies') or 'not provided'}. LifeLine AI decision-support risk level: "
-        f"{result_value(result, 'risk_level', 'Doctor Visit Recommended')} ({result_value(result, 'score', 0)}/100), "
-        f"possible symptom pattern: {result_value(result, 'possible_category', 'General Health')}. "
+        f"{_present_text(patient_data.get('medications'))}. Allergies: "
+        f"{_present_text(patient_data.get('allergies'))}. LifeLine AI decision-support risk level: "
+        f"{_present_text(result_value(result, 'risk_level'), 'Doctor Visit Recommended')} ({_score_text(result_value(result, 'score', 0))}), "
+        f"possible symptom pattern: {_present_text(result_value(result, 'possible_category'), 'General Health')}. "
         f"Recommended timeframe: {_clean_sentence(advice.get('timeframe'))}. "
         f"Main advice: {_clean_sentence(result_value(result, 'recommendation', 'Review with a medical professional if symptoms continue or worsen.'))}. "
         "This summary is not a diagnosis or prescription."

@@ -30,8 +30,8 @@ def _text_value(advice: dict[str, Any], key: str, fallback: str = "Not provided"
 
 
 def _short(value: Any) -> str:
-    text = str(value or "Not provided")
-    return text
+    text = str(value).strip() if value is not None else ""
+    return text or "Not provided"
 
 
 def _list_text(value: Any) -> str:
@@ -40,6 +40,14 @@ def _list_text(value: Any) -> str:
 
 def _result_text(result: Any, key: str, fallback: str) -> str:
     return _short(result_value(result, key, fallback))
+
+
+def _score_text(value: Any) -> str:
+    try:
+        score = max(0, min(100, int(float(value or 0))))
+    except (TypeError, ValueError):
+        score = 0
+    return f"{score}/100"
 
 
 def _p(text: Any, style: Any) -> Paragraph:
@@ -71,14 +79,14 @@ def generate_health_report_pdf(patient_data: dict[str, Any], result: Any, advice
     symptoms_text = _list_text(patient_data.get("symptoms", []))
     summary = [
         [_p("Patient", styles["BodyText"]), _p(_short(patient_data.get("patient_name") or "Anonymous"), styles["BodyText"])],
-        [_p("Age / Gender", styles["BodyText"]), _p(f"{patient_data.get('age', 'Not provided')} / {patient_data.get('gender', 'Not provided')}", styles["BodyText"])],
+        [_p("Age / Gender", styles["BodyText"]), _p(f"{_short(patient_data.get('age'))} / {_short(patient_data.get('gender'))}", styles["BodyText"])],
         [_p("Symptoms", styles["BodyText"]), ""],
         [_p(symptoms_text, styles["BodyText"]), ""],
         [_p("Existing conditions", styles["BodyText"]), _p(_list_text(patient_data.get("conditions", [])), styles["BodyText"])],
         [_p("Current medicines", styles["BodyText"]), _p(_short(patient_data.get("medications")), styles["BodyText"])],
         [_p("Allergies", styles["BodyText"]), _p(_short(patient_data.get("allergies")), styles["BodyText"])],
         [_p("Risk level", styles["BodyText"]), _p(_result_text(result, "risk_level", "Doctor Visit Recommended"), styles["BodyText"])],
-        [_p("Risk score", styles["BodyText"]), _p(f"{result_value(result, 'score', 0)}/100", styles["BodyText"])],
+        [_p("Risk score", styles["BodyText"]), _p(_score_text(result_value(result, "score", 0)), styles["BodyText"])],
         [_p("Likely pattern", styles["BodyText"]), _p(_result_text(result, "possible_category", "General Health"), styles["BodyText"])],
         [_p("Recommended timeframe", styles["BodyText"]), _p(_text_value(advice, "timeframe"), styles["BodyText"])],
     ]
