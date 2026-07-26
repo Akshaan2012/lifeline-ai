@@ -3997,11 +3997,33 @@ def render_dashboard() -> None:
         return
 
     df = pd.DataFrame(cases)
+    dashboard_defaults = {
+        "created_at": "",
+        "share_code": "",
+        "patient_name": "Anonymous",
+        "age": 0,
+        "symptoms": "",
+        "category": "General Health",
+        "risk_level": "Doctor Visit Recommended",
+        "review_status": "New",
+        "recommendation": "",
+        "score": 0,
+    }
+    for column, fallback in dashboard_defaults.items():
+        if column not in df.columns:
+            df[column] = fallback
+        df[column] = df[column].fillna(fallback)
+        if isinstance(fallback, str):
+            df[column] = df[column].replace("", fallback)
     if "review_status" not in df.columns:
         df["review_status"] = "New"
     if "doctor_notes" not in df.columns:
         df["doctor_notes"] = ""
-    df["review_status"] = df["review_status"].fillna("New").replace("", "New")
+    df["risk_level"] = df["risk_level"].astype(str)
+    df.loc[~df["risk_level"].isin(RISK_ORDER), "risk_level"] = "Doctor Visit Recommended"
+    df["score"] = pd.to_numeric(df["score"], errors="coerce").fillna(0).clip(lower=0, upper=100).astype(int)
+    df["review_status"] = df["review_status"].astype(str).fillna("New").replace("", "New")
+    df.loc[~df["review_status"].isin(REVIEW_STATUS_OPTIONS), "review_status"] = "New"
     df["doctor_notes"] = df["doctor_notes"].fillna("")
 
     filter_col1, filter_col2 = st.columns(2)
@@ -4011,7 +4033,7 @@ def render_dashboard() -> None:
         df = df[df["risk_level"] == selected]
     if status_filter != "All":
         df = df[df["review_status"] == status_filter]
-    df["urgency_rank"] = df["risk_level"].map(RISK_ORDER)
+    df["urgency_rank"] = df["risk_level"].map(RISK_ORDER).fillna(0)
     df = df.sort_values(["urgency_rank", "score"], ascending=[False, False])
 
     st.markdown(f'<div class="section-label">{h("Queue summary")}</div>', unsafe_allow_html=True)

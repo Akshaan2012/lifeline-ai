@@ -246,6 +246,13 @@ def safe_case_age(value: Any) -> int:
         return 0
 
 
+def safe_case_score(value: Any) -> int:
+    try:
+        return max(0, min(100, int(float(value or 0))))
+    except (TypeError, ValueError):
+        return 0
+
+
 def save_case(patient_data: dict[str, Any], triage_result: Any) -> str:
     share_code = _new_share_code()
     supabase = _supabase_client()
@@ -257,7 +264,7 @@ def save_case(patient_data: dict[str, Any], triage_result: Any) -> str:
         "category": triage_result.possible_category,
         "risk_level": triage_result.risk_level,
         "recommendation": triage_result.recommendation,
-        "score": int(triage_result.score),
+        "score": safe_case_score(getattr(triage_result, "score", 0)),
         "raw_data": patient_data,
         "review_status": "New",
         "doctor_notes": "",
