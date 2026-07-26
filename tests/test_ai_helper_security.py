@@ -61,6 +61,19 @@ class AIHelperSecurityTests(unittest.TestCase):
             self.assertTrue(ai_helper._rate_limit_allows_call())
             self.assertFalse(ai_helper._rate_limit_allows_call())
 
+    def test_bad_numeric_ai_settings_use_safe_defaults(self) -> None:
+        env = {
+            "AI_RATE_LIMIT_PER_MINUTE": "not-a-number",
+            "AI_MAX_OUTPUT_TOKENS": "many",
+            "AI_TIMEOUT_SECONDS": "soon",
+        }
+        with patch.dict(os.environ, env, clear=False):
+            ai_helper.setting.cache_clear()
+
+            self.assertEqual(ai_helper.setting_int("AI_RATE_LIMIT_PER_MINUTE", 30), 30)
+            self.assertEqual(ai_helper.setting_int("AI_MAX_OUTPUT_TOKENS", 220), 220)
+            self.assertEqual(ai_helper.setting_float("AI_TIMEOUT_SECONDS", 10), 10)
+
 
 if __name__ == "__main__":
     unittest.main()

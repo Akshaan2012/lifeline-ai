@@ -62,6 +62,20 @@ def setting(name: str, default: str = "") -> str:
         return default
 
 
+def setting_int(name: str, default: int) -> int:
+    try:
+        return int(setting(name, str(default)) or default)
+    except (TypeError, ValueError):
+        return default
+
+
+def setting_float(name: str, default: float) -> float:
+    try:
+        return float(setting(name, str(default)) or default)
+    except (TypeError, ValueError):
+        return default
+
+
 def truthy(value: str) -> bool:
     return str(value).strip().lower() in {"1", "true", "yes", "on"}
 
@@ -107,7 +121,7 @@ def minimize_patient_identifiers(text: str) -> str:
 
 
 def _rate_limit_allows_call() -> bool:
-    limit = int(setting("AI_RATE_LIMIT_PER_MINUTE", "30") or "30")
+    limit = setting_int("AI_RATE_LIMIT_PER_MINUTE", 30)
     if limit <= 0:
         return True
     now = time.monotonic()
@@ -155,7 +169,7 @@ def ai_text(
             "contents": [{"role": "user", "parts": [{"text": safe_user}]}],
             "generationConfig": {
                 "maxOutputTokens": max(
-                    max_output_tokens or int(setting("AI_MAX_OUTPUT_TOKENS", "220")),
+                    max_output_tokens or setting_int("AI_MAX_OUTPUT_TOKENS", 220),
                     256,
                 )
             },
@@ -168,7 +182,7 @@ def ai_text(
         )
         with urlopen(
             request,
-            timeout=timeout_seconds or float(setting("AI_TIMEOUT_SECONDS", "10")),
+            timeout=timeout_seconds or setting_float("AI_TIMEOUT_SECONDS", 10),
         ) as response:
             payload = json.loads(response.read().decode("utf-8"))
         candidates = payload.get("candidates") or []

@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, asdict
 from functools import lru_cache
 
-from backend.ai_helper import ai_text, offline_mode, setting
+from backend.ai_helper import ai_text, offline_mode, setting_float, setting_int
 
 
 @dataclass(frozen=True)
@@ -186,8 +186,8 @@ def _ai_reply(message: str) -> str | None:
     return ai_text(
         system,
         message,
-        max_output_tokens=int(setting("AI_MAX_OUTPUT_TOKENS", "90")),
-        timeout_seconds=float(setting("AI_TIMEOUT_SECONDS", "10")),
+        max_output_tokens=setting_int("AI_MAX_OUTPUT_TOKENS", 90),
+        timeout_seconds=setting_float("AI_TIMEOUT_SECONDS", 10),
     )
 
 
