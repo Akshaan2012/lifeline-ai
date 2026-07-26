@@ -137,6 +137,8 @@ def train_or_load_model() -> Any:
 
 
 def predict_with_model(data: dict[str, Any]) -> dict[str, Any]:
+    import numpy as np
+
     model = train_or_load_model()
     features = np.array([patient_to_features(data)])
     prediction = str(model.predict(features)[0])
