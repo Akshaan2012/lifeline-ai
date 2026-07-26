@@ -8,7 +8,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from backend.care_features import split_list_items
+from backend.care_features import result_value, split_list_items
 
 
 DB_PATH = Path("data/lifeline_cases.db")
@@ -18,6 +18,7 @@ _SUPABASE_CLIENT_READY = False
 _DOTENV_LOADED = False
 REVIEW_STATUSES = ("New", "Reviewed", "Book appointment", "Seek urgent care", "Resolved")
 MAX_DOCTOR_NOTE_CHARS = 1200
+MAX_CASE_TEXT_CHARS = 2000
 
 
 def _set_database_error(message: str) -> None:
@@ -258,6 +259,11 @@ def normalize_patient_name(value: Any) -> str:
     return clean[:120] if clean else "Anonymous"
 
 
+def safe_case_text(value: Any, fallback: str = "") -> str:
+    clean = " ".join(str(value or fallback or "").split())
+    return clean[:MAX_CASE_TEXT_CHARS]
+
+
 def save_case(patient_data: dict[str, Any], triage_result: Any) -> str:
     share_code = _new_share_code()
     supabase = _supabase_client()
@@ -266,10 +272,23 @@ def save_case(patient_data: dict[str, Any], triage_result: Any) -> str:
         "patient_name": normalize_patient_name(patient_data.get("patient_name")),
         "age": safe_case_age(patient_data.get("age")),
         "symptoms": ", ".join(split_list_items(patient_data.get("symptoms", []))),
-        "category": triage_result.possible_category,
-        "risk_level": triage_result.risk_level,
-        "recommendation": triage_result.recommendation,
-        "score": safe_case_score(getattr(triage_result, "score", 0)),
+        "category": safe_case_text(
+            result_value(triage_result, "possible_category", "General Health"),
+            "General Health",
+        ),
+        "risk_level": safe_case_text(
+            result_value(triage_result, "risk_level", "Review recommended"),
+            "Review recommended",
+        ),
+        "recommendation": safe_case_text(
+            result_value(
+                triage_result,
+                "recommendation",
+                "Please review this result with a healthcare professional.",
+            ),
+            "Please review this result with a healthcare professional.",
+        ),
+        "score": safe_case_score(result_value(triage_result, "score", 0)),
         "raw_data": patient_data,
         "review_status": "New",
         "doctor_notes": "",
@@ -289,7 +308,9 @@ def save_case(patient_data: dict[str, Any], triage_result: Any) -> str:
             }
             try:
                 supabase.table("patient_cases").insert(legacy_row).execute()
-                _set_database_error("")
+                _set_database_error(
+                    "Supabase schema is outdated; the case was saved without a private clinic response code. Run supabase_schema.sql so patient_consent and share_code are available."
+                )
                 return ""
             except Exception as exc:
                 _set_database_error(str(exc))

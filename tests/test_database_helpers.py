@@ -7,7 +7,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from backend import database
-from backend.database import MAX_DOCTOR_NOTE_CHARS, REVIEW_STATUSES, database_error_message, get_case_by_share_code, init_db, normalize_doctor_notes, normalize_patient_name, normalize_review_status, normalize_share_code, safe_case_age, safe_case_score, update_case_review, valid_share_code
+from backend.database import MAX_CASE_TEXT_CHARS, MAX_DOCTOR_NOTE_CHARS, REVIEW_STATUSES, database_error_message, get_case_by_share_code, init_db, normalize_doctor_notes, normalize_patient_name, normalize_review_status, normalize_share_code, safe_case_age, safe_case_score, safe_case_text, save_case, update_case_review, valid_share_code
 
 
 class DatabaseHelperTests(unittest.TestCase):
@@ -45,6 +45,11 @@ class DatabaseHelperTests(unittest.TestCase):
         self.assertEqual(safe_case_score("not entered"), 0)
         self.assertEqual(safe_case_score(-5), 0)
         self.assertEqual(safe_case_score(150), 100)
+
+    def test_case_text_is_clean_and_bounded_before_save(self) -> None:
+        self.assertEqual(safe_case_text("  Book\n\nvisit  "), "Book visit")
+        self.assertEqual(safe_case_text(None, "Review recommended"), "Review recommended")
+        self.assertEqual(len(safe_case_text("x" * 3000)), MAX_CASE_TEXT_CHARS)
 
     def test_patient_name_is_clean_for_dashboard_grouping(self) -> None:
         self.assertEqual(normalize_patient_name("  Patient   001  "), "Patient 001")
@@ -91,6 +96,53 @@ class DatabaseHelperTests(unittest.TestCase):
         with patch("backend.database._supabase_client", return_value=FakeClient()):
             self.assertFalse(update_case_review(999, "Reviewed", "No matching case."))
             self.assertIn("did not match", database_error_message())
+
+    def test_supabase_legacy_save_fallback_reports_missing_private_code(self) -> None:
+        class FakeInsert:
+            def __init__(self, table):
+                self.table = table
+
+            def execute(self):
+                self.table.calls += 1
+                if self.table.calls == 1:
+                    raise RuntimeError("missing column share_code")
+                return SimpleNamespace(data=[{"id": 1}])
+
+        class FakeTable:
+            def __init__(self):
+                self.calls = 0
+                self.rows = []
+
+            def insert(self, row):
+                self.rows.append(row)
+                return FakeInsert(self)
+
+        class FakeClient:
+            def __init__(self):
+                self.patient_cases = FakeTable()
+
+            def table(self, name):
+                self.table_name = name
+                return self.patient_cases
+
+        fake_client = FakeClient()
+        result = {
+            "possible_category": "General Health",
+            "risk_level": "Doctor Visit Recommended",
+            "recommendation": "Book a doctor visit.",
+            "score": "40",
+        }
+
+        with patch("backend.database._supabase_client", return_value=fake_client):
+            self.assertEqual(
+                save_case({"patient_name": "Ava", "age": "31", "symptoms": ["cough"]}, result),
+                "",
+            )
+
+        self.assertEqual(fake_client.patient_cases.calls, 2)
+        self.assertIn("share_code", fake_client.patient_cases.rows[0])
+        self.assertNotIn("share_code", fake_client.patient_cases.rows[1])
+        self.assertIn("schema is outdated", database_error_message())
 
 
 if __name__ == "__main__":
