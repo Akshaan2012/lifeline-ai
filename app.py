@@ -498,7 +498,7 @@ def split_free_text_items(text: str) -> list[str]:
     if not text.strip():
         return []
     normalized = text.replace("\n", ",").replace(";", ",")
-    return [item.strip().title() for item in normalized.split(",") if item.strip()]
+    return [item.strip() for item in normalized.split(",") if item.strip()]
 
 
 def unique_items(items: list[str]) -> list[str]:
@@ -2189,10 +2189,10 @@ def build_previous_check_comparison(
         return None
 
     previous_raw = parse_case_raw_data(previous_case.get("raw_data"))
-    previous_symptoms = {item.lower() for item in split_list_items(previous_raw.get("symptoms", []))}
-    current_symptoms = {item.lower() for item in split_list_items(patient_data.get("symptoms", []))}
-    new_symptoms = sorted(current_symptoms - previous_symptoms)
-    resolved_symptoms = sorted(previous_symptoms - current_symptoms)
+    previous_symptoms_by_key = {item.lower(): item for item in split_list_items(previous_raw.get("symptoms", []))}
+    current_symptoms_by_key = {item.lower(): item for item in split_list_items(patient_data.get("symptoms", []))}
+    new_symptoms = [current_symptoms_by_key[key] for key in sorted(set(current_symptoms_by_key) - set(previous_symptoms_by_key))]
+    resolved_symptoms = [previous_symptoms_by_key[key] for key in sorted(set(previous_symptoms_by_key) - set(current_symptoms_by_key))]
 
     previous_risk = str(previous_case.get("risk_level") or "Unknown")
     current_risk = result_risk_level(result)
@@ -2218,9 +2218,9 @@ def build_previous_check_comparison(
         if note:
             highlights.append(note)
     if new_symptoms:
-        highlights.append(f"New symptoms: {', '.join(item.title() for item in new_symptoms[:6])}.")
+        highlights.append(f"New symptoms: {', '.join(new_symptoms[:6])}.")
     if resolved_symptoms:
-        highlights.append(f"No longer listed: {', '.join(item.title() for item in resolved_symptoms[:6])}.")
+        highlights.append(f"No longer listed: {', '.join(resolved_symptoms[:6])}.")
 
     return {
         "previous_created_at": previous_case.get("created_at", ""),
