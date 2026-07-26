@@ -7,13 +7,22 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from backend import database
-from backend.database import MAX_DOCTOR_NOTE_CHARS, REVIEW_STATUSES, database_error_message, init_db, normalize_doctor_notes, normalize_review_status, normalize_share_code, safe_case_age, update_case_review
+from backend.database import MAX_DOCTOR_NOTE_CHARS, REVIEW_STATUSES, database_error_message, get_case_by_share_code, init_db, normalize_doctor_notes, normalize_review_status, normalize_share_code, safe_case_age, update_case_review, valid_share_code
 
 
 class DatabaseHelperTests(unittest.TestCase):
     def test_share_code_normalization_accepts_common_user_typing(self) -> None:
         self.assertEqual(normalize_share_code("ll-1a2b3c4d5e6f"), "LL-1A2B3C4D5E6F")
         self.assertEqual(normalize_share_code(" LL 1a2b 3c4d5e6f "), "LL-1A2B3C4D5E6F")
+
+    def test_share_code_validation_rejects_bad_codes_before_lookup(self) -> None:
+        self.assertTrue(valid_share_code("ll-1a2b3c4d5e6f"))
+        self.assertFalse(valid_share_code(""))
+        self.assertFalse(valid_share_code("LL-123"))
+        self.assertFalse(valid_share_code("LL-1A2B3C4D5E6Z"))
+        with patch("backend.database._supabase_client") as supabase_client:
+            self.assertIsNone(get_case_by_share_code("LL-123"))
+            supabase_client.assert_not_called()
 
     def test_review_status_falls_back_to_new_if_unrecognized(self) -> None:
         self.assertEqual(normalize_review_status("Book appointment"), "Book appointment")

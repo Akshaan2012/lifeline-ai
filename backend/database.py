@@ -232,6 +232,13 @@ def normalize_share_code(share_code: str) -> str:
     return code
 
 
+def valid_share_code(share_code: str) -> bool:
+    code = normalize_share_code(share_code)
+    return len(code) == 15 and code.startswith("LL-") and all(
+        char in "0123456789ABCDEF" for char in code[3:]
+    )
+
+
 def safe_case_age(value: Any) -> int:
     try:
         return max(0, min(120, int(float(value or 0))))
@@ -309,7 +316,7 @@ def save_case(patient_data: dict[str, Any], triage_result: Any) -> str:
 
 def get_case_by_share_code(share_code: str) -> dict[str, Any] | None:
     code = normalize_share_code(share_code)
-    if not code:
+    if not valid_share_code(code):
         return None
     supabase = _supabase_client()
     if supabase:
