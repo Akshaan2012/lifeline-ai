@@ -418,6 +418,7 @@ COMMON_TRANSLATION_TEXTS = [
     "Allergies",
     "Current medicines",
     "Conditions",
+    "Other conditions",
     "Save passport",
     "Passport saved for this browser session.",
     "Download structured passport",
@@ -3655,7 +3656,15 @@ def render_passport_and_reminders() -> None:
         allergies = st.text_area(tr("Allergies"), value=str(profile.get("allergies", "")), key="passport_allergies")
         medications = st.text_area(tr("Current medicines"), value=str(profile.get("medications", "")), key="passport_medicines")
         passport_profile_conditions = profile_conditions_list(profile.get("conditions", []))
-        conditions = st.multiselect(tr("Conditions"), CONDITION_OPTIONS, default=[item for item in passport_profile_conditions if item in CONDITION_OPTIONS], key="passport_conditions", format_func=tr)
+        known_passport_conditions, custom_passport_conditions = split_known_conditions(passport_profile_conditions)
+        selected_conditions = st.multiselect(tr("Conditions"), CONDITION_OPTIONS, default=known_passport_conditions, key="passport_conditions", format_func=tr)
+        custom_conditions = st.text_area(
+            tr("Other conditions"),
+            value=", ".join(custom_passport_conditions),
+            placeholder=tr("Example: thyroid problem, anemia, migraine"),
+            key="passport_custom_conditions",
+        )
+        conditions = unique_items(selected_conditions + split_free_text_items(custom_conditions))
         if st.button(tr("Save passport"), type="primary", width="stretch"):
             saved_profile = {
                 **profile,
