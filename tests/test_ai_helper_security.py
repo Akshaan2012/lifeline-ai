@@ -74,6 +74,14 @@ class AIHelperSecurityTests(unittest.TestCase):
             self.assertEqual(ai_helper.setting_int("AI_MAX_OUTPUT_TOKENS", 220), 220)
             self.assertEqual(ai_helper.setting_float("AI_TIMEOUT_SECONDS", 10), 10)
 
+    def test_ai_request_limits_are_bounded(self) -> None:
+        self.assertEqual(ai_helper.bounded_int("999999", 220, 64, 2048), 2048)
+        self.assertEqual(ai_helper.bounded_int("-5", 220, 64, 2048), 64)
+        self.assertEqual(ai_helper.bounded_int("many", 220, 64, 2048), 220)
+        self.assertEqual(ai_helper.bounded_float("999", 10, 1, 30), 30)
+        self.assertEqual(ai_helper.bounded_float("0", 10, 1, 30), 1)
+        self.assertEqual(ai_helper.bounded_float("soon", 10, 1, 30), 10)
+
 
 if __name__ == "__main__":
     unittest.main()

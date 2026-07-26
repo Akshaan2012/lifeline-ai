@@ -76,6 +76,22 @@ def setting_float(name: str, default: float) -> float:
         return default
 
 
+def bounded_int(value: Any, default: int, minimum: int, maximum: int) -> int:
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        parsed = default
+    return max(minimum, min(maximum, parsed))
+
+
+def bounded_float(value: Any, default: float, minimum: float, maximum: float) -> float:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        parsed = default
+    return max(minimum, min(maximum, parsed))
+
+
 def truthy(value: str) -> bool:
     return str(value).strip().lower() in {"1", "true", "yes", "on"}
 
@@ -164,14 +180,23 @@ def ai_text(
         model = provider_model()
         safe_user = minimize_patient_identifiers(user)
         _audit_ai_event("request_started", model=model, user_text=safe_user)
+        token_limit = bounded_int(
+            max_output_tokens if max_output_tokens is not None else setting_int("AI_MAX_OUTPUT_TOKENS", 220),
+            default=220,
+            minimum=64,
+            maximum=2048,
+        )
+        timeout_limit = bounded_float(
+            timeout_seconds if timeout_seconds is not None else setting_float("AI_TIMEOUT_SECONDS", 10),
+            default=10,
+            minimum=1,
+            maximum=30,
+        )
         body = json.dumps({
             "system_instruction": {"parts": [{"text": system}]},
             "contents": [{"role": "user", "parts": [{"text": safe_user}]}],
             "generationConfig": {
-                "maxOutputTokens": max(
-                    max_output_tokens or setting_int("AI_MAX_OUTPUT_TOKENS", 220),
-                    256,
-                )
+                "maxOutputTokens": token_limit
             },
         }).encode("utf-8")
         request = Request(
@@ -182,7 +207,7 @@ def ai_text(
         )
         with urlopen(
             request,
-            timeout=timeout_seconds or setting_float("AI_TIMEOUT_SECONDS", 10),
+            timeout=timeout_limit,
         ) as response:
             payload = json.loads(response.read().decode("utf-8"))
         candidates = payload.get("candidates") or []
