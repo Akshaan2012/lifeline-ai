@@ -904,17 +904,27 @@ def _ai_health_answer(question: str, existing_answer: dict[str, Any]) -> dict[st
     if any(key not in data for key in required):
         return None
 
-    def items(key: str) -> list[str]:
-        return split_list_items(data.get(key, []))[:4]
+    def items(key: str, *, preserve_existing: bool = False) -> list[str]:
+        clean = split_list_items(data.get(key, []))
+        if preserve_existing:
+            clean = [*split_list_items(existing_answer.get(key, [])), *clean]
+        seen: set[str] = set()
+        unique: list[str] = []
+        for item in clean:
+            item_key = item.lower()
+            if item_key not in seen:
+                seen.add(item_key)
+                unique.append(item)
+        return unique[:5]
 
     answer = {
         "title": str(data.get("title") or _title_from_question(question)),
         "meaning": str(data.get("meaning") or ""),
         "symptoms": items("symptoms"),
-        "precautions": items("precautions"),
+        "precautions": items("precautions", preserve_existing=True),
         "prevention": items("prevention"),
         "doctor": str(data.get("doctor") or "Ask a doctor if symptoms continue, worsen, or you are unsure what is safe."),
-        "emergency": items("emergency"),
+        "emergency": items("emergency", preserve_existing=True),
         "kind": str(existing_answer.get("kind") or data.get("kind") or "general"),
         "intent": str(existing_answer.get("intent") or data.get("intent") or _question_intent(question)),
         "source": "AI-enhanced health education with LifeLine AI safety rules",

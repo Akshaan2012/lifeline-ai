@@ -51,6 +51,26 @@ class DiseaseQaSafetyTests(unittest.TestCase):
         self.assertEqual(answer["emergency"], ["chest pain", "fainting"])
         self.assertNotIn("f", answer["symptoms"])
 
+    def test_ai_answer_preserves_local_emergency_warnings(self) -> None:
+        ai_payload = {
+            "title": "Possible warning sign",
+            "meaning": "Chest pain can have many causes.",
+            "symptoms": ["Track timing."],
+            "precautions": ["Rest if needed."],
+            "prevention": ["Keep routine care."],
+            "doctor": "Ask a doctor if worried.",
+            "emergency": ["Feeling very unwell."],
+            "kind": "general",
+            "intent": "emergency",
+        }
+
+        with patch("backend.disease_qa.ai_json", return_value=ai_payload):
+            answer = answer_question("is chest pain normal")
+
+        self.assertEqual(answer["intent"], "emergency")
+        self.assertTrue(any("chest pain" in item.lower() for item in answer["emergency"]))
+        self.assertTrue(any("do not assume" in item.lower() for item in answer["precautions"]))
+
 
 if __name__ == "__main__":
     unittest.main()
