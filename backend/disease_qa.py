@@ -10,6 +10,7 @@ except ModuleNotFoundError:  # pragma: no cover - depends on deployment packages
     requests = None
 
 from backend.ai_helper import ai_json
+from backend.care_features import split_list_items
 
 
 DISEASE_LIBRARY: dict[str, dict[str, Any]] = {
@@ -902,14 +903,18 @@ def _ai_health_answer(question: str, existing_answer: dict[str, Any]) -> dict[st
     required = ["title", "meaning", "symptoms", "precautions", "prevention", "doctor", "emergency"]
     if any(key not in data for key in required):
         return None
+
+    def items(key: str) -> list[str]:
+        return split_list_items(data.get(key, []))[:4]
+
     answer = {
         "title": str(data.get("title") or _title_from_question(question)),
         "meaning": str(data.get("meaning") or ""),
-        "symptoms": [str(item) for item in data.get("symptoms", []) if str(item).strip()][:4],
-        "precautions": [str(item) for item in data.get("precautions", []) if str(item).strip()][:4],
-        "prevention": [str(item) for item in data.get("prevention", []) if str(item).strip()][:4],
+        "symptoms": items("symptoms"),
+        "precautions": items("precautions"),
+        "prevention": items("prevention"),
         "doctor": str(data.get("doctor") or "Ask a doctor if symptoms continue, worsen, or you are unsure what is safe."),
-        "emergency": [str(item) for item in data.get("emergency", []) if str(item).strip()][:4],
+        "emergency": items("emergency"),
         "kind": str(existing_answer.get("kind") or data.get("kind") or "general"),
         "intent": str(existing_answer.get("intent") or data.get("intent") or _question_intent(question)),
         "source": "AI-enhanced health education with LifeLine AI safety rules",
