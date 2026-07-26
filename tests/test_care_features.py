@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 from datetime import date
 from types import SimpleNamespace
+from unittest.mock import patch
 
 from backend.care_features import build_fhir_bundle, reconcile_medications, reminder_status, safe_fhir_id, split_list_items
 from backend.followup import evaluate_follow_up
@@ -83,6 +84,31 @@ class CareFeatureTests(unittest.TestCase):
 
                 self.assertEqual(result.level, "Get urgent help now")
                 self.assertTrue(any("overdose" in item.lower() or "urgent" in item.lower() for item in result.caution_flags))
+
+    def test_medication_ai_enhancement_preserves_local_safety_flags(self) -> None:
+        ai_payload = {
+            "summary": "Polished summary.",
+            "key_points": "read the label, ask a pharmacist",
+            "caution_flags": ["General caution only."],
+            "what_to_do": "call poison control, keep the bottle nearby",
+            "emergency_signs": ["Feeling very unwell."],
+            "questions": "What should I watch for?",
+        }
+
+        with patch("backend.medication_safety.ai_json", return_value=ai_payload):
+            result = analyze_medication_safety(
+                "paracetamol",
+                age=40,
+                allergies="",
+                conditions=[],
+                current_medicines="I took too many pills",
+                pregnant=False,
+            )
+
+        self.assertEqual(result.level, "Get urgent help now")
+        self.assertTrue(any("overdose" in item.lower() or "urgent" in item.lower() for item in result.caution_flags))
+        self.assertTrue(any("accidental overdose" in item.lower() for item in result.emergency_signs))
+        self.assertIn("read the label", result.key_points)
 
     def test_reminder_status(self) -> None:
         self.assertEqual(reminder_status({"due_date": "2026-07-03"}, date(2026, 7, 3)), "Due today")

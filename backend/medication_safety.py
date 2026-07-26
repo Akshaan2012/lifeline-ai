@@ -218,20 +218,27 @@ def _ai_enhanced_safety_result(
     if not data:
         return result
 
-    def items(name: str, fallback: list[str]) -> list[str]:
+    def items(name: str, fallback: list[str], *, preserve: bool = False) -> list[str]:
         value = data.get(name)
-        if not isinstance(value, list):
-            return fallback
-        clean = [str(item).strip() for item in value if str(item).strip()]
-        return clean[:5] or fallback
+        clean = split_list_items(value)
+        if preserve:
+            clean = [*fallback, *clean]
+        seen: set[str] = set()
+        unique = []
+        for item in clean:
+            key = item.lower()
+            if key not in seen:
+                seen.add(key)
+                unique.append(item)
+        return unique[:5] or fallback
 
     return MedicationSafetyResult(
         level=result.level,
         summary=str(data.get("summary") or result.summary),
         key_points=items("key_points", result.key_points),
-        caution_flags=items("caution_flags", result.caution_flags),
+        caution_flags=items("caution_flags", result.caution_flags, preserve=True),
         what_to_do=items("what_to_do", result.what_to_do),
-        emergency_signs=items("emergency_signs", result.emergency_signs),
+        emergency_signs=items("emergency_signs", result.emergency_signs, preserve=True),
         questions=items("questions", result.questions),
         source="AI-enhanced medication guidance with LifeLine AI safety rules",
     )
