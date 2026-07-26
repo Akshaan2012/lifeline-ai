@@ -429,6 +429,8 @@ COMMON_TRANSLATION_TEXTS = [
     "For profile",
     "Add reminder",
     "No reminders yet.",
+    "Untitled reminder",
+    "No due date",
     "Doctor follow-up, vaccination, medicine-list review",
     "Offline mode: local rules only.",
     "Sign out",
@@ -2715,7 +2717,7 @@ def stored_triage_result(stored: Any) -> Any | None:
 def render_patient_home() -> None:
     profile = st.session_state.get("patient_profile", {})
     reminders = st.session_state.get("care_reminders", [])
-    open_reminders = sum(1 for reminder in reminders if not reminder.get("completed"))
+    open_reminders = sum(1 for reminder in reminders if isinstance(reminder, dict) and not reminder.get("completed"))
     last_result = stored_triage_result(st.session_state.get("checker_result"))
     last_score = getattr(last_result, "score", None) if last_result else None
     last_risk = compact_risk_label(str(getattr(last_result, "risk_level", "Not checked"))) if last_result else "Not checked"
@@ -3698,9 +3700,14 @@ def render_passport_and_reminders() -> None:
         if not st.session_state.care_reminders:
             st.info(tr("No reminders yet."))
         for index, reminder in enumerate(st.session_state.care_reminders):
+            if not isinstance(reminder, dict):
+                continue
             status = reminder_status(reminder)
+            title = str(reminder.get("title") or tr("Untitled reminder")).strip()
+            profile_label = str(reminder.get("profile") or tr("Profile")).strip()
+            due_date = str(reminder.get("due_date") or tr("No due date")).strip()
             done = st.checkbox(
-                f"{reminder['title']} — {reminder['profile']} — {reminder['due_date']} ({status})",
+                f"{title} — {profile_label} — {due_date} ({tr(status)})",
                 value=bool(reminder.get("completed")),
                 key=f"reminder_done_{index}",
             )
