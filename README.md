@@ -194,9 +194,9 @@ In Supabase:
 2. Open **SQL Editor**.
 3. Paste and run the SQL from `supabase_schema.sql`.
 
-Run the schema again after updating the app; it safely adds the clinic handoff columns when they are missing.
+Run the schema again after updating the app; it safely adds missing clinic handoff columns, constraints, indexes, and the private-code lookup function.
 
-The updated schema keeps anonymous patient submissions and private-code response lookup working, but blocks anonymous table-wide reads, edits, and deletes. Doctor-dashboard access requires an authenticated Supabase user whose `app_metadata.role` is `staff`. Set that role only from a trusted server or the Supabase administration tools; users must never be allowed to assign it to themselves.
+The updated schema keeps anonymous patient submissions and private-code response lookup working, but blocks anonymous table-wide reads, edits, and deletes. Private-code lookup only returns a small patient-visible response and validates the `LL-` code shape before searching. Doctor-dashboard access requires an authenticated Supabase user whose `app_metadata.role` is `staff`. Set that role only from a trusted server or the Supabase administration tools; users must never be allowed to assign it to themselves.
 
 The interface enforces this role too: professional navigation and patient cases stay locked until staff sign-in succeeds. Never place a Supabase service-role key in this app or its Streamlit secrets.
 
