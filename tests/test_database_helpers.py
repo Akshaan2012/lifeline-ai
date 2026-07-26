@@ -7,7 +7,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from backend import database
-from backend.database import MAX_CASE_TEXT_CHARS, MAX_DOCTOR_NOTE_CHARS, REVIEW_STATUSES, database_error_message, get_case_by_share_code, init_db, normalize_doctor_notes, normalize_patient_name, normalize_review_status, normalize_share_code, safe_case_age, safe_case_score, safe_case_text, save_case, update_case_review, valid_share_code
+from backend.database import MAX_CASE_TEXT_CHARS, MAX_DOCTOR_NOTE_CHARS, REVIEW_STATUSES, clear_cases, database_error_message, delete_patient_cases, get_case_by_share_code, init_db, normalize_doctor_notes, normalize_patient_name, normalize_review_status, normalize_share_code, safe_case_age, safe_case_score, safe_case_text, save_case, update_case_review, valid_share_code
 
 
 class DatabaseHelperTests(unittest.TestCase):
@@ -96,6 +96,50 @@ class DatabaseHelperTests(unittest.TestCase):
         with patch("backend.database._supabase_client", return_value=FakeClient()):
             self.assertFalse(update_case_review(999, "Reviewed", "No matching case."))
             self.assertIn("did not match", database_error_message())
+
+    def test_supabase_clear_cases_reports_delete_failure(self) -> None:
+        class FakeDelete:
+            def neq(self, *_args):
+                return self
+
+            def execute(self):
+                raise RuntimeError("delete denied")
+
+        class FakeTable:
+            def delete(self):
+                return FakeDelete()
+
+        class FakeClient:
+            def table(self, *_args):
+                return FakeTable()
+
+        with patch("backend.database._supabase_client", return_value=FakeClient()):
+            with patch("backend.database._supabase_configured", return_value=True):
+                self.assertFalse(clear_cases())
+
+        self.assertIn("delete denied", database_error_message())
+
+    def test_supabase_delete_patient_cases_reports_delete_failure(self) -> None:
+        class FakeDelete:
+            def eq(self, *_args):
+                return self
+
+            def execute(self):
+                raise RuntimeError("delete denied")
+
+        class FakeTable:
+            def delete(self):
+                return FakeDelete()
+
+        class FakeClient:
+            def table(self, *_args):
+                return FakeTable()
+
+        with patch("backend.database._supabase_client", return_value=FakeClient()):
+            with patch("backend.database._supabase_configured", return_value=True):
+                self.assertFalse(delete_patient_cases(" Patient 001 "))
+
+        self.assertIn("delete denied", database_error_message())
 
     def test_supabase_legacy_save_fallback_reports_missing_private_code(self) -> None:
         class FakeInsert:

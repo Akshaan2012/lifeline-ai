@@ -405,39 +405,43 @@ def list_cases() -> list[dict[str, Any]]:
     return [dict(row) for row in rows]
 
 
-def clear_cases() -> None:
+def clear_cases() -> bool:
     supabase = _supabase_client()
     if supabase:
         try:
             supabase.table("patient_cases").delete().neq("id", 0).execute()
             _set_database_error("")
-            return
+            return True
         except Exception as exc:
             _set_database_error(str(exc))
             if _supabase_configured():
-                return
+                return False
 
     init_db()
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("DELETE FROM patient_cases")
+    _set_database_error("")
+    return True
 
 
-def delete_patient_cases(patient_name: str) -> None:
-    name = patient_name or "Anonymous"
+def delete_patient_cases(patient_name: str) -> bool:
+    name = normalize_patient_name(patient_name)
     supabase = _supabase_client()
     if supabase:
         try:
             supabase.table("patient_cases").delete().eq("patient_name", name).execute()
             _set_database_error("")
-            return
+            return True
         except Exception as exc:
             _set_database_error(str(exc))
             if _supabase_configured():
-                return
+                return False
 
     init_db()
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("DELETE FROM patient_cases WHERE patient_name = ?", (name,))
+    _set_database_error("")
+    return True
 
 
 def update_case_review(case_id: int | str, review_status: str, doctor_notes: str) -> bool:

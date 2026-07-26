@@ -359,6 +359,8 @@ COMMON_TRANSLATION_TEXTS = [
     "Using local fallback storage. To use Supabase, run supabase_schema.sql in Supabase SQL Editor and reboot.",
     "The app could not confirm a private case code. If this was meant for clinic review, ask the clinic to check Supabase setup and schema.",
     "Case review could not be saved. Check Supabase schema, staff access, and network connection.",
+    "Patient timeline could not be removed. Check database access and try again.",
+    "Saved patient cases could not be removed. Check database access and try again.",
     "Clinic Pilot Plan",
     "Doctor-visit preparation",
     "Digital intake",
@@ -3474,12 +3476,14 @@ def render_timeline() -> None:
         disabled=not confirm_patient_reset,
         width="stretch",
     ):
-        delete_patient_cases(selected_patient)
-        profile_name = st.session_state.get("patient_profile", {}).get("patient_name")
-        if profile_name == selected_patient:
-            st.session_state.patient_profile = {}
-        st.success(tr("Selected patient was removed from the timeline."))
-        st.rerun()
+        if delete_patient_cases(selected_patient):
+            profile_name = st.session_state.get("patient_profile", {}).get("patient_name")
+            if profile_name == selected_patient:
+                st.session_state.patient_profile = {}
+            st.success(tr("Selected patient was removed from the timeline."))
+            st.rerun()
+        else:
+            st.error(tr("Patient timeline could not be removed. Check database access and try again."))
 
     latest = patient_cases[-1]
     raw_latest = parse_case_raw_data(latest.get("raw_data"))
@@ -4004,11 +4008,13 @@ def render_dashboard() -> None:
     with reset_col:
         confirm_reset = st.checkbox(tr("I understand this will remove saved patient cases"))
         if st.button(tr("Reset patient data"), disabled=not confirm_reset, width="stretch"):
-            clear_cases()
-            st.session_state.checker_result = None
-            st.session_state.checker_patient_data = None
-            st.success(tr("Saved patient cases were removed."))
-            st.rerun()
+            if clear_cases():
+                st.session_state.checker_result = None
+                st.session_state.checker_patient_data = None
+                st.success(tr("Saved patient cases were removed."))
+                st.rerun()
+            else:
+                st.error(tr("Saved patient cases could not be removed. Check database access and try again."))
     cases = list_cases()
     db_error = database_error_message()
     db_label = database_backend()
