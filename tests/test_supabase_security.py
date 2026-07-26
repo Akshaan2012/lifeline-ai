@@ -28,6 +28,10 @@ class SupabaseSecurityTests(unittest.TestCase):
         self.assertIn("regexp_replace(coalesce(input_code, ''), '\\s+', '', 'g')", self.schema)
         self.assertIn("'ll-' || substring", self.schema)
 
+    def test_private_code_lookup_validates_code_shape_in_rpc(self) -> None:
+        self.assertIn("~ '^ll-[0-9a-f]{12}$'", self.schema)
+        self.assertIn("cross join normalized", self.schema)
+
     def test_review_status_and_patient_visible_note_constraints_exist(self) -> None:
         self.assertIn("patient_cases_review_status_check", self.schema)
         self.assertIn("'seek urgent care'", self.schema)
