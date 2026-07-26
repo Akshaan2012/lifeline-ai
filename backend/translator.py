@@ -206,6 +206,16 @@ def _fallback_text(original: str, selected_language: str) -> str:
     return fallback
 
 
+def _looks_corrupted(text: str) -> bool:
+    return "Ã " in text or "Ã‚" in text or "\ufffd" in text
+
+
+def _safe_cached_text(original: str, cached: str, selected_language: str) -> str:
+    if _looks_corrupted(cached):
+        return _fallback_text(original, selected_language)
+    return cached
+
+
 @lru_cache(maxsize=64)
 def _translator(target: str) -> Any:
     from deep_translator import GoogleTranslator
@@ -265,7 +275,7 @@ def _translate_batch_cached(items: tuple[str, ...], selected_language: str) -> t
         if _should_skip_translation(item, target):
             continue
         if item in memory:
-            translated[index] = memory[item]
+            translated[index] = _safe_cached_text(item, memory[item], selected_language)
             continue
         if target == "hi" and item in HINDI_FALLBACKS:
             translated[index] = _fallback_text(item, selected_language)
@@ -296,7 +306,7 @@ def translate_text(text: str, selected_language: str) -> str:
         return text
     memory = _memory().get(selected_language, {})
     if text in memory:
-        return memory[text]
+        return _safe_cached_text(text, memory[text], selected_language)
     if target == "hi" and text in HINDI_FALLBACKS:
         fallback = _fallback_text(text, selected_language)
         _remember(selected_language, text, fallback)
@@ -320,7 +330,7 @@ def translate_text_cached(text: str, selected_language: str) -> str:
         return text
     memory = _memory().get(selected_language, {})
     if text in memory:
-        return memory[text]
+        return _safe_cached_text(text, memory[text], selected_language)
     if target == "hi" and text in HINDI_FALLBACKS:
         return _fallback_text(text, selected_language)
     if _offline_mode():

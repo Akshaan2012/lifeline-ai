@@ -42,6 +42,18 @@ class TranslatorFallbackTests(unittest.TestCase):
         self.assertEqual(translated, ["Broken Label"])
 
 
+    def test_cached_corrupted_translation_is_not_displayed(self) -> None:
+        translator._TRANSLATION_MEMORY = {
+            "Hindi": {"Language": "ÃƒÂ Ã‚Â¤Ã‚Â¸ÃƒÂ Ã‚Â¥Ã‚Â"}
+        }
+        translate_text.cache_clear()
+        translator._translate_batch_cached.cache_clear()
+
+        self.assertEqual(translate_text("Language", "Hindi"), "\u092d\u093e\u0937\u093e")
+        self.assertEqual(translate_items(["Language"], "Hindi"), ["\u092d\u093e\u0937\u093e"])
+        self.assertEqual(translator.translate_text_cached("Language", "Hindi"), "\u092d\u093e\u0937\u093e")
+
+
     def test_translate_items_accepts_plain_text_without_character_split(self) -> None:
         self.assertEqual(translate_items("Chest pain, confusion", "English"), ["Chest pain, confusion"])
         self.assertEqual(translate_items_cached("Chest pain, confusion", "English"), ["Chest pain, confusion"])
