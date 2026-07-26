@@ -3385,8 +3385,10 @@ def render_checker() -> None:
                 if share_code:
                     st.success(f"{tr('Shared with the clinic. Keep this private case code')}: {share_code}")
                     st.code(share_code, language=None)
+                else:
+                    st.warning(tr("The app could not confirm a private case code. If this was meant for clinic review, ask the clinic to check Supabase setup and schema."))
             else:
-                st.warning(tr("The app could not confirm a private case code. If this was meant for clinic review, ask the clinic to check Supabase setup and schema."))
+                st.caption(tr("This check was kept private and was not shared with the clinic dashboard."))
             patient_data = st.session_state.get("checker_patient_data") or {}
             result = stored.get("result")
             advice = stored.get("advice") if isinstance(stored.get("advice"), dict) else {}
@@ -3415,8 +3417,9 @@ def render_checker() -> None:
             )
     stored = st.session_state.get("checker_result")
     patient_data = st.session_state.get("checker_patient_data") or {}
-    if stored and patient_data:
-        render_followup_and_summary(patient_data, stored["result"], stored["advice"])
+    if stored and patient_data and stored.get("result") is not None:
+        advice = stored.get("advice") if isinstance(stored.get("advice"), dict) else {}
+        render_followup_and_summary(patient_data, stored["result"], advice)
     render_clinic_response_lookup()
     st.write("")
 
