@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import random
 import json
@@ -193,6 +193,18 @@ PROFESSIONAL_PAGES = [
 ]
 
 ROLE_OPTIONS = ["Patient", "Healthcare Professional"]
+
+PAGE_LABELS = {
+    "Home": "My Health",
+    "Patient Health Checker": "Get Care Guidance",
+    "Health Timeline": "My Health Timeline",
+    "Disease Q&A Assistant": "Understand Health Topics",
+    "Medication Safety Checker": "Check My Medicines",
+    "Health Passport & Reminders": "My Health Profile",
+    "Safety & Quality": "Safety & Privacy",
+    "Scenario Challenge": "Practice Scenarios",
+    "Safety Videos": "Health Videos",
+}
 
 LANGUAGE_OPTIONS = [
     "\U0001f1fa\U0001f1f8 English", "\U0001f1ee\U0001f1f3 Hindi", "\U0001f1f7\U0001f1fa Russian", "\U0001f1e9\U0001f1ea German", "\U0001f1eb\U0001f1f7 French",
@@ -494,6 +506,10 @@ def prepare_language(selected_language: str) -> None:
 
 def h(text: str) -> str:
     return escape(tr(text))
+
+
+def page_label(page: str) -> str:
+    return tr(PAGE_LABELS.get(page, page))
 
 
 def split_free_text_items(text: str) -> list[str]:
@@ -1942,7 +1958,7 @@ def sidebar() -> None:
                 <div class="brand-mark">L</div>
                 <div>
                     <span class="brand-name">LifeLine AI</span>
-                    <span class="brand-sub">Triage workspace</span>
+                    <span class="brand-sub">Your health navigator</span>
                 </div>
             </div>
         </div>
@@ -2003,7 +2019,7 @@ def sidebar() -> None:
         available_pages,
         key="page_picker",
         label_visibility="collapsed",
-        format_func=lambda page: tr(page),
+        format_func=page_label,
     )
     page_changed = selected_page != st.session_state.page
     if page_changed:
@@ -2437,8 +2453,8 @@ def render_emergency_actions(patient_data: dict[str, Any], result: Any) -> None:
     for step in emergency_action_plan(patient_data):
         st.write(f"- {tr(step)}")
     st.markdown(
-        '<a href="tel:112" style="display:inline-block;padding:.75rem 1rem;background:#b42318;color:white;border-radius:.6rem;text-decoration:none;font-weight:700">Call 112</a> '
-        '<a href="https://www.google.com/maps/search/hospital+near+me" target="_blank" rel="noopener" style="display:inline-block;padding:.75rem 1rem;background:#174f46;color:white;border-radius:.6rem;text-decoration:none;font-weight:700">Find nearby hospitals</a>',
+        '<div style="padding:.75rem 1rem;background:#b42318;color:white;border-radius:.6rem;font-weight:800;margin-bottom:.65rem">Call your local emergency service now</div>'
+        '<a href="https://www.google.com/maps/search/hospital+near+me" target="_blank" rel="noopener" style="display:inline-block;padding:.75rem 1rem;background:#174f46;color:white;border-radius:.6rem;text-decoration:none;font-weight:700">Find a nearby emergency department</a>',
         unsafe_allow_html=True,
     )
     st.caption(tr("Location is opened only when you choose the hospital link; LifeLine AI does not track it."))
@@ -2792,9 +2808,9 @@ def render_patient_home() -> None:
         <div class="dashboard-shell">
             <div class="app-hero">
                 <div>
-                    <div class="small-title">{h("Patient workspace")}</div>
-                    <h1>{h("How can we help today?")}</h1>
-                    <p>{h("Prepare a clearer doctor visit, review your health timeline, and keep medicines and reminders together in one safe place.")}</p>
+                    <div class="small-title">{h("Your health, in your language")}</div>
+                    <h1>{h("What are you feeling today?")}</h1>
+                    <p>{h("Describe your symptoms, understand how urgent they may be, and leave with a clear next step and a summary for a healthcare professional.")}</p>
                 </div>
                 <div class="safety-badge">{h("Decision support only")}</div>
             </div>
@@ -2803,7 +2819,7 @@ def render_patient_home() -> None:
         unsafe_allow_html=True,
     )
     st.info(
-        tr("If there is severe breathing difficulty, chest pain, fainting, stroke signs, a seizure, or another life-threatening concern, do not wait for this app. Call 112 or go to the nearest emergency department."),
+        tr("If there is severe breathing difficulty, chest pain, fainting, stroke signs, a seizure, or another life-threatening concern, do not wait for this app. Contact your local emergency service or go to the nearest emergency department."),
         icon="☎️",
     )
     render_command_center_cards(
@@ -2819,18 +2835,18 @@ def render_patient_home() -> None:
         <div class="home-workspace">
             <div class="workspace-panel">
                 <div class="small-title">{h("Start here")}</div>
-                <h2>{h("Prepare a doctor visit")}</h2>
-                <p class="muted">{h("Tell LifeLine AI what is happening and get a doctor-ready summary, questions to ask, and urgent warning signs.")}</p>
+                <h2>{h("Get care guidance")}</h2>
+                <p class="muted">{h("Tell LifeLine AI what is happening. It will check urgent warning signs, explain possible symptom patterns, and help you choose the safest next step.")}</p>
                 <div class="chip-row">
-                    <span class="clinical-chip">{h("Symptoms")}</span>
-                    <span class="clinical-chip">{h("Risk guidance")}</span>
-                    <span class="clinical-chip">{h("Doctor-ready summary")}</span>
+                    <span class="clinical-chip">{h("Understand")}</span>
+                    <span class="clinical-chip">{h("Act")}</span>
+                    <span class="clinical-chip">{h("Prepare")}</span>
                 </div>
             </div>
             <div class="workspace-panel">
                 <div class="small-title">{h("Your health")}</div>
-                <h2>{h("Timeline and care tools")}</h2>
-                <p class="muted">{h("Review previous checks, medication safety, profiles, and care reminders.")}</p>
+                <h2>{h("Keep your health organised")}</h2>
+                <p class="muted">{h("Review previous checks, medicine cautions, your health profile, and care reminders.")}</p>
                 <div class="trend-card"><div class="trend-line"></div></div>
             </div>
         </div>
@@ -2840,11 +2856,11 @@ def render_patient_home() -> None:
     st.write("")
     with st.container(key="patient_home_actions"):
         action1, action2, action3 = st.columns(3)
-        if action1.button(tr("Start Health Check"), type="primary", width="stretch"):
+        if action1.button(tr("Describe My Symptoms"), type="primary", width="stretch"):
             switch_page("Patient Health Checker")
-        if action2.button(tr("Medication Safety"), width="stretch"):
+        if action2.button(tr("Check My Medicines"), width="stretch"):
             switch_page("Medication Safety Checker")
-        if action3.button(tr("Timeline & Reminders"), width="stretch"):
+        if action3.button(tr("View My Health Profile"), width="stretch"):
             switch_page("Health Passport & Reminders")
 
 
@@ -3335,13 +3351,13 @@ def render_followup_and_summary(patient_data: dict[str, Any], result: Any, advic
 
 def render_checker() -> None:
     page_header(
-        "Patient Health Checker",
-        "Enter symptoms and the details you know. Heart rate, blood pressure, and oxygen are optional for home users.",
-        "Visit-prep workspace",
+        "Get Care Guidance",
+        "Tell us what you are feeling. LifeLine AI will check warning signs, explain the pattern, and suggest the safest next step.",
+        "Understand → Act → Prepare",
     )
     form_col, result_col = st.columns([1.05, .95], gap="large")
     with form_col:
-        st.markdown(f'<div class="section-label">{h("Patient intake")}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="section-label">{h("Tell us what is happening")}</div>', unsafe_allow_html=True)
         data = patient_form()
         p1, p2 = st.columns(2)
         if p1.button(tr("Save patient profile"), width="stretch"):
@@ -3365,7 +3381,7 @@ def render_checker() -> None:
             value=False,
             help=tr("Only share when you want a clinician to review this case. A private case code will be created."),
         )
-        if st.button(tr("Create Visit Summary"), type="primary", width="stretch"):
+        if st.button(tr("Show My Care Guidance"), type="primary", width="stretch"):
             if not data["symptoms"]:
                 st.error(tr("Please choose at least one symptom."))
             else:
@@ -3390,7 +3406,7 @@ def render_checker() -> None:
                     st.session_state.checker_result["share_code"] = save_case(data, result)
                 st.rerun()
     with result_col:
-        st.markdown(f'<div class="section-label">{h("Live result")}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="section-label">{h("Your next step")}</div>', unsafe_allow_html=True)
         stored = st.session_state.get("checker_result")
         if stored:
             if stored.get("saved"):
@@ -3421,9 +3437,9 @@ def render_checker() -> None:
             st.markdown(
                 f"""
                     <div class="empty-result">
-                        <b>{h("No analysis yet.")}</b><br>
-                    {h("Fill the patient details on the left and click Create Visit Summary.")}
-                        {h("The danger level will appear here as green, yellow, or red.")}
+                        <b>{h("Your guidance will appear here.")}</b><br>
+                    {h("Describe your symptoms on the left and select Show My Care Guidance.")}
+                        {h("You will see an urgency level, recommended next step, warning signs, and appointment summary.")}
                     </div>
                 """,
                 unsafe_allow_html=True,
@@ -4208,9 +4224,7 @@ def render_regulatory_fine_print() -> None:
 
 **Children and capacity.** A parent or lawful guardian should supervise use for a child or anyone unable to provide valid consent. The deployer is responsible for applying the consent requirements that are in force.
 
-**India regulatory position (reviewed 27 June 2026).** The product's actual intended purpose and claims—not this disclaimer alone—determine whether it is regulated. Software intended for diagnosis, prevention, monitoring, treatment, or alleviation may fall within India's medical-device framework. Before clinical deployment or marketing, obtain qualified review under the Medical Devices Rules, 2017 and current CDSCO classification/licensing requirements. Personal-data handling should be reviewed against the Digital Personal Data Protection Act, 2023 and the phased commencement of the Digital Personal Data Protection Rules, 2025. ABDM Health Data Management Policy controls are relevant if the service participates in the ABDM ecosystem. Telemedicine requirements apply when a registered medical practitioner provides a consultation; this app itself is not a registered medical practitioner.
-
-Official references: [CDSCO medical-device framework](https://cdsco.gov.in/opencms/opencms/en/Medical-Device-Diagnostics/Medical-Device-Diagnostics/) · [Medical Devices Rules, 2017](https://cdsco.gov.in/opencms/opencms/en/Acts-and-rules/Medical-Devices-Rules/) · [DPDP Rules, 2025](https://www.meity.gov.in/documents/act-and-policies/digital-personal-data-protection-rules-2025-gDOxUjMtQWa) · [ABDM Health Data Management Policy](https://abdm.gov.in/static/media/health_management_policy_bac9429a79.80f74bc3e039c00acd4f.pdf)
+**Regional readiness.** Medical-device, privacy, consent, emergency-service, and telemedicine requirements differ by location. Before public or clinical deployment, configure the supported region, local emergency instructions, data controls, and care pathways, then obtain qualified clinical, privacy, and regulatory review for that region.
 
 This disclosure is a product-safety summary, not legal advice or evidence of regulatory approval.
             """

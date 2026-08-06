@@ -140,7 +140,7 @@ def clinician_evidence(patient_data: dict[str, Any], result: Any) -> list[dict[s
 
 def emergency_action_plan(patient_data: dict[str, Any]) -> list[str]:
     return [
-        "Call 112 or the local emergency number now.",
+        "Contact your local emergency service now.",
         "Do not drive yourself; ask someone to stay with the patient.",
         "Note when the symptoms began and whether they changed suddenly.",
         "Keep the medicine list, allergies, emergency contact, and recent measurements ready.",

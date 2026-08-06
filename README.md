@@ -1,6 +1,6 @@
 # LifeLine AI
 
-LifeLine AI is a patient-friendly doctor-visit preparation and clinic-intake app built with Streamlit. It helps users record symptoms, create a doctor-ready summary, learn about health and medicine topics, review saved cases, and check basic medication safety concerns. It is not an autonomous diagnosis product.
+LifeLine AI is a multilingual, patient-oriented symptom-to-care navigator built with Streamlit. It helps people describe symptoms, recognize urgent warning signs, choose a safer next step, prepare for a healthcare visit, learn about health topics, and check basic medication safety concerns. It is not an autonomous diagnosis product.
 
 ## Features
 
@@ -21,7 +21,7 @@ LifeLine AI is a patient-friendly doctor-visit preparation and clinic-intake app
 - Multi-language dropdown support
 - Offline mode for local rules, local SQLite storage, and no cloud calls
 - Plain-language red-flag interviews with fail-safe handling for unanswered or uncertain responses
-- Emergency action screen with one-tap 112 calling and user-initiated nearby-hospital search
+- Country-neutral emergency action screen with clear local-emergency guidance and a user-initiated nearby-hospital search
 - Medication reconciliation for duplicate ingredients, selected interactions, and allergy matches
 - Patient-controlled health passports and separate caregiver profiles
 - Care reminders for follow-ups, vaccinations, and medicine-list reviews
