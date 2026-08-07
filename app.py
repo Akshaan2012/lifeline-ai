@@ -4171,19 +4171,27 @@ def render_challenge() -> None:
     st.markdown(f'<div class="section-label">{h("Current case")}</div>', unsafe_allow_html=True)
     st.subheader(tr("Patient Case"))
     st.write(tr(scenario["case"]))
+    choice_key = f"challenge_choice_{index}"
     choice = st.radio(
         tr("What should this patient do?"),
         st.session_state[option_key],
+        index=None,
+        placeholder=tr("Choose one care level"),
         format_func=tr,
-        key=f"challenge_choice_{index}",
+        key=choice_key,
     )
     if st.button(tr("Check My Answer")):
-        result = fast_analyze_patient(scenario["data"])
-        if choice == result_risk_level(result):
-            st.session_state.score += 10
-        render_challenge_feedback(choice, result, scenario["data"])
+        if choice is None:
+            st.warning(tr("Choose an answer before checking."))
+        else:
+            result = fast_analyze_patient(scenario["data"])
+            if choice == result_risk_level(result):
+                st.session_state.score += 10
+            render_challenge_feedback(choice, result, scenario["data"])
     if st.button(tr("Next Scenario")):
-        st.session_state.scenario_index = random.randint(0, len(SCENARIOS) - 1)
+        st.session_state.pop(choice_key, None)
+        other_indexes = [item for item in range(len(SCENARIOS)) if item != index]
+        st.session_state.scenario_index = random.choice(other_indexes) if other_indexes else index
         st.rerun()
     st.metric(tr("Score"), st.session_state.score)
 
