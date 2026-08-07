@@ -1,5 +1,7 @@
 # LifeLine AI
 
+[Open the public LifeLine AI app](https://lifeline-ai.streamlit.app)
+
 LifeLine AI is a multilingual, patient-oriented symptom-to-care navigator built with Streamlit. It helps people describe symptoms, recognize urgent warning signs, choose a safer next step, prepare for a healthcare visit, learn about health topics, and check basic medication safety concerns. It is not an autonomous diagnosis product.
 
 ## Features

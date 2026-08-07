@@ -859,6 +859,12 @@ def inject_css() -> None:
             fill: #efffff !important;
             width: 24px !important;
             height: 24px !important;
+        }        /* Patient navigation is intentionally persistent. */
+        [data-testid="collapsedControl"],
+        [data-testid="stSidebarCollapseButton"] {
+            display: none !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
         }
         [data-testid="stSidebar"] * { color: #efffff; }
         .sidebar-brand {
