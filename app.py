@@ -777,11 +777,16 @@ def inject_css() -> None:
             max-width: 300px !important;
         }
         [data-testid="stSidebar"][aria-expanded="false"] {
-            min-width: 0 !important;
-            width: 0 !important;
-            max-width: 0 !important;
-            border-right: 0 !important;
-            box-shadow: none !important;
+            display: block !important;
+            visibility: visible !important;
+            transform: none !important;
+            left: 0 !important;
+            margin-left: 0 !important;
+            min-width: 300px !important;
+            width: 300px !important;
+            max-width: 300px !important;
+            border-right: 1px solid rgba(255,255,255,.1) !important;
+            box-shadow: 18px 0 42px rgba(8, 38, 49, .14) !important;
         }
         [data-testid="collapsedControl"] {
             display: flex !important;
