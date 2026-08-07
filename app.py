@@ -4176,7 +4176,6 @@ def render_challenge() -> None:
         tr("What should this patient do?"),
         st.session_state[option_key],
         index=None,
-        placeholder=tr("Choose one care level"),
         format_func=tr,
         key=choice_key,
     )
