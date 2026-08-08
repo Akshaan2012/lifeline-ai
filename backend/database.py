@@ -5,6 +5,7 @@ import os
 import secrets
 import sqlite3
 from datetime import datetime
+from functools import wraps
 from pathlib import Path
 from typing import Any
 
@@ -39,6 +40,7 @@ def _load_dotenv() -> None:
     if not env_path.exists():
         return
     try:
+        file_values: dict[str, str] = {}
         for line in env_path.read_text(encoding="utf-8").splitlines():
             clean = line.strip()
             if not clean or clean.startswith("#") or "=" not in clean:
@@ -46,10 +48,17 @@ def _load_dotenv() -> None:
             key, value = clean.split("=", 1)
             key = key.strip()
             value = value.strip().strip('"').strip("'")
-            if key and key not in os.environ:
+            if key:
+                file_values[key] = value
+        for key, value in file_values.items():
+            if key not in os.environ:
                 os.environ[key] = value
     except Exception as exc:
         _set_database_error(f"Could not read .env: {exc}")
+
+
+_load_dotenv()
+DB_PATH = Path(os.getenv("LIFELINE_DATA_DIR", "data")).expanduser() / "lifeline_cases.db"
 
 
 def _setting(name: str) -> str:
@@ -80,6 +89,20 @@ def _offline_mode() -> bool:
         )
     except Exception:
         return False
+
+
+def _production_mode() -> bool:
+    return (_setting("LIFELINE_ENV") or "development").strip().lower() == "production"
+
+
+def _local_storage_allowed() -> bool:
+    return _offline_mode() or not _production_mode()
+
+
+def _local_storage_error() -> None:
+    _set_database_error(
+        "Secure patient storage is unavailable. Configure Supabase for production, or enable offline mode only on a trusted local device."
+    )
 
 
 def _supabase_client() -> Any | None:
@@ -113,7 +136,11 @@ def _supabase_configured() -> bool:
 def database_backend() -> str:
     if _offline_mode():
         return "SQLite offline mode"
-    return "Supabase" if _supabase_client() else "SQLite local fallback"
+    if _supabase_client():
+        return "Supabase"
+    if _production_mode():
+        return "Storage unavailable"
+    return "SQLite local development"
 
 
 def supabase_is_configured() -> bool:
@@ -168,49 +195,80 @@ def sign_out_staff() -> None:
             pass
 
 
-def init_db() -> None:
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with sqlite3.connect(DB_PATH) as conn:
-        conn.execute(
-            """
-            CREATE TABLE IF NOT EXISTS patient_cases (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                created_at TEXT NOT NULL,
-                patient_name TEXT,
-                age INTEGER,
-                symptoms TEXT NOT NULL,
-                category TEXT NOT NULL,
-                risk_level TEXT NOT NULL,
-                recommendation TEXT NOT NULL,
-                score INTEGER NOT NULL,
-                raw_data TEXT NOT NULL,
-                review_status TEXT NOT NULL DEFAULT 'New',
-                doctor_notes TEXT NOT NULL DEFAULT ''
-                ,share_code TEXT
-                ,patient_consent INTEGER NOT NULL DEFAULT 0
-            )
-            """
-        )
-        existing_columns = {
-            row[1] for row in conn.execute("PRAGMA table_info(patient_cases)").fetchall()
-        }
-        if "review_status" not in existing_columns:
+def init_db() -> bool:
+    if not _local_storage_allowed():
+        _local_storage_error()
+        return False
+    try:
+        DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with sqlite3.connect(DB_PATH) as conn:
             conn.execute(
-                "ALTER TABLE patient_cases ADD COLUMN review_status TEXT NOT NULL DEFAULT 'New'"
+                """
+                CREATE TABLE IF NOT EXISTS patient_cases (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    created_at TEXT NOT NULL,
+                    patient_name TEXT,
+                    age INTEGER,
+                    symptoms TEXT NOT NULL,
+                    category TEXT NOT NULL,
+                    risk_level TEXT NOT NULL,
+                    recommendation TEXT NOT NULL,
+                    score INTEGER NOT NULL,
+                    raw_data TEXT NOT NULL,
+                    review_status TEXT NOT NULL DEFAULT 'New',
+                    doctor_notes TEXT NOT NULL DEFAULT '',
+                    share_code TEXT,
+                    patient_consent INTEGER NOT NULL DEFAULT 0
+                )
+                """
             )
-        if "doctor_notes" not in existing_columns:
+            existing_columns = {
+                row[1] for row in conn.execute("PRAGMA table_info(patient_cases)").fetchall()
+            }
+            if "review_status" not in existing_columns:
+                conn.execute(
+                    "ALTER TABLE patient_cases ADD COLUMN review_status TEXT NOT NULL DEFAULT 'New'"
+                )
+            if "doctor_notes" not in existing_columns:
+                conn.execute(
+                    "ALTER TABLE patient_cases ADD COLUMN doctor_notes TEXT NOT NULL DEFAULT ''"
+                )
+            if "share_code" not in existing_columns:
+                conn.execute("ALTER TABLE patient_cases ADD COLUMN share_code TEXT")
+            if "patient_consent" not in existing_columns:
+                conn.execute(
+                    "ALTER TABLE patient_cases ADD COLUMN patient_consent INTEGER NOT NULL DEFAULT 0"
+                )
             conn.execute(
-                "ALTER TABLE patient_cases ADD COLUMN doctor_notes TEXT NOT NULL DEFAULT ''"
+                "CREATE UNIQUE INDEX IF NOT EXISTS patient_cases_share_code_idx ON patient_cases (share_code)"
             )
-        if "share_code" not in existing_columns:
-            conn.execute("ALTER TABLE patient_cases ADD COLUMN share_code TEXT")
-        if "patient_consent" not in existing_columns:
-            conn.execute(
-                "ALTER TABLE patient_cases ADD COLUMN patient_consent INTEGER NOT NULL DEFAULT 0"
-            )
-        conn.execute(
-            "CREATE UNIQUE INDEX IF NOT EXISTS patient_cases_share_code_idx ON patient_cases (share_code)"
-        )
+        _set_database_error("")
+        return True
+    except (OSError, sqlite3.Error) as exc:
+        _set_database_error(f"Local patient storage is unavailable: {exc}")
+        return False
+
+
+def _require_local_storage() -> None:
+    if not init_db():
+        raise sqlite3.OperationalError(database_error_message() or "Local storage unavailable")
+
+
+def _storage_safe(function: Any) -> Any:
+    """Keep storage failures from crashing a patient-facing page."""
+    @wraps(function)
+    def wrapped(*args: Any, **kwargs: Any) -> Any:
+        try:
+            return function(*args, **kwargs)
+        except (OSError, sqlite3.Error) as exc:
+            _set_database_error(f"Patient storage operation failed safely: {exc}")
+            return {
+                "save_case": "",
+                "get_case_by_share_code": None,
+                "list_cases": [],
+            }.get(function.__name__, False)
+
+    return wrapped
 
 
 def _new_share_code() -> str:
@@ -264,6 +322,7 @@ def safe_case_text(value: Any, fallback: str = "") -> str:
     return clean[:MAX_CASE_TEXT_CHARS]
 
 
+@_storage_safe
 def save_case(patient_data: dict[str, Any], triage_result: Any) -> str:
     share_code = _new_share_code()
     supabase = _supabase_client()
@@ -317,7 +376,7 @@ def save_case(patient_data: dict[str, Any], triage_result: Any) -> str:
                 if _supabase_configured():
                     return ""
 
-    init_db()
+    _require_local_storage()
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute(
             """
@@ -347,6 +406,7 @@ def save_case(patient_data: dict[str, Any], triage_result: Any) -> str:
     return share_code
 
 
+@_storage_safe
 def get_case_by_share_code(share_code: str) -> dict[str, Any] | None:
     code = normalize_share_code(share_code)
     if not valid_share_code(code):
@@ -364,7 +424,7 @@ def get_case_by_share_code(share_code: str) -> dict[str, Any] | None:
             _set_database_error(str(exc))
             if _supabase_configured():
                 return None
-    init_db()
+    _require_local_storage()
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
         row = conn.execute(
@@ -378,6 +438,7 @@ def get_case_by_share_code(share_code: str) -> dict[str, Any] | None:
     return dict(row) if row else None
 
 
+@_storage_safe
 def list_cases() -> list[dict[str, Any]]:
     supabase = _supabase_client()
     if supabase:
@@ -396,7 +457,7 @@ def list_cases() -> list[dict[str, Any]]:
             if _supabase_configured():
                 return []
 
-    init_db()
+    _require_local_storage()
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
         rows = conn.execute(
@@ -405,6 +466,7 @@ def list_cases() -> list[dict[str, Any]]:
     return [dict(row) for row in rows]
 
 
+@_storage_safe
 def clear_cases() -> bool:
     supabase = _supabase_client()
     if supabase:
@@ -417,13 +479,14 @@ def clear_cases() -> bool:
             if _supabase_configured():
                 return False
 
-    init_db()
+    _require_local_storage()
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("DELETE FROM patient_cases")
     _set_database_error("")
     return True
 
 
+@_storage_safe
 def delete_patient_cases(patient_name: str) -> bool:
     name = normalize_patient_name(patient_name)
     supabase = _supabase_client()
@@ -437,13 +500,14 @@ def delete_patient_cases(patient_name: str) -> bool:
             if _supabase_configured():
                 return False
 
-    init_db()
+    _require_local_storage()
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("DELETE FROM patient_cases WHERE patient_name = ?", (name,))
     _set_database_error("")
     return True
 
 
+@_storage_safe
 def update_case_review(case_id: int | str, review_status: str, doctor_notes: str) -> bool:
     review_status = normalize_review_status(review_status)
     doctor_notes = normalize_doctor_notes(doctor_notes)
@@ -464,7 +528,7 @@ def update_case_review(case_id: int | str, review_status: str, doctor_notes: str
                 return False
             return False
 
-    init_db()
+    _require_local_storage()
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.execute(
             """

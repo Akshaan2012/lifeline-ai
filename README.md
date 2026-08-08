@@ -1,6 +1,6 @@
 # LifeLine AI
 
-[Open the public LifeLine AI app](https://lifeline-ai.streamlit.app)
+[Open the public LifeLine AI app](https://lifeline-ai-jwp5bk2k67r3jygxlgix2k.streamlit.app)
 
 LifeLine AI is a multilingual, patient-oriented symptom-to-care navigator built with Streamlit. It helps people describe symptoms, recognize urgent warning signs, choose a safer next step, prepare for a healthcare visit, learn about health topics, and check basic medication safety concerns. It is not an autonomous diagnosis product.
 
@@ -122,7 +122,7 @@ sudo apt install python3-venv
 - scikit-learn
 - ReportLab
 - SQLite
-- deep-translator
+- requests-based translation with safe local fallbacks
 - Gemini API (optional AI enhancements)
 
 ## Gemini Setup
@@ -176,7 +176,9 @@ For real patient data, confirm the provider's privacy terms, data-retention cont
 
 ## Supabase Setup
 
-LifeLine AI uses Supabase PostgreSQL in production when these secrets are present:
+LifeLine AI requires Supabase PostgreSQL for production patient sharing. If it is not configured, the app reports storage as unavailable and does not silently write patient data to temporary Streamlit Cloud files. Local SQLite is limited to development or explicit offline mode.
+
+Use these secrets:
 
 ```toml
 SUPABASE_URL = "https://your-project-ref.supabase.co"

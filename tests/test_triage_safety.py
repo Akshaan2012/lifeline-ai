@@ -110,5 +110,21 @@ class TriageSafetyTests(unittest.TestCase):
                 self.assertIn(result.risk_level, {"Urgent Care", "Emergency"})
 
 
+    def test_separate_heart_attack_warning_signs_are_emergency(self) -> None:
+        for companion in ("Sweating", "Shortness of breath", "Fainting"):
+            with self.subTest(companion=companion):
+                result = analyze_patient(
+                    {
+                        "age": 55,
+                        "symptoms": ["Chest pain", companion],
+                        "conditions": ["Heart disease"],
+                        "pain_level": 8,
+                    },
+                    use_ml=False,
+                )
+                self.assertEqual(result.risk_level, "Emergency")
+                self.assertGreaterEqual(result.score, 70)
+
+
 if __name__ == "__main__":
     unittest.main()

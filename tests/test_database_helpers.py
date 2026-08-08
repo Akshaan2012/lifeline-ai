@@ -188,6 +188,36 @@ class DatabaseHelperTests(unittest.TestCase):
         self.assertNotIn("share_code", fake_client.patient_cases.rows[1])
         self.assertIn("schema is outdated", database_error_message())
 
+    def test_production_never_falls_back_to_local_patient_storage(self) -> None:
+        patient = {"patient_name": "Ava", "age": 31, "symptoms": ["cough"]}
+        result = {
+            "possible_category": "Respiratory",
+            "risk_level": "Doctor Visit Recommended",
+            "recommendation": "Book a doctor visit.",
+            "score": 30,
+        }
+        with patch("backend.database._supabase_client", return_value=None), patch(
+            "backend.database._production_mode", return_value=True
+        ), patch("backend.database._offline_mode", return_value=False), patch(
+            "backend.database.sqlite3.connect"
+        ) as local_connect:
+            self.assertEqual(save_case(patient, result), "")
+            self.assertEqual(database.database_backend(), "Storage unavailable")
+            local_connect.assert_not_called()
+        self.assertIn("Secure patient storage is unavailable", database_error_message())
+
+    def test_full_disk_database_error_does_not_crash_patient_page(self) -> None:
+        with TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
+            with patch.object(database, "DB_PATH", Path(tmp) / "cases.db"), patch(
+                "backend.database._local_storage_allowed", return_value=True
+            ), patch(
+                "backend.database.sqlite3.connect",
+                side_effect=database.sqlite3.OperationalError("database or disk is full"),
+            ):
+                self.assertFalse(init_db())
+                self.assertEqual(database.list_cases(), [])
+        self.assertIn("failed safely", database_error_message())
+
 
 if __name__ == "__main__":
     unittest.main()

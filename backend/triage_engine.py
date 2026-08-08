@@ -225,6 +225,11 @@ def analyze_patient(data: dict[str, Any], use_ml: bool = True) -> TriageResult:
     signals: list[str] = []
 
     emergency_hits = symptoms.intersection(EMERGENCY_SYMPTOMS)
+    heart_emergency_pattern = "chest pain" in symptoms and bool(
+        {"sweating", "shortness of breath", "fainting"}.intersection(symptoms)
+    )
+    if heart_emergency_pattern:
+        emergency_hits.add("heart attack warning signs")
     ambiguous_high_risk_hits = symptoms.intersection(AMBIGUOUS_HIGH_RISK_SYMPTOMS)
     urgent_hits = symptoms.intersection(URGENT_SYMPTOMS)
 

@@ -9,7 +9,7 @@ from threading import RLock
 from typing import Any
 
 
-TRANSLATION_CACHE_PATH = Path("data/translation_cache.json")
+TRANSLATION_CACHE_PATH = Path(os.getenv("LIFELINE_DATA_DIR", "data")).expanduser() / "translation_cache.json"
 _TRANSLATION_MEMORY: dict[str, dict[str, str]] | None = None
 _MEMORY_LOCK = RLock()
 _PRELOAD_EXECUTOR = ThreadPoolExecutor(max_workers=2, thread_name_prefix="translation-preload")
@@ -216,12 +216,6 @@ def _safe_cached_text(original: str, cached: str, selected_language: str) -> str
     return cached
 
 
-@lru_cache(maxsize=64)
-def _translator(target: str) -> Any:
-    from deep_translator import GoogleTranslator
-
-    return GoogleTranslator(source="auto", target=target)
-
 
 def _direct_google_batch(texts: list[str], target: str) -> list[str] | None:
     try:
@@ -288,7 +282,9 @@ def _translate_batch_cached(items: tuple[str, ...], selected_language: str) -> t
         return tuple(translated)
 
     try:
-        batch = _direct_google_batch(pending, target) or _translator(target).translate_batch(pending)
+        batch = _direct_google_batch(pending, target)
+        if not batch:
+            raise RuntimeError("Translation service unavailable")
         for index, value in zip(pending_indexes, batch):
             translated[index] = value or items[index]
             _remember(selected_language, items[index], translated[index])
@@ -315,13 +311,13 @@ def translate_text(text: str, selected_language: str) -> str:
         return text
     if _offline_mode():
         return _fallback_text(text, selected_language)
-    try:
-        translated = _translator(target).translate(text)
-        _remember(selected_language, text, translated or text)
+    translated_items = _direct_google_batch([text], target)
+    if translated_items:
+        translated = translated_items[0]
+        _remember(selected_language, text, translated)
         _save_memory()
-        return translated or text
-    except Exception:
-        return _fallback_text(text, selected_language)
+        return translated
+    return _fallback_text(text, selected_language)
 
 
 def translate_text_cached(text: str, selected_language: str) -> str:

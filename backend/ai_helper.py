@@ -35,6 +35,7 @@ def _load_dotenv() -> None:
     if not env_path.exists():
         return
     try:
+        file_values: dict[str, str] = {}
         for line in env_path.read_text(encoding="utf-8").splitlines():
             clean = line.strip()
             if not clean or clean.startswith("#") or "=" not in clean:
@@ -42,7 +43,10 @@ def _load_dotenv() -> None:
             key, value = clean.split("=", 1)
             key = key.strip()
             value = value.strip().strip('"').strip("'")
-            if key and key not in os.environ:
+            if key:
+                file_values[key] = value
+        for key, value in file_values.items():
+            if key not in os.environ:
                 os.environ[key] = value
     except OSError as exc:
         LOGGER.warning("Could not read local .env settings: %s", exc)
